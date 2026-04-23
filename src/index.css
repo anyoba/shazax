@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 260 40% 10%;
+  --border: 260 20% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 260 40% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 260 40% 10%;
+  --primary: 265 89% 58%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 20% 96%;
+  --secondary-foreground: 260 40% 10%;
+  --muted: 260 20% 94%;
+  --muted-foreground: 260 10% 40%;
+  --accent: 45 100% 50%;
+  --accent-foreground: 260 40% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 260 20% 90%;
+  --ring: 265 89% 58%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.85), transparent 18%),
+    radial-gradient(circle at 85% 10%, rgba(255, 220, 80, 0.18), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f7f4ff 45%, #f6f2ff 100%);
+  color: hsl(var(--foreground));
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading tracking-tight;
+  }
+}

@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import logo from '../assets/he.png';
 import { addEmail } from '../waitlist';
 
 function ComingSoonModal({ isOpen, onClose }) {
@@ -471,7 +472,7 @@ export default function HomePage() {
         <div className="container mx-auto flex h-20 items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <img
-              src="/he.png"
+              src={logo}
               alt="Shazaxx Logo"
               className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20"
             />
@@ -750,7 +751,7 @@ export default function HomePage() {
         <div className="container mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
           <div className="flex items-center gap-2">
             <img
-              src="/he.png"
+              src={logo}
               alt="Shazaxx Logo"
               className="h-8 w-8 rounded-lg"
             />

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/next';
 import { trackPageVisit } from './analytics';
 import { useResources } from './hooks/useResources';
 import { useUser } from '@clerk/clerk-react';
@@ -9,6 +10,7 @@ import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
 import LearnPage from './pages/LearnPage';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AnalyticsTracker() {
@@ -50,21 +52,24 @@ export default function App() {
   return (
     <>
       <AnalyticsTracker />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/learn" element={<ProtectedRoute element={<LearnPage resources={resources} />} />} />
-        <Route
-          path="/admin"
-          element={
-            <AdminPage
-              resources={resources}
-              onAddResource={addResource}
-              onDeleteResource={removeResource}
-            />
-          }
-        />
-      </Routes>
+      <Analytics />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/learn" element={<ProtectedRoute element={<LearnPage resources={resources} />} />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminPage
+                resources={resources}
+                onAddResource={addResource}
+                onDeleteResource={removeResource}
+              />
+            }
+          />
+        </Routes>
+      </Layout>
     </>
   );
 }

@@ -25,9 +25,9 @@ function WaitlistModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle');
 
-async function handleSubmit(event) {
-  event.preventDefault();
-  if (!email) return;
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (!email) return;
 
   setStatus('loading');
 

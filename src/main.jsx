@@ -22,19 +22,43 @@ function handleClerkNavigate(to) {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root');
+
+const appElement = (
   <React.StrictMode>
-    <BrowserRouter>
-      <ClerkProvider
-        publishableKey={clerkPublishableKey}
-        navigate={handleClerkNavigate}
-        afterSignInUrl="/learn"
-        afterSignUpUrl="/learn"
-      >
-        <ErrorBoundary>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ClerkProvider
+          publishableKey={clerkPublishableKey}
+          navigate={handleClerkNavigate}
+          afterSignInUrl="/learn"
+          afterSignUpUrl="/learn"
+        >
           <App />
-        </ErrorBoundary>
-      </ClerkProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
+        </ClerkProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  </React.StrictMode>
+);
+
+const missingKeyElement = (
+  <React.StrictMode>
+    <ErrorBoundary>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-6">
+        <div className="max-w-2xl rounded-3xl border border-white/10 bg-slate-900/90 p-8 text-center shadow-2xl">
+          <h1 className="mb-4 text-3xl font-bold">Clerk is not configured</h1>
+          <p className="text-sm text-slate-300">
+            The app requires a Clerk publishable key to render correctly.
+          </p>
+          <p className="mt-4 text-sm text-slate-400">
+            Please set <code className="rounded bg-slate-800 px-2 py-1">VITE_CLERK_PUBLISHABLE_KEY</code> in your Vercel environment variables.
+          </p>
+        </div>
+      </div>
+    </ErrorBoundary>
+  </React.StrictMode>
+);
+
+ReactDOM.createRoot(rootElement).render(
+  clerkPublishableKey ? appElement : missingKeyElement,
 );

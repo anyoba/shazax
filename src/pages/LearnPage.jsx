@@ -10,13 +10,10 @@ import {
   ChevronRight,
   Circle,
   Download,
-  ExternalLink,
   FileText,
   FlaskConical,
   Layers,
   Loader2,
-  LogOut,
-  Trophy,
 } from 'lucide-react';
 import { useUser, UserButton } from '@clerk/clerk-react';
 
@@ -76,27 +73,14 @@ const MODULES = [
     pill: 'bg-emerald-50 border-emerald-200 text-emerald-600',
     checkColor: 'text-emerald-500',
   },
-  {
-    id: 'Concours',
-    label: 'Concours',
-    icon: Trophy,
-    gradient: 'from-yellow-100 to-amber-50',
-    iconBg: 'bg-yellow-100',
-    accent: 'text-yellow-600',
-    activeBorder: 'border-yellow-300',
-    pill: 'bg-yellow-50 border-yellow-200 text-yellow-700',
-    checkColor: 'text-yellow-500',
-  },
 ];
 
 const CATEGORIES = [
   { id: 'Courses', label: 'Cours' },
   { id: 'TD', label: 'TD' },
   { id: 'Exams', label: 'Examens' },
-  { id: 'Resources', label: 'Ressources Live' },
 ];
 
-const CONCOURS_KEY = 'admin_concours_items';
 const COMPLETED_KEY = 'learn_completed_resources';
 
 function readCompleted() {
@@ -107,14 +91,6 @@ function readCompleted() {
   }
 }
 
-function readConcours() {
-  try {
-    return JSON.parse(window.localStorage.getItem(CONCOURS_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
 export default function LearnPage({ resources }) {
   const navigate = useNavigate();
   const [selectedModule, setSelectedModule] = useState(null);
@@ -122,10 +98,9 @@ export default function LearnPage({ resources }) {
   const [loading, setLoading] = useState(false);
   const [completedIds, setCompletedIds] = useState(() => readCompleted());
   const [toggling, setToggling] = useState(null);
-  const [concoursList, setConcoursList] = useState(() => readConcours());
-  const [concoursLoading, setConcoursLoading] = useState(false);
 
   const activeModule = MODULES.find((moduleItem) => moduleItem.id === selectedModule);
+  const ActiveIcon = activeModule?.icon;
 
   const filteredResources = useMemo(() => {
     if (!selectedModule || !selectedCategory) return [];
@@ -137,16 +112,6 @@ export default function LearnPage({ resources }) {
   useEffect(() => {
     window.localStorage.setItem(COMPLETED_KEY, JSON.stringify([...completedIds]));
   }, [completedIds]);
-
-  useEffect(() => {
-    if (selectedModule === 'Concours') {
-      setConcoursLoading(true);
-      window.setTimeout(() => {
-        setConcoursList(readConcours());
-        setConcoursLoading(false);
-      }, 250);
-    }
-  }, [selectedModule]);
 
   useEffect(() => {
     if (!selectedModule || !selectedCategory) return;
@@ -225,7 +190,7 @@ export default function LearnPage({ resources }) {
               <div className="mb-10 text-center">
                 <h1 className="mb-2 font-heading text-4xl font-black">Your Modules</h1>
                 <p className="text-base text-gray-500">
-                  Select a module to access courses, TDs, exams, and concours links
+                  Select a module to access courses, TDs, and exams
                 </p>
               </div>
 
@@ -265,66 +230,14 @@ export default function LearnPage({ resources }) {
             >
               <div className="mb-8">
                 <div className={`mb-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${activeModule?.pill}`}>
-                  {activeModule ? <activeModule.icon size={12} /> : null}
+                  {ActiveIcon ? <ActiveIcon size={12} /> : null}
                   {activeModule?.label}
                 </div>
                 <h1 className="font-heading text-3xl font-black text-gray-800">{activeModule?.label}</h1>
-                <p className="mt-1 text-sm text-gray-400">
-                  {selectedModule === 'Concours'
-                    ? 'Browse competition links and entrance exam resources'
-                    : 'Choose a category to browse resources'}
-                </p>
+                <p className="mt-1 text-sm text-gray-400">Choose a category to browse resources</p>
               </div>
 
-              {selectedModule === 'Concours' ? (
-                <div>
-                  {concoursLoading ? (
-                    <div className="rounded-3xl border border-gray-100 bg-white p-16 text-center text-gray-400 shadow-sm">
-                      <Loader2 size={32} className="mx-auto mb-3 animate-spin text-gray-300" />
-                      Loading...
-                    </div>
-                  ) : concoursList.length === 0 ? (
-                    <div className="rounded-3xl border border-gray-100 bg-white p-16 text-center shadow-sm">
-                      <Trophy size={48} className="mx-auto mb-4 text-gray-200" />
-                      <p className="font-semibold text-gray-500">No concours yet</p>
-                      <p className="mt-1 text-sm text-gray-400">Links will appear here once added by the admin</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {concoursList.map((entry, index) => (
-                        <motion.a
-                          key={entry.id}
-                          href={entry.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="group flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-6 py-4 shadow-sm transition-all hover:border-yellow-200 hover:shadow-md"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-yellow-100">
-                              <Trophy size={17} className="text-yellow-600" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-800 transition-colors group-hover:text-yellow-700">
-                                {entry.name}
-                              </div>
-                              <div className="mt-0.5 max-w-[200px] truncate text-xs text-gray-400">
-                                {entry.url.replace(/^https?:\/\//, '')}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="ml-4 flex flex-shrink-0 items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-yellow-600">
-                            <ExternalLink size={13} /> Open
-                          </div>
-                        </motion.a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div>
+              <div>
                   <div className="mb-8 flex flex-wrap gap-3">
                     {CATEGORIES.map((categoryItem) => (
                       <button
@@ -353,105 +266,104 @@ export default function LearnPage({ resources }) {
                         transition={{ duration: 0.2 }}
                       >
                         {loading ? (
-                          <div className="rounded-3xl border border-gray-100 bg-white p-16 text-center text-gray-400 shadow-sm">
-                            <Loader2 size={32} className="mx-auto mb-3 animate-spin text-gray-300" />
-                            Loading resources...
-                          </div>
-                        ) : filteredResources.length === 0 ? (
-                          <div className="rounded-3xl border border-gray-100 bg-white p-16 text-center shadow-sm">
-                            <FileText size={48} className="mx-auto mb-4 text-gray-200" />
-                            <p className="font-semibold text-gray-500">No resources yet</p>
-                            <p className="mt-1 text-sm text-gray-400">
-                              Content will appear here once uploaded by the admin
-                            </p>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="mb-3 flex items-center justify-between px-1">
-                              <span className="text-xs font-medium text-gray-400">
-                                {completedCount} / {filteredResources.length} completed
-                              </span>
-                              <div className="h-1.5 w-32 overflow-hidden rounded-full bg-gray-200">
-                                <motion.div
-                                  className={`h-full rounded-full ${activeModule?.accent.replace('text-', 'bg-')}`}
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${progressWidth}%` }}
-                                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                                />
-                              </div>
+                        <div className="rounded-3xl border border-gray-100 bg-white p-16 text-center text-gray-400 shadow-sm">
+                          <Loader2 size={32} className="mx-auto mb-3 animate-spin text-gray-300" />
+                          Loading resources...
+                        </div>
+                      ) : filteredResources.length === 0 ? (
+                        <div className="rounded-3xl border border-gray-100 bg-white p-16 text-center shadow-sm">
+                          <FileText size={48} className="mx-auto mb-4 text-gray-200" />
+                          <p className="font-semibold text-gray-500">No resources yet</p>
+                          <p className="mt-1 text-sm text-gray-400">
+                            Content will appear here once uploaded by the admin
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mb-3 flex items-center justify-between px-1">
+                            <span className="text-xs font-medium text-gray-400">
+                              {completedCount} / {filteredResources.length} completed
+                            </span>
+                            <div className="h-1.5 w-32 overflow-hidden rounded-full bg-gray-200">
+                              <motion.div
+                                className={`h-full rounded-full ${activeModule?.accent.replace('text-', 'bg-')}`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressWidth}%` }}
+                                transition={{ duration: 0.4, ease: 'easeOut' }}
+                              />
                             </div>
+                          </div>
 
-                            <div className="space-y-3">
-                              {filteredResources.map((resource, index) => {
-                                const isDone = completedIds.has(resource.id);
-                                return (
-                                  <motion.div
-                                    key={resource.id}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className={`flex items-center justify-between rounded-2xl border bg-white px-6 py-4 shadow-sm transition-all ${
-                                      isDone
-                                        ? 'border-gray-100 opacity-70'
-                                        : `border-gray-100 hover:${activeModule?.activeBorder} hover:shadow-sm`
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-4">
-                                      <button
-                                        onClick={() => toggleDone(resource.id)}
-                                        disabled={toggling === resource.id}
-                                        className="flex-shrink-0 transition-all duration-200 hover:scale-110 active:scale-95"
-                                        title={isDone ? 'Mark as not done' : 'Mark as done'}
-                                      >
-                                        {isDone ? (
-                                          <CheckCircle2 size={22} className={`${activeModule?.checkColor} transition-colors`} />
-                                        ) : (
-                                          <Circle size={22} className="text-gray-300 transition-colors hover:text-gray-400" />
-                                        )}
-                                      </button>
-                                      <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${activeModule?.iconBg}`}>
-                                        <FileText size={17} className={activeModule?.accent} />
+                          <div className="space-y-3">
+                            {filteredResources.map((resource, index) => {
+                              const isDone = completedIds.has(resource.id);
+                              return (
+                                <motion.div
+                                  key={resource.id}
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.05 }}
+                                  className={`flex items-center justify-between rounded-2xl border bg-white px-6 py-4 shadow-sm transition-all ${
+                                    isDone
+                                      ? 'border-gray-100 opacity-70'
+                                      : `border-gray-100 hover:${activeModule?.activeBorder} hover:shadow-sm`
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <button
+                                      onClick={() => toggleDone(resource.id)}
+                                      disabled={toggling === resource.id}
+                                      className="flex-shrink-0 transition-all duration-200 hover:scale-110 active:scale-95"
+                                      title={isDone ? 'Mark as not done' : 'Mark as done'}
+                                    >
+                                      {isDone ? (
+                                        <CheckCircle2 size={22} className={`${activeModule?.checkColor} transition-colors`} />
+                                      ) : (
+                                        <Circle size={22} className="text-gray-300 transition-colors hover:text-gray-400" />
+                                      )}
+                                    </button>
+                                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${activeModule?.iconBg}`}>
+                                      <FileText size={17} className={activeModule?.accent} />
+                                    </div>
+                                    <div>
+                                      <div className={`font-semibold ${isDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                        {resource.title}
                                       </div>
-                                      <div>
-                                        <div className={`font-semibold ${isDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                          {resource.title}
-                                        </div>
-                                        <div className="mt-0.5 text-xs text-gray-400">
-                                          {resource.category} • {activeModule?.label}
-                                        </div>
+                                      <div className="mt-0.5 text-xs text-gray-400">
+                                        {resource.category} • {activeModule?.label}
                                       </div>
                                     </div>
-                                    <div className="ml-4 flex flex-shrink-0 items-center gap-2">
-                                      {resource.correctionUrl ? (
-                                        <a
-                                          href={resource.correctionUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="rounded-full border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
-                                        >
-                                          Correction
-                                        </a>
-                                      ) : null}
+                                  </div>
+                                  <div className="ml-4 flex flex-shrink-0 items-center gap-2">
+                                    {resource.correctionUrl ? (
                                       <a
-                                        href={resource.fileUrl}
+                                        href={resource.correctionUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
+                                        className="rounded-full border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
                                       >
-                                        <Download size={13} /> View
+                                        Correction
                                       </a>
-                                    </div>
-                                  </motion.div>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </div>
-              )}
+                                    ) : null}
+                                    <a
+                                      href={resource.fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
+                                    >
+                                      <Download size={13} /> View
+                                    </a>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -465,7 +377,18 @@ export default function LearnPage({ resources }) {
             </div>
             <span className="font-heading font-bold text-gray-800">Shazaxx Learn</span>
           </div>
-          <div>Study smarter with your saved resources and progress.</div>
+          <div>
+            Study smarter with your saved resources and progress. Made by{' '}
+            <a
+              href="https://instagram.com/med_shazaxx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-primary underline"
+            >
+              @med_shazaxx
+            </a>
+            .
+          </div>
         </div>
       </footer>
     </div>

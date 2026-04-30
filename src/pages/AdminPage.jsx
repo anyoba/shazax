@@ -13,11 +13,9 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  Trophy,
   Users,
   CheckCircle,
   Globe,
-  TrendingUp,
 } from 'lucide-react';
 import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';
@@ -40,7 +38,6 @@ const CATEGORIES = [
 const ADMIN_USER = 'shazaxx';
 const ADMIN_PASS = '2008';
 const AUTH_KEY = 'admin_auth';
-const CONCOURS_KEY = 'admin_concours_items';
 const VISITS_KEY = 'admin_dashboard_visits';
 const FORMSPREE_ID = 'mjgjpnbb'; // Replace with your Formspree ID
 
@@ -73,7 +70,7 @@ function recordVisit() {
   return nextVisits;
 }
 
-function getStats(visits, resources, concoursList, emails) {
+function getStats(visits, resources, emails) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -81,7 +78,6 @@ function getStats(visits, resources, concoursList, emails) {
     pageViews: visits.length,
     todayViews: visits.filter((visit) => visit.ts >= todayStart.getTime()).length,
     resourceCount: resources.length,
-    concoursCount: concoursList.length,
     emailCount: emails.length,
   };
 }
@@ -107,13 +103,10 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
   const [users, setUsers] = useState([]);
-  const [concoursList, setConcoursList] = useState(() => readJson(CONCOURS_KEY, []));
   const [lastRefresh, setLastRefresh] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resLoading, setResLoading] = useState(false);
   const [resMsg, setResMsg] = useState('');
-  const [concLoading, setConcLoading] = useState(false);
-  const [concMsg, setConcMsg] = useState('');
   const [contactMsg, setContactMsg] = useState('');
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [firebaseAnalytics, setFirebaseAnalytics] = useState([]);
@@ -128,15 +121,10 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     correctionTitle: '',
     correctionUrl: '',
   });
-  const [concForm, setConcForm] = useState({ name: '', url: '' });
 
   useEffect(() => {
     setVisits(recordVisit());
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(CONCOURS_KEY, JSON.stringify(concoursList));
-  }, [concoursList]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -191,8 +179,8 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   }, []);
 
   const stats = useMemo(
-    () => getStats(visits, resources, concoursList, emails),
-    [visits, resources, concoursList, emails],
+    () => getStats(visits, resources, emails),
+    [visits, resources, emails],
   );
 
   function login(event) {
@@ -260,31 +248,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       console.error('Failed to delete resource', error);
       window.alert('Unable to delete resource.');
     }
-  }
-
-  function addConcours(event) {
-    event.preventDefault();
-    setConcLoading(true);
-    setConcMsg('');
-
-    setConcoursList((current) => [
-      {
-        id: Date.now(),
-        name: concForm.name,
-        url: concForm.url,
-        createdAt: new Date().toISOString(),
-      },
-      ...current,
-    ]);
-
-    setConcForm({ name: '', url: '' });
-    setConcMsg('Entry added successfully.');
-    window.setTimeout(() => setConcLoading(false), 250);
-  }
-
-  function deleteConcours(id) {
-    if (!window.confirm('Delete this concours entry?')) return;
-    setConcoursList((current) => current.filter((entry) => entry.id !== id));
   }
 
   async function handleContactSubmit(event) {
@@ -366,7 +329,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
               ['emails', 'Emails & Contact', Mail],
               ['users', 'Users', Users],
               ['resources', 'Resources', BookOpen],
-              ['concours', 'Concours', Trophy],
             ].map(([id, label, Icon]) => (
               <button
                 key={id}
@@ -572,64 +534,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
                         <div className="text-sm text-white/40">{userItem.email || 'No email yet'}</div>
                       </div>
                       <div className="text-sm text-white/40">Joined {formatTimestamp(userItem.createdAt)}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {activeTab === 'concours' ? (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold">Manage Concours</h2>
-
-            <form onSubmit={addConcours} className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <input
-                  value={concForm.name}
-                  onChange={(event) => setConcForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Name"
-                  required
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/20 focus:border-primary/50 focus:outline-none"
-                />
-                <input
-                  value={concForm.url}
-                  onChange={(event) => setConcForm((current) => ({ ...current, url: event.target.value }))}
-                  placeholder="https://..."
-                  required
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/20 focus:border-primary/50 focus:outline-none"
-                />
-              </div>
-              <div className="mt-4 flex items-center gap-4">
-                <button
-                  type="submit"
-                  disabled={concLoading}
-                  className="flex items-center gap-2 rounded-xl bg-yellow-500 px-5 py-2.5 font-semibold text-gray-900"
-                >
-                  <Plus size={14} />
-                  {concLoading ? 'Saving...' : 'Add Entry'}
-                </button>
-                {concMsg ? <span className="text-sm text-green-400">{concMsg}</span> : null}
-              </div>
-            </form>
-
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-              {concoursList.length === 0 ? (
-                <div className="p-6 text-white/40">No concours entries yet.</div>
-              ) : (
-                <div className="divide-y divide-white/5">
-                  {concoursList.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between gap-4 p-4">
-                      <div>
-                        <div className="font-medium">{entry.name}</div>
-                        <a href={entry.url} target="_blank" rel="noreferrer" className="text-sm text-primary">
-                          {entry.url}
-                        </a>
-                      </div>
-                      <button onClick={() => deleteConcours(entry.id)} className="text-white/40 hover:text-red-400">
-                        <Trash2 size={16} />
-                      </button>
                     </div>
                   ))}
                 </div>

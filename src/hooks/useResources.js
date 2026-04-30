@@ -1,33 +1,52 @@
 import { useEffect, useState } from 'react';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
+import { db } from '../firebase';
 import { sampleResources } from '../data/modules';
 
-const STORAGE_KEY = 'resource-hub-items';
-
 export function useResources() {
-  const [resources, setResources] = useState(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return sampleResources;
-    }
-
-    try {
-      return JSON.parse(stored);
-    } catch (error) {
-      console.error('Failed to parse stored resources', error);
-      return sampleResources;
-    }
-  });
+  const [resources, setResources] = useState(sampleResources);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(resources));
-  }, [resources]);
+    const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(
+      resourcesQuery,
+      (snapshot) => {
+        if (snapshot.empty) {
+          setResources(sampleResources);
+          return;
+        }
 
-  const addResource = (resource) => {
-    setResources((current) => [resource, ...current]);
+        setResources(snapshot.docs.map((docItem) => ({ id: docItem.id, ...docItem.data() })));
+      },
+      (error) => {
+        console.error('Failed to load resources', error);
+        setResources(sampleResources);
+      },
+    );
+
+    return unsubscribe;
+  }, []);
+
+  const addResource = async (resource) => {
+    const id = resource.id || `resource-${Date.now()}`;
+    await setDoc(doc(db, 'resources', id), {
+      ...resource,
+      id,
+      createdAt: serverTimestamp(),
+    });
   };
 
-  const removeResource = (resourceId) => {
-    setResources((current) => current.filter((resource) => resource.id !== resourceId));
+  const removeResource = async (resourceId) => {
+    await deleteDoc(doc(db, 'resources', resourceId));
   };
 
   return {

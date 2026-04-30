@@ -34,6 +34,7 @@ const CATEGORIES = [
   { id: 'Courses', label: 'Courses' },
   { id: 'TD', label: 'TD' },
   { id: 'Exams', label: 'Exams' },
+  { id: 'Resources', label: 'Resources' },
 ];
 
 const ADMIN_USER = 'shazaxx';
@@ -105,6 +106,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   const [activeTab, setActiveTab] = useState('analytics');
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
+  const [users, setUsers] = useState([]);
   const [concoursList, setConcoursList] = useState(() => readJson(CONCOURS_KEY, []));
   const [lastRefresh, setLastRefresh] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -173,6 +175,21 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setUsers(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      },
+      () => {
+        setUsers([]);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   const stats = useMemo(
     () => getStats(visits, resources, concoursList, emails),
     [visits, resources, concoursList, emails],
@@ -201,32 +218,48 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     window.setTimeout(() => setLoading(false), 300);
   }
 
-  function addResource(event) {
+  async function addResource(event) {
     event.preventDefault();
     setResLoading(true);
     setResMsg('');
 
-    onAddResource({
-      id: `resource-${Date.now()}`,
-      ...resForm,
-    });
+    try {
+      await onAddResource({
+        module: resForm.module,
+        category: resForm.category,
+        title: resForm.title,
+        fileName: resForm.fileName,
+        fileUrl: resForm.fileUrl,
+        correctionTitle: resForm.correctionTitle,
+        correctionUrl: resForm.correctionUrl,
+      });
 
-    setResForm({
-      module: MODULES[0].id,
-      category: CATEGORIES[0].id,
-      title: '',
-      fileName: '',
-      fileUrl: '',
-      correctionTitle: '',
-      correctionUrl: '',
-    });
-    setResMsg('Resource added successfully.');
-    window.setTimeout(() => setResLoading(false), 250);
+      setResForm({
+        module: MODULES[0].id,
+        category: CATEGORIES[0].id,
+        title: '',
+        fileName: '',
+        fileUrl: '',
+        correctionTitle: '',
+        correctionUrl: '',
+      });
+      setResMsg('Resource published successfully.');
+    } catch (error) {
+      console.error('Failed to publish resource', error);
+      setResMsg('Failed to publish resource.');
+    } finally {
+      setResLoading(false);
+    }
   }
 
-  function deleteResource(id) {
+  async function deleteResource(id) {
     if (!window.confirm('Delete this resource?')) return;
-    onDeleteResource(id);
+    try {
+      await onDeleteResource(id);
+    } catch (error) {
+      console.error('Failed to delete resource', error);
+      window.alert('Unable to delete resource.');
+    }
   }
 
   function addConcours(event) {
@@ -331,6 +364,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
               ['analytics', 'Dashboard', Activity],
               ['analytics-live', 'Live Analytics', Globe],
               ['emails', 'Emails & Contact', Mail],
+              ['users', 'Users', Users],
               ['resources', 'Resources', BookOpen],
               ['concours', 'Concours', Trophy],
             ].map(([id, label, Icon]) => (
@@ -519,6 +553,29 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
                   ) : null}
                 </div>
               </form>
+            </div>
+          </div>
+        ) : null}
+
+        {activeTab === 'users' ? (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold">Registered Users</h2>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+              {users.length === 0 ? (
+                <div className="p-6 text-white/40">No registered users found yet.</div>
+              ) : (
+                <div className="divide-y divide-white/5">
+                  {users.map((userItem) => (
+                    <div key={userItem.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="font-medium">{userItem.fullName || userItem.email || 'Student'}</div>
+                        <div className="text-sm text-white/40">{userItem.email || 'No email yet'}</div>
+                      </div>
+                      <div className="text-sm text-white/40">Joined {formatTimestamp(userItem.createdAt)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : null}

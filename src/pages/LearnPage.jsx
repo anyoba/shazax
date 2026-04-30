@@ -18,6 +18,7 @@ import {
   LogOut,
   Trophy,
 } from 'lucide-react';
+import { useUser, UserButton } from '@clerk/clerk-react';
 
 const MODULES = [
   {
@@ -89,9 +90,10 @@ const MODULES = [
 ];
 
 const CATEGORIES = [
-  { id: 'Courses', label: 'Courses' },
+  { id: 'Courses', label: 'Cours' },
   { id: 'TD', label: 'TD' },
-  { id: 'Exams', label: 'Exams' },
+  { id: 'Exams', label: 'Examens' },
+  { id: 'Resources', label: 'Ressources Live' },
 ];
 
 const CONCOURS_KEY = 'admin_concours_items';
@@ -173,6 +175,8 @@ export default function LearnPage({ resources }) {
   const completedCount = filteredResources.filter((resource) => completedIds.has(resource.id)).length;
   const progressWidth = filteredResources.length > 0 ? (completedCount / filteredResources.length) * 100 : 0;
 
+  const { user } = useUser();
+
   return (
     <div className="min-h-screen bg-[#f0f2f8]">
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur">
@@ -197,17 +201,13 @@ export default function LearnPage({ resources }) {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-                G
+                {user?.firstName?.[0] ?? 'S'}
               </div>
-              <span className="hidden text-sm font-medium text-gray-700 sm:block">Guest Student</span>
+              <span className="hidden text-sm font-medium text-gray-700 sm:block">
+                {user?.firstName ? `Bonjour ${user.firstName}` : 'Guest Student'}
+              </span>
             </div>
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-gray-700"
-            >
-              <LogOut size={14} />
-              <span className="hidden sm:inline">Back home</span>
-            </button>
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>

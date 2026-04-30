@@ -6,7 +6,7 @@ export const modules = [
   'Structure of Matter',
 ];
 
-export const categories = ['Courses', 'TD', 'Exams'];
+export const categories = ['Courses', 'TD', 'Exams', 'Resources'];
 
 export const sampleResources = [
   {

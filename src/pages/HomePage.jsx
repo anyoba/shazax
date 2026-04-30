@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, animate, motion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight,
@@ -19,58 +20,6 @@ import { createPortal } from 'react-dom';
 import logo from '../assets/he.png';
 import { addEmail } from '../waitlist';
 
-function ComingSoonModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {isOpen ? (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm"
-            data-testid="modal-backdrop"
-          />
-          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', bounce: 0.4, duration: 0.6 }}
-              className="relative w-full max-w-sm rounded-3xl border border-border bg-background p-8 text-center shadow-2xl pointer-events-auto"
-              data-testid="modal-coming-soon"
-            >
-              <button
-                onClick={onClose}
-                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                data-testid="button-close-modal"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Zap size={32} />
-              </div>
-
-              <h2 className="mb-2 font-heading text-3xl font-bold">Coming Soon</h2>
-              <p className="mb-6 text-muted-foreground">
-                We&apos;re currently in closed beta. The full platform launches on:
-              </p>
-
-              <div className="mb-2 inline-block rounded-2xl border border-accent/30 bg-accent/20 px-6 py-4 text-xl font-bold text-accent-foreground">
-                01/05/2026
-              </div>
-            </motion.div>
-          </div>
-        </>
-      ) : null}
-    </AnimatePresence>,
-    document.body,
-  );
-}
 
 function WaitlistModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -419,15 +368,14 @@ function TestimonialCard({ name, handle, quote, delay }) {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const { scrollYProgress } = useScroll();
   const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
-  const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background selection:bg-primary selection:text-white">
-      <ComingSoonModal isOpen={comingSoonOpen} onClose={() => setComingSoonOpen(false)} />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-30">
@@ -499,7 +447,7 @@ export default function HomePage() {
             </a>
           </nav>
           <button
-            onClick={() => setComingSoonOpen(true)}
+            onClick={() => navigate('/auth')}
             data-testid="button-nav-login"
             className="rounded-full bg-secondary px-6 py-2.5 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/80"
           >

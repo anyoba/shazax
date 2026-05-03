@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from '@vercel/analytics/react';
 import { trackPageVisit } from './analytics';
 import { useResources } from './hooks/useResources';
 import { useUser } from '@clerk/clerk-react';

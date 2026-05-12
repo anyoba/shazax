@@ -91,8 +91,8 @@ function WaitlistModal({ isOpen, onClose }) {
                     </div>
                     <h2 className="mb-2 font-heading text-2xl font-black">You&apos;re on the list!</h2>
                     <p className="font-medium text-muted-foreground">
-                      We&apos;ll notify you when Shazaxx launches on{' '}
-                      <span className="font-bold text-foreground">01/05/2026</span>.
+                      We&apos;ll notify you when Shazaxx launches any{' '}
+                      <span className="font-bold text-foreground">Update</span>
                     </p>
                     <button
                       onClick={handleClose}
@@ -108,8 +108,8 @@ function WaitlistModal({ isOpen, onClose }) {
                     </div>
                     <h2 className="mb-2 font-heading text-2xl font-black">Join the Waitlist</h2>
                     <p className="mb-6 font-medium text-muted-foreground">
-                      Be first to know when we launch on{' '}
-                      <span className="font-bold text-foreground">01/05/2026</span>.
+                      Be first to know when we launch any{' '}
+                      <span className="font-bold text-foreground">Update</span>
                     </p>
                    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
   <div className="relative">
@@ -479,13 +479,13 @@ export default function HomePage() {
                   Bridge the gap between lectures and exams. Master FST with organized TD, solutions, and interactive tools for total success.
                 </p>
                 <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-                  <button
-                    onClick={() => setWaitlistOpen(true)}
-                    data-testid="button-hero-cta"
-                    className="flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
-                  >
-                    Start Learning <ArrowRight size={20} />
-                  </button>
+                      <button
+  onClick={() => window.location.href = '/auth'}
+  data-testid="button-hero-cta"
+  className="flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
+>
+  Start Learning <ArrowRight size={20} />
+</button>
                   <button
                     onClick={() => setWaitlistOpen(true)}
                     data-testid="button-hero-secondary"

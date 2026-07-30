@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useClerk } from '@clerk/clerk-react';
 
 import {
   Activity,
   BookOpen,
   ChevronDown,
   Eye,
-  Lock,
   LogOut,
   Mail,
   Plus,
@@ -35,9 +35,6 @@ const CATEGORIES = [
   { id: 'Resources', label: 'Resources' },
 ];
 
-const ADMIN_USER = 'shazaxx';
-const ADMIN_PASS = '2008';
-const AUTH_KEY = 'admin_auth';
 const VISITS_KEY = 'admin_dashboard_visits';
 const FORMSPREE_ID = 'mjgjpnbb'; // Replace with your Formspree ID
 
@@ -95,14 +92,12 @@ function StatCard({ icon, label, value }) {
 }
 
 export default function AdminPage({ resources, onAddResource, onDeleteResource }) {
-  const [authed, setAuthed] = useState(() => window.sessionStorage.getItem(AUTH_KEY) === 'true');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { signOut } = useClerk();
   const [activeTab, setActiveTab] = useState('analytics');
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
   const [users, setUsers] = useState([]);
+  const [firestoreError, setFirestoreError] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resLoading, setResLoading] = useState(false);
@@ -126,6 +121,13 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     setVisits(recordVisit());
   }, []);
 
+  function handleFirestoreError(error) {
+    console.error('Firebase snapshot failed', error);
+    setFirestoreError(
+      'Impossible de charger les données Firebase. Vérifie le projet Firebase et les règles de lecture.'
+    );
+  }
+
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, 'waitlist'),
@@ -140,8 +142,9 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
         }
         setLastEmailCount(newEmails.length);
       },
-      () => {
+      (error) => {
         setEmails([]);
+        handleFirestoreError(error);
       },
     );
 
@@ -155,8 +158,9 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       (snapshot) => {
         setFirebaseAnalytics(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).slice(0, 50));
       },
-      () => {
+      (error) => {
         setFirebaseAnalytics([]);
+        handleFirestoreError(error);
       },
     );
 
@@ -170,8 +174,9 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       (snapshot) => {
         setUsers(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       },
-      () => {
+      (error) => {
         setUsers([]);
+        handleFirestoreError(error);
       },
     );
 
@@ -182,22 +187,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     () => getStats(visits, resources, emails),
     [visits, resources, emails],
   );
-
-  function login(event) {
-    event.preventDefault();
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-      window.sessionStorage.setItem(AUTH_KEY, 'true');
-      setAuthed(true);
-      setError('');
-      return;
-    }
-    setError('Invalid credentials. Try again.');
-  }
-
-  function logout() {
-    window.sessionStorage.removeItem(AUTH_KEY);
-    setAuthed(false);
-  }
 
   function refreshDashboard() {
     setLoading(true);
@@ -274,50 +263,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     }
   }
 
-  if (!authed) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-950 p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-6"
-        >
-          <div className="mb-6 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 text-primary">
-              <Lock size={24} />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Admin Access</h1>
-          </div>
-
-          <form onSubmit={login} className="space-y-4">
-            <input
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Username"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/20 focus:border-primary/50 focus:outline-none"
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/20 focus:border-primary/50 focus:outline-none"
-            />
-            <AnimatePresence>
-              {error ? (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center text-sm text-red-400">
-                  {error}
-                </motion.p>
-              ) : null}
-            </AnimatePresence>
-            <button className="w-full rounded-xl bg-primary py-3 font-semibold text-white">Sign In</button>
-          </form>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <header className="border-b border-white/10 px-6 py-4">
@@ -359,7 +304,10 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               Refresh
             </button>
-            <button onClick={logout} className="flex items-center gap-2 text-sm text-white/60 hover:text-red-400">
+            <button
+              onClick={() => signOut({ redirectUrl: '/' })}
+              className="flex items-center gap-2 text-sm text-white/60 hover:text-red-400"
+            >
               <LogOut size={14} />
               Logout
             </button>
@@ -368,6 +316,11 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        {firestoreError ? (
+          <div className="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {firestoreError}
+          </div>
+        ) : null}
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Dashboard</h2>

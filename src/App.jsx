@@ -12,6 +12,8 @@ import HomePage from './pages/HomePage';
 import LearnPage from './pages/LearnPage';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
+import { USER_ROLES } from './constants/roles';
 
 function AnalyticsTracker() {
   const location = useLocation();
@@ -61,11 +63,13 @@ export default function App() {
           <Route
             path="/admin"
             element={
-              <AdminPage
-                resources={resources}
-                onAddResource={addResource}
-                onDeleteResource={removeResource}
-              />
+              <RoleProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.OWNER]}>
+                <AdminPage
+                  resources={resources}
+                  onAddResource={addResource}
+                  onDeleteResource={removeResource}
+                />
+              </RoleProtectedRoute>
             }
           />
         </Routes>

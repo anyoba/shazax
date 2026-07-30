@@ -76,9 +76,11 @@ const MODULES = [
 ];
 
 const CATEGORIES = [
-  { id: 'Courses', label: 'Cours' },
+  { id: 'All', label: 'All' },
+  { id: 'Courses', label: 'Courses' },
   { id: 'TD', label: 'TD' },
-  { id: 'Exams', label: 'Examens' },
+  { id: 'Exams', label: 'Exams' },
+  { id: 'Resources', label: 'Resources' },
 ];
 
 const COMPLETED_KEY = 'learn_completed_resources';
@@ -104,9 +106,11 @@ export default function LearnPage({ resources }) {
 
   const filteredResources = useMemo(() => {
     if (!selectedModule || !selectedCategory) return [];
-    return resources.filter(
-      (resource) => resource.module === selectedModule && resource.category === selectedCategory,
-    );
+    return resources.filter((resource) => {
+      if (resource.module !== selectedModule) return false;
+      if (selectedCategory === 'All') return true;
+      return resource.category === selectedCategory;
+    });
   }, [resources, selectedCategory, selectedModule]);
 
   useEffect(() => {
@@ -205,7 +209,10 @@ export default function LearnPage({ resources }) {
                       transition={{ delay: index * 0.06 }}
                       whileHover={{ y: -3, scale: 1.015 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedModule(moduleItem.id)}
+                      onClick={() => {
+                        setSelectedModule(moduleItem.id);
+                        setSelectedCategory('All');
+                      }}
                       className={`group cursor-pointer rounded-3xl border border-white bg-gradient-to-br ${moduleItem.gradient} p-7 text-left shadow-sm transition-all duration-200 hover:shadow-md`}
                     >
                       <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl ${moduleItem.iconBg}`}>
@@ -234,7 +241,7 @@ export default function LearnPage({ resources }) {
                   {activeModule?.label}
                 </div>
                 <h1 className="font-heading text-3xl font-black text-gray-800">{activeModule?.label}</h1>
-                <p className="mt-1 text-sm text-gray-400">Choose a category to browse resources</p>
+                <p className="mt-1 text-sm text-gray-400">Choose a category or see all resources for this module</p>
               </div>
 
               <div>

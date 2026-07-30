@@ -3,9 +3,10 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react'
 import { trackPageVisit } from './analytics';
 import { useResources } from './hooks/useResources';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { createResource, deleteResource } from './services/resourcesApi';
 import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
@@ -28,8 +29,17 @@ function AnalyticsTracker() {
 }
 
 export default function App() {
-  const { resources, addResource, removeResource } = useResources();
+  const { resources } = useResources();
+  const { getToken } = useAuth();
   const { user } = useUser();
+
+  async function addAdminResource(resource) {
+    return createResource(resource, getToken);
+  }
+
+  async function deleteAdminResource(resourceId) {
+    return deleteResource(resourceId, getToken);
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -66,8 +76,8 @@ export default function App() {
               <RoleProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.OWNER]}>
                 <AdminPage
                   resources={resources}
-                  onAddResource={addResource}
-                  onDeleteResource={removeResource}
+                  onAddResource={addAdminResource}
+                  onDeleteResource={deleteAdminResource}
                 />
               </RoleProtectedRoute>
             }

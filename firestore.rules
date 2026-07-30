@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /user_roles/{userId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId} {
+      // TODO(security): migrate users reads/writes to secured server APIs, then close this rule.
+      allow read, write: if true;
+    }
+
+    match /waitlist/{entryId} {
+      // TODO(security): migrate waitlist reads/admin operations to secured server APIs, then close this rule.
+      allow read, write: if true;
+    }
+
+    match /analytics_visits/{visitId} {
+      // TODO(security): migrate analytics writes/admin reads to secured server APIs, then close this rule.
+      allow read, write: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

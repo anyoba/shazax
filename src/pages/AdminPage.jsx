@@ -223,7 +223,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       setResMsg('Resource published successfully.');
     } catch (error) {
       console.error('Failed to publish resource', error);
-      setResMsg('Failed to publish resource.');
+      setResMsg(error?.message || 'Failed to publish resource.');
     } finally {
       setResLoading(false);
     }
@@ -235,7 +235,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       await onDeleteResource(id);
     } catch (error) {
       console.error('Failed to delete resource', error);
-      window.alert('Unable to delete resource.');
+      window.alert(error?.message || 'Unable to delete resource.');
     }
   }
 

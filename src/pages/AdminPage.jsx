@@ -5,6 +5,7 @@ import { useClerk } from '@clerk/clerk-react';
 
 import {
   Activity,
+  Building2,
   BookOpen,
   ChevronDown,
   Eye,
@@ -19,6 +20,9 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';
+import InstitutionsManager from '../components/admin/academic/InstitutionsManager.jsx';
+import { USER_ROLES } from '../constants/roles.js';
+import { useUserRole } from '../hooks/useUserRole.js';
 
 const MODULES = [
   { id: 'Thermodynamics', label: 'Thermodynamics' },
@@ -93,6 +97,7 @@ function StatCard({ icon, label, value }) {
 
 export default function AdminPage({ resources, onAddResource, onDeleteResource }) {
   const { signOut } = useClerk();
+  const { role } = useUserRole();
   const [activeTab, setActiveTab] = useState('analytics');
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
@@ -116,10 +121,46 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     correctionTitle: '',
     correctionUrl: '',
   });
+  const canViewAdminData = [USER_ROLES.ADMIN, USER_ROLES.OWNER].includes(role);
+  const canManageResources = [USER_ROLES.EDITOR, USER_ROLES.ADMIN, USER_ROLES.OWNER].includes(role);
+  const canAccessInstitutions = [
+    USER_ROLES.MODERATOR,
+    USER_ROLES.EDITOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.OWNER,
+  ].includes(role);
+  const tabs = useMemo(() => {
+    const nextTabs = [];
+
+    if (canViewAdminData) {
+      nextTabs.push(
+        ['analytics', 'Dashboard', Activity],
+        ['analytics-live', 'Live Analytics', Globe],
+        ['emails', 'Emails & Contact', Mail],
+        ['users', 'Users', Users],
+      );
+    }
+
+    if (canAccessInstitutions) {
+      nextTabs.push(['institutions', 'Etablissements', Building2]);
+    }
+
+    if (canManageResources) {
+      nextTabs.push(['resources', 'Resources', BookOpen]);
+    }
+
+    return nextTabs;
+  }, [canAccessInstitutions, canManageResources, canViewAdminData]);
 
   useEffect(() => {
     setVisits(recordVisit());
   }, []);
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.some(([id]) => id === activeTab)) {
+      setActiveTab(tabs[0][0]);
+    }
+  }, [activeTab, tabs]);
 
   function handleFirestoreError(error) {
     console.error('Firebase snapshot failed', error);
@@ -129,6 +170,13 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   }
 
   useEffect(() => {
+    if (!canViewAdminData) {
+      setEmails([]);
+      setNewEmailCount(0);
+      setLastEmailCount(0);
+      return undefined;
+    }
+
     const unsubscribe = onSnapshot(
       collection(db, 'waitlist'),
       (snapshot) => {
@@ -149,9 +197,14 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, [lastEmailCount]);
+  }, [canViewAdminData, lastEmailCount]);
 
   useEffect(() => {
+    if (!canViewAdminData) {
+      setFirebaseAnalytics([]);
+      return undefined;
+    }
+
     const q = query(collection(db, 'analytics_visits'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(
       q,
@@ -165,9 +218,14 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [canViewAdminData]);
 
   useEffect(() => {
+    if (!canViewAdminData) {
+      setUsers([]);
+      return undefined;
+    }
+
     const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(
       q,
@@ -181,7 +239,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [canViewAdminData]);
 
   const stats = useMemo(
     () => getStats(visits, resources, emails),
@@ -268,13 +326,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       <header className="border-b border-white/10 px-6 py-4">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/5 p-1">
-            {[
-              ['analytics', 'Dashboard', Activity],
-              ['analytics-live', 'Live Analytics', Globe],
-              ['emails', 'Emails & Contact', Mail],
-              ['users', 'Users', Users],
-              ['resources', 'Resources', BookOpen],
-            ].map(([id, label, Icon]) => (
+            {tabs.map(([id, label, Icon]) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
@@ -321,7 +373,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
             {firestoreError}
           </div>
         ) : null}
-        {activeTab === 'analytics' ? (
+        {canViewAdminData && activeTab === 'analytics' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Dashboard</h2>
             <div className="grid gap-4 md:grid-cols-4">
@@ -333,7 +385,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'analytics-live' ? (
+        {canViewAdminData && activeTab === 'analytics-live' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Real-time Visitor Analytics</h2>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -371,7 +423,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'emails' ? (
+        {canViewAdminData && activeTab === 'emails' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Emails & Contact Management</h2>
             
@@ -472,7 +524,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'users' ? (
+        {canViewAdminData && activeTab === 'users' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Registered Users</h2>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -495,7 +547,9 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'resources' ? (
+        {canAccessInstitutions && activeTab === 'institutions' ? <InstitutionsManager /> : null}
+
+        {canManageResources && activeTab === 'resources' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Manage Resources</h2>
 

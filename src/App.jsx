@@ -73,7 +73,14 @@ export default function App() {
           <Route
             path="/admin"
             element={
-              <RoleProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.OWNER]}>
+              <RoleProtectedRoute
+                allowedRoles={[
+                  USER_ROLES.MODERATOR,
+                  USER_ROLES.EDITOR,
+                  USER_ROLES.ADMIN,
+                  USER_ROLES.OWNER,
+                ]}
+              >
                 <AdminPage
                   resources={resources}
                   onAddResource={addAdminResource}

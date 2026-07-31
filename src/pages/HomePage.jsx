@@ -476,7 +476,7 @@ export default function HomePage() {
                   <span className="text-primary">Start Doing.</span>
                 </h1>
                 <p className="max-w-lg text-xl font-medium leading-relaxed text-muted-foreground">
-                  Bridge the gap between lectures and exams. Master FST with organized TD, solutions, and interactive tools for total success.
+                  Bridge the gap between lectures and exams. Master universities with organized TD, solutions, and interactive tools for total success.
                 </p>
                 <div className="flex flex-col gap-4 pt-4 sm:flex-row">
                       <button
@@ -689,7 +689,7 @@ export default function HomePage() {
               data-testid="button-final-cta"
               className="inline-flex items-center gap-3 rounded-full bg-accent px-10 py-5 text-xl font-black text-accent-foreground shadow-2xl transition-all hover:scale-105 hover:bg-white hover:text-foreground active:scale-95"
             >
-              Get Early Access <Zap size={24} fill="currentColor" />
+              Get Early Access Now !! <Zap size={24} fill="currentColor" />
             </button>
           </div>
         </section>

@@ -1,4 +1,4 @@
-import { USER_ROLES } from './roles';
+import { USER_ROLES } from './roles.js';
 
 export const ACADEMIC_STATUSES = {
   DRAFT: 'draft',
@@ -8,6 +8,18 @@ export const ACADEMIC_STATUSES = {
 };
 
 export const ACADEMIC_STATUS_VALUES = Object.values(ACADEMIC_STATUSES);
+
+export const INSTITUTION_TYPES = {
+  FACULTY: 'faculty',
+  ENGINEERING_SCHOOL: 'engineering_school',
+  BUSINESS_SCHOOL: 'business_school',
+  MEDICAL_SCHOOL: 'medical_school',
+  UNIVERSITY: 'university',
+  INSTITUTE: 'institute',
+  OTHER: 'other',
+};
+
+export const INSTITUTION_TYPE_VALUES = Object.values(INSTITUTION_TYPES);
 
 export const RESOURCE_CATEGORIES = [
   {
@@ -63,12 +75,28 @@ export const ACADEMIC_CONTENT_WRITE_ROLES = [
   USER_ROLES.OWNER,
 ];
 
+export const ACADEMIC_ADMIN_READ_ROLES = [
+  USER_ROLES.MODERATOR,
+  USER_ROLES.EDITOR,
+  USER_ROLES.ADMIN,
+  USER_ROLES.OWNER,
+];
+
+export const ACADEMIC_PUBLISH_ROLES = [
+  USER_ROLES.ADMIN,
+  USER_ROLES.OWNER,
+];
+
 export function getResourceCategory(categoryId) {
   return RESOURCE_CATEGORIES.find((category) => category.id === categoryId) || null;
 }
 
 export function getAcademicStatus(status) {
   return ACADEMIC_STATUS_VALUES.includes(status) ? status : null;
+}
+
+export function getInstitutionType(type) {
+  return INSTITUTION_TYPE_VALUES.includes(type) ? type : null;
 }
 
 export function isResourceCategoryDisabled(categoryId) {

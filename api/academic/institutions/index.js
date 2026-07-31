@@ -186,6 +186,20 @@ export default async function handler(req, res) {
 
     throw new HttpError(405, 'Method not allowed.');
   } catch (error) {
+    if (req.method === 'GET') {
+      console.error('[INSTITUTIONS_GET_FAILED]', {
+        name: error?.name,
+        message: error?.message,
+      });
+    }
+
+    if (req.method === 'POST') {
+      console.error('[INSTITUTION_CREATE_FAILED]', {
+        name: error?.name,
+        message: error?.message,
+      });
+    }
+
     return sendError(res, error);
   }
 }

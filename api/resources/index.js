@@ -61,6 +61,12 @@ export default async function handler(req, res) {
     setMethodHeader(res, ['GET', 'POST']);
     throw new HttpError(405, 'Method not allowed.');
   } catch (error) {
+    if (req.method === 'POST') {
+      console.error('[RESOURCE_CREATE_FAILED]', {
+        name: error?.name,
+        message: error?.message,
+      });
+    }
     sendError(res, error);
   }
 }

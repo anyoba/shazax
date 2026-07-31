@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     firebaseAdminInitialized = false;
   }
 
-  return sendJson(res, firebaseAdminInitialized ? 200 : 500, {
+  return sendJson(res, 200, {
     ok:
       environment.clerkSecretConfigured &&
       environment.firebaseProjectConfigured &&

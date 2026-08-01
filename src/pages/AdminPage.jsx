@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';
+import AcademicStructureManager from '../components/admin/academic/AcademicStructureManager.jsx';
 import InstitutionsManager from '../components/admin/academic/InstitutionsManager.jsx';
 import { USER_ROLES } from '../constants/roles.js';
 import { useUserRole } from '../hooks/useUserRole.js';
@@ -147,6 +148,7 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
 
     if (canAccessInstitutions) {
       nextTabs.push(['institutions', 'Etablissements', Building2]);
+      nextTabs.push(['academic-structure', 'Structure', Layers]);
     }
 
     if (canManageResources) {
@@ -584,6 +586,8 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
         ) : null}
 
         {canAccessInstitutions && activeTab === 'institutions' ? <InstitutionsManager /> : null}
+
+        {canAccessInstitutions && activeTab === 'academic-structure' ? <AcademicStructureManager /> : null}
 
         {canManageResources && activeTab === 'resources' ? (
           <div className="space-y-6">

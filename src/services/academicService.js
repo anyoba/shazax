@@ -1,12 +1,4 @@
-import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import {
-  ACADEMIC_COLLECTIONS,
-  ACADEMIC_READ_LIMIT,
-  ACADEMIC_STATUSES,
-} from '../constants/academic';
-import { db } from '../firebase';
 import { sortByOrder } from '../utils/academicValidation';
-import { getFirestoreErrorMessage } from '../utils/firebaseErrors';
 
 export class AcademicServiceError extends Error {
   constructor(message, cause) {
@@ -16,77 +8,91 @@ export class AcademicServiceError extends Error {
   }
 }
 
-function serializeDoc(docSnapshot) {
+let academicTreeCache = null;
+let academicTreePromise = null;
+
+function normalizeResponsePayload(payload) {
   return {
-    id: docSnapshot.id,
-    ...docSnapshot.data(),
+    institutions: Array.isArray(payload?.institutions) ? payload.institutions : [],
+    programs: Array.isArray(payload?.programs) ? payload.programs : [],
+    programYears: Array.isArray(payload?.programYears) ? payload.programYears : [],
+    semesters: Array.isArray(payload?.semesters) ? payload.semesters : [],
+    modules: Array.isArray(payload?.modules) ? payload.modules : [],
   };
 }
 
-function withoutDeleted(items) {
-  return items.filter((item) => item.isDeleted !== true);
-}
-
-async function readAcademicCollection(collectionName, constraints, label) {
-  try {
-    // Firestore indexes may be required for queries combining parentId/status with order.
-    // See docs/ACADEMIC_ARCHITECTURE.md for the expected composite indexes.
-    const snapshot = await getDocs(
-      query(
-        collection(db, collectionName),
-        ...constraints,
-        where('status', '==', ACADEMIC_STATUSES.PUBLISHED),
-        orderBy('order', 'asc'),
-        limit(ACADEMIC_READ_LIMIT),
-      ),
-    );
-
-    return sortByOrder(withoutDeleted(snapshot.docs.map(serializeDoc)));
-  } catch (error) {
-    throw new AcademicServiceError(getFirestoreErrorMessage(error, `Unable to load ${label}.`), error);
+async function parseApiResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json();
   }
+
+  const text = await response.text();
+  return text ? { error: text } : {};
 }
 
-export function getInstitutions() {
-  return readAcademicCollection(ACADEMIC_COLLECTIONS.INSTITUTIONS, [], 'institutions');
+async function fetchAcademicTree() {
+  const response = await fetch('/api/academic/learn');
+  const payload = await parseApiResponse(response);
+
+  if (!response.ok || payload?.success === false) {
+    const message = payload?.error || `Unable to load academic navigation. HTTP ${response.status}`;
+    throw new AcademicServiceError(message);
+  }
+
+  return normalizeResponsePayload(payload);
 }
 
-export function getPrograms(institutionId) {
-  if (!institutionId) return Promise.resolve([]);
+export async function getAcademicTree({ force = false } = {}) {
+  if (!force && academicTreeCache) return academicTreeCache;
+  if (!force && academicTreePromise) return academicTreePromise;
 
-  return readAcademicCollection(
-    ACADEMIC_COLLECTIONS.PROGRAMS,
-    [where('institutionId', '==', institutionId)],
-    'programs',
-  );
+  academicTreePromise = fetchAcademicTree()
+    .then((tree) => {
+      academicTreeCache = tree;
+      return tree;
+    })
+    .finally(() => {
+      academicTreePromise = null;
+    });
+
+  return academicTreePromise;
 }
 
-export function getProgramYears(programId) {
-  if (!programId) return Promise.resolve([]);
-
-  return readAcademicCollection(
-    ACADEMIC_COLLECTIONS.PROGRAM_YEARS,
-    [where('programId', '==', programId)],
-    'program years',
-  );
+export function clearAcademicTreeCache() {
+  academicTreeCache = null;
+  academicTreePromise = null;
 }
 
-export function getSemesters(programYearId) {
-  if (!programYearId) return Promise.resolve([]);
-
-  return readAcademicCollection(
-    ACADEMIC_COLLECTIONS.SEMESTERS,
-    [where('programYearId', '==', programYearId)],
-    'semesters',
-  );
+export async function getInstitutions() {
+  const tree = await getAcademicTree();
+  return sortByOrder(tree.institutions);
 }
 
-export function getAcademicModules(semesterId) {
-  if (!semesterId) return Promise.resolve([]);
+export async function getPrograms(institutionId) {
+  if (!institutionId) return [];
 
-  return readAcademicCollection(
-    ACADEMIC_COLLECTIONS.MODULES,
-    [where('semesterId', '==', semesterId)],
-    'modules',
-  );
+  const tree = await getAcademicTree();
+  return sortByOrder(tree.programs.filter((program) => program.institutionId === institutionId));
+}
+
+export async function getProgramYears(programId) {
+  if (!programId) return [];
+
+  const tree = await getAcademicTree();
+  return sortByOrder(tree.programYears.filter((programYear) => programYear.programId === programId));
+}
+
+export async function getSemesters(programYearId) {
+  if (!programYearId) return [];
+
+  const tree = await getAcademicTree();
+  return sortByOrder(tree.semesters.filter((semester) => semester.programYearId === programYearId));
+}
+
+export async function getAcademicModules(semesterId) {
+  if (!semesterId) return [];
+
+  const tree = await getAcademicTree();
+  return sortByOrder(tree.modules.filter((moduleItem) => moduleItem.semesterId === semesterId));
 }

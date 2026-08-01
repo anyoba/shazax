@@ -82,6 +82,10 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/learn" element={<LearnRoute />} />
+            <Route path="/learn/:institutionSlug" element={<LearnRoute />} />
+            <Route path="/learn/:institutionSlug/:programSlug" element={<LearnRoute />} />
+            <Route path="/learn/:institutionSlug/:programSlug/:semesterSlug" element={<LearnRoute />} />
+            <Route path="/learn/:institutionSlug/:programSlug/:semesterSlug/:moduleSlug" element={<LearnRoute />} />
             <Route path="/concours" element={concoursRoute(<ConcoursDashboardPage />)} />
             <Route path="/concours/concours" element={concoursRoute(<ContestsPage />)} />
             <Route path="/concours/concours/:contestSlug" element={concoursRoute(<ContestsPage />)} />

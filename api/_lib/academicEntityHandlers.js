@@ -153,7 +153,7 @@ async function assertSlugAvailable(db, config, slug, scopeFilters, excludeId = n
   }
 }
 
-async function handleList(req, res, entityType) {
+export async function handleAcademicEntityList(req, res, entityType) {
   const config = getAcademicEntityConfig(entityType);
   const includeAdminData = getQueryValue(req.query?.admin) === 'true';
   const limit = parseLimit(req.query?.limit);
@@ -202,7 +202,7 @@ async function handleList(req, res, entityType) {
   sendJson(res, 200, { items });
 }
 
-async function handleCreate(req, res, entityType) {
+export async function handleAcademicEntityCreate(req, res, entityType) {
   const config = getAcademicEntityConfig(entityType);
   const user = await requireRole(req, ACADEMIC_CONTENT_WRITE_ROLES);
   const body = await readJsonBody(req);
@@ -263,7 +263,7 @@ async function getExistingDoc(db, config, id) {
   return docSnapshot;
 }
 
-async function handleGetOne(req, res, entityType, id) {
+export async function handleAcademicEntityGetOne(req, res, entityType, id) {
   const config = getAcademicEntityConfig(entityType);
   const db = getAdminDb();
   const includeAdminData = getQueryValue(req.query?.admin) === 'true';
@@ -281,7 +281,7 @@ async function handleGetOne(req, res, entityType, id) {
   sendJson(res, 200, { item: serializeDoc(docSnapshot, { admin: includeAdminData }) });
 }
 
-async function handlePatch(req, res, entityType, id) {
+export async function handleAcademicEntityPatch(req, res, entityType, id) {
   const config = getAcademicEntityConfig(entityType);
   const user = await requireRole(req, ACADEMIC_CONTENT_WRITE_ROLES);
   const db = getAdminDb();
@@ -331,7 +331,7 @@ async function handlePatch(req, res, entityType, id) {
   });
 }
 
-async function handleArchive(req, res, entityType, id) {
+export async function handleAcademicEntityArchive(req, res, entityType, id) {
   const config = getAcademicEntityConfig(entityType);
   const user = await requireRole(req, ACADEMIC_PUBLISH_ROLES);
   const db = getAdminDb();
@@ -360,8 +360,8 @@ export function createAcademicCollectionHandler(entityType) {
     const requestId = getRequestId(req);
 
     try {
-      if (req.method === 'GET') return await handleList(req, res, entityType);
-      if (req.method === 'POST') return await handleCreate(req, res, entityType);
+      if (req.method === 'GET') return await handleAcademicEntityList(req, res, entityType);
+      if (req.method === 'POST') return await handleAcademicEntityCreate(req, res, entityType);
       throw new HttpError(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED');
     } catch (error) {
       console.error('[ACADEMIC_ENTITY_COLLECTION_FAILED]', {
@@ -385,9 +385,9 @@ export function createAcademicItemHandler(entityType) {
 
     try {
       if (!id) throw new HttpError(400, 'id is required.', 'ACADEMIC_ID_REQUIRED');
-      if (req.method === 'GET') return await handleGetOne(req, res, entityType, id);
-      if (req.method === 'PATCH') return await handlePatch(req, res, entityType, id);
-      if (req.method === 'DELETE') return await handleArchive(req, res, entityType, id);
+      if (req.method === 'GET') return await handleAcademicEntityGetOne(req, res, entityType, id);
+      if (req.method === 'PATCH') return await handleAcademicEntityPatch(req, res, entityType, id);
+      if (req.method === 'DELETE') return await handleAcademicEntityArchive(req, res, entityType, id);
       throw new HttpError(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED');
     } catch (error) {
       console.error('[ACADEMIC_ENTITY_ITEM_FAILED]', {

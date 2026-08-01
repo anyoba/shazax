@@ -75,6 +75,7 @@ function assertInstitutionCreated(body, response) {
 
 function buildInstitutionUrl(id = '', params = {}) {
   const query = new URLSearchParams();
+  query.set('entity', 'institutions');
 
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -82,9 +83,9 @@ function buildInstitutionUrl(id = '', params = {}) {
     }
   });
 
-  const path = id
-    ? `/api/academic/institutions/${encodeURIComponent(id)}`
-    : '/api/academic/institutions';
+  if (id) query.set('id', id);
+
+  const path = '/api/academic';
   const queryString = query.toString();
 
   return queryString ? `${path}?${queryString}` : path;
@@ -110,7 +111,7 @@ export async function getInstitution(id, { admin = false, getToken } = {}) {
 
 export async function createInstitution(payload, getToken) {
   const authHeaders = await getAuthHeaders(getToken);
-  const response = await fetch('/api/academic/institutions', {
+  const response = await fetch(buildInstitutionUrl(), {
     method: 'POST',
     headers: {
       ...authHeaders,

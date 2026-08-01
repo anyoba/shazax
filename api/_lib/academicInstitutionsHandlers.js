@@ -1,49 +1,21 @@
 import {
-  randomUUID,
-} from 'node:crypto';
-import {
   ACADEMIC_ADMIN_READ_ROLES,
   ACADEMIC_CONTENT_WRITE_ROLES,
   ACADEMIC_PUBLISH_ROLES,
   ACADEMIC_STATUSES,
   ACADEMIC_STATUS_VALUES,
-} from '../../_lib/serverConstants.js';
-import { getAdminDb, FieldValue } from '../../_lib/firebaseAdmin.js';
-import {
-  createFirestoreHttpError,
-  HttpError,
-  requireRole,
-  sendError,
-  sendJson,
-} from '../../_lib/auth.js';
-import { readJsonBody, setMethodHeader } from '../../_lib/request.js';
+} from './serverConstants.js';
+import { getAdminDb, FieldValue } from './firebaseAdmin.js';
+import { createFirestoreHttpError, HttpError, requireRole, sendJson } from './auth.js';
+import { readJsonBody } from './request.js';
 import {
   normalizeComparable,
   validateInstitutionPayload,
-} from '../../_lib/institutionsValidation.js';
+} from './institutionsValidation.js';
 
 const COLLECTION = 'institutions';
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 100;
-const CREATE_STAGES = {
-  AUTH: 'AUTH',
-  ROLE_LOOKUP: 'ROLE_LOOKUP',
-  BODY_PARSE: 'BODY_PARSE',
-  VALIDATION: 'VALIDATION',
-  SLUG_CHECK: 'SLUG_CHECK',
-  FIRESTORE_WRITE: 'FIRESTORE_WRITE',
-};
-const GET_STAGES = {
-  AUTH: 'GET_AUTH',
-  FIRESTORE_READ: 'GET_FIRESTORE_READ',
-};
-
-function getRequestId(req) {
-  const headerRequestId = req.headers['x-request-id'] || req.headers['x-vercel-id'];
-  const requestId = Array.isArray(headerRequestId) ? headerRequestId[0] : headerRequestId;
-
-  return requestId || randomUUID();
-}
 
 function getQueryValue(value) {
   return Array.isArray(value) ? value[0] : value;
@@ -91,7 +63,7 @@ function serializeInstitution(doc, { admin = false } = {}) {
 
 function sortInstitutions(first, second) {
   if (first.order !== second.order) return first.order - second.order;
-  return first.name.localeCompare(second.name);
+  return first.name.localeCompare(second.name, 'fr');
 }
 
 async function assertSlugAvailable(db, slug, excludeId = null) {
@@ -105,7 +77,6 @@ async function assertSlugAvailable(db, slug, excludeId = null) {
   }
 
   const duplicate = snapshot.docs.find((doc) => doc.id !== excludeId);
-
   if (duplicate) {
     throw new HttpError(409, 'An institution with this slug already exists.', 'INSTITUTION_SLUG_DUPLICATE');
   }
@@ -142,7 +113,30 @@ function removeUndefinedFields(data) {
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
 }
 
-async function handleGet(req, res, setStage) {
+async function getInstitutionSnapshot(db, id) {
+  if (!id || typeof id !== 'string') {
+    throw new HttpError(400, 'institution id is required.', 'INSTITUTION_ID_REQUIRED');
+  }
+
+  let snapshot;
+  try {
+    snapshot = await db.collection(COLLECTION).doc(id).get();
+  } catch (error) {
+    throw createFirestoreHttpError(error, 'Unable to load institution.');
+  }
+
+  if (!snapshot.exists || snapshot.data()?.isDeleted === true) {
+    throw new HttpError(404, 'Institution not found.', 'INSTITUTION_NOT_FOUND');
+  }
+
+  return snapshot;
+}
+
+function isPublicInstitution(data) {
+  return data?.status === ACADEMIC_STATUSES.PUBLISHED && data?.isDeleted !== true;
+}
+
+export async function listInstitutions(req, res, setStage = () => {}) {
   const includeAdminData = getQueryValue(req.query?.admin) === 'true';
   const limit = parseLimit(req.query?.limit);
   const db = getAdminDb();
@@ -156,27 +150,21 @@ async function handleGet(req, res, setStage) {
   let institutionsQuery = db.collection(COLLECTION).limit(limit);
 
   if (!isAdminRequest) {
-    institutionsQuery = db
-      .collection(COLLECTION)
-      .where('status', '==', ACADEMIC_STATUSES.PUBLISHED)
-      .limit(limit);
+    institutionsQuery = db.collection(COLLECTION).where('status', '==', ACADEMIC_STATUSES.PUBLISHED).limit(limit);
   } else {
     const status = getQueryValue(req.query?.status);
     if (status && status !== 'all') {
       if (!ACADEMIC_STATUS_VALUES.includes(status)) {
-        throw new HttpError(400, 'status filter is invalid.');
+        throw new HttpError(400, 'status filter is invalid.', 'INSTITUTION_STATUS_FILTER_INVALID');
       }
 
-      institutionsQuery = db
-        .collection(COLLECTION)
-        .where('status', '==', status)
-        .limit(limit);
+      institutionsQuery = db.collection(COLLECTION).where('status', '==', status).limit(limit);
     }
   }
 
   let snapshot;
   try {
-    setStage(GET_STAGES.FIRESTORE_READ);
+    setStage('FIRESTORE_READ');
     snapshot = await institutionsQuery.get();
   } catch (error) {
     throw createFirestoreHttpError(error, 'Unable to load institutions.');
@@ -190,13 +178,31 @@ async function handleGet(req, res, setStage) {
   sendJson(res, 200, { institutions });
 }
 
-async function handlePost(req, res, setStage) {
+export async function getInstitution(req, res, id) {
+  const db = getAdminDb();
+  const snapshot = await getInstitutionSnapshot(db, id);
+  const data = snapshot.data() || {};
+  const includeAdminData = getQueryValue(req.query?.admin) === 'true';
+
+  if (!isPublicInstitution(data) || includeAdminData) {
+    await requireRole(req, ACADEMIC_ADMIN_READ_ROLES);
+    return sendJson(res, 200, {
+      institution: serializeInstitution(snapshot, { admin: true }),
+    });
+  }
+
+  return sendJson(res, 200, {
+    institution: serializeInstitution(snapshot, { admin: false }),
+  });
+}
+
+export async function createInstitution(req, res, setStage = () => {}) {
   const user = await requireRole(req, ACADEMIC_CONTENT_WRITE_ROLES, { onStage: setStage });
 
-  setStage(CREATE_STAGES.BODY_PARSE);
+  setStage('BODY_PARSE');
   const body = await readJsonBody(req);
 
-  setStage(CREATE_STAGES.VALIDATION);
+  setStage('VALIDATION');
   const payload = validateInstitutionPayload(body);
 
   if (
@@ -206,7 +212,7 @@ async function handlePost(req, res, setStage) {
     throw new HttpError(403, 'Only admin and owner roles can publish or archive institutions.', 'INSTITUTION_STATUS_FORBIDDEN');
   }
 
-  setStage(CREATE_STAGES.SLUG_CHECK);
+  setStage('SLUG_CHECK');
   const db = getAdminDb();
   await assertSlugAvailable(db, payload.slug);
   await assertNameCityAvailable(db, payload.name, payload.city);
@@ -233,7 +239,7 @@ async function handlePost(req, res, setStage) {
   });
 
   try {
-    setStage(CREATE_STAGES.FIRESTORE_WRITE);
+    setStage('FIRESTORE_WRITE');
     await docRef.set(institution);
   } catch (error) {
     throw createFirestoreHttpError(error, 'Unable to create institution in Firestore.');
@@ -243,59 +249,76 @@ async function handlePost(req, res, setStage) {
     success: true,
     institution: {
       id: docRef.id,
-      name: institution.name,
-      shortName: institution.shortName,
-      slug: institution.slug,
-      city: institution.city,
-      type: institution.type,
-      status: institution.status,
-      order: institution.order,
-      description: institution.description,
-      logoUrl: institution.logoUrl,
-      websiteUrl: institution.websiteUrl,
-      isDeleted: false,
+      ...institution,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: user.userId,
-      updatedBy: user.userId,
     },
   });
 }
 
-export default async function handler(req, res) {
-  setMethodHeader(res, ['GET', 'POST']);
-  const requestId = getRequestId(req);
-  let stage = req.method === 'POST' ? CREATE_STAGES.AUTH : GET_STAGES.FIRESTORE_READ;
-  const setStage = (nextStage) => {
-    stage = nextStage;
-  };
+export async function updateInstitution(req, res, id) {
+  const user = await requireRole(req, ACADEMIC_CONTENT_WRITE_ROLES);
+  const payload = validateInstitutionPayload(await readJsonBody(req), { partial: true });
+  const db = getAdminDb();
+  const docRef = db.collection(COLLECTION).doc(id);
+  const currentSnapshot = await getInstitutionSnapshot(db, id);
+  const currentData = currentSnapshot.data() || {};
+  const nextStatus = payload.status ?? currentData.status;
+  const isStatusChange = payload.status !== undefined && payload.status !== currentData.status;
+  const isAdminOnlyStatusChange =
+    nextStatus === ACADEMIC_STATUSES.PUBLISHED ||
+    nextStatus === ACADEMIC_STATUSES.ARCHIVED ||
+    currentData.status === ACADEMIC_STATUSES.ARCHIVED;
+
+  if (isStatusChange && isAdminOnlyStatusChange && !ACADEMIC_PUBLISH_ROLES.includes(user.role)) {
+    throw new HttpError(403, 'Only admin and owner roles can publish, archive, or restore institutions.', 'INSTITUTION_STATUS_FORBIDDEN');
+  }
+
+  if (payload.slug && payload.slug !== currentData.slug) {
+    await assertSlugAvailable(db, payload.slug, id);
+  }
+
+  const nextName = payload.name ?? currentData.name;
+  const nextCity = payload.city ?? currentData.city;
+  if (payload.name !== undefined || payload.city !== undefined) {
+    await assertNameCityAvailable(db, nextName, nextCity, id);
+  }
 
   try {
-    if (req.method === 'GET') return await handleGet(req, res, setStage);
-    if (req.method === 'POST') return await handlePost(req, res, setStage);
-
-    throw new HttpError(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED');
+    await docRef.update({
+      ...payload,
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: user.userId,
+    });
   } catch (error) {
-    if (req.method === 'GET') {
-      console.error('[INSTITUTIONS_GET_FAILED]', {
-        requestId,
-        stage,
-        name: error?.name,
-        code: error?.code,
-        message: error?.message,
-      });
-    }
-
-    if (req.method === 'POST') {
-      console.error('[INSTITUTION_CREATE_FAILED]', {
-        requestId,
-        stage,
-        name: error?.name,
-        code: error?.code,
-        message: error?.message,
-      });
-    }
-
-    return sendError(res, error, { requestId, stage });
+    throw createFirestoreHttpError(error, 'Unable to update institution.');
   }
+
+  const updated = await docRef.get();
+  return sendJson(res, 200, {
+    institution: serializeInstitution(updated, { admin: true }),
+  });
+}
+
+export async function archiveInstitution(req, res, id) {
+  const user = await requireRole(req, ACADEMIC_PUBLISH_ROLES);
+  const db = getAdminDb();
+  const docRef = db.collection(COLLECTION).doc(id);
+  await getInstitutionSnapshot(db, id);
+
+  try {
+    await docRef.update({
+      status: ACADEMIC_STATUSES.ARCHIVED,
+      isDeleted: false,
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: user.userId,
+    });
+  } catch (error) {
+    throw createFirestoreHttpError(error, 'Unable to archive institution.');
+  }
+
+  const updated = await docRef.get();
+  return sendJson(res, 200, {
+    institution: serializeInstitution(updated, { admin: true }),
+  });
 }

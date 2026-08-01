@@ -11,7 +11,7 @@ export class AcademicAdminApiError extends Error {
 
 const ENTITY_PATHS = {
   programs: 'programs',
-  program_years: 'program_years',
+  program_years: 'program-years',
   semesters: 'semesters',
   modules: 'modules',
 };
@@ -77,9 +77,10 @@ function entityUrl(entityType, id = '', params = {}) {
     if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
   });
 
-  const path = id
-    ? `/api/academic/${entityPath}/${encodeURIComponent(id)}`
-    : `/api/academic/${entityPath}`;
+  query.set('entity', entityPath);
+  if (id) query.set('id', id);
+
+  const path = '/api/academic';
   const queryString = query.toString();
 
   return queryString ? `${path}?${queryString}` : path;

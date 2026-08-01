@@ -32,7 +32,7 @@ async function parseApiResponse(response) {
 }
 
 async function fetchAcademicTree() {
-  const response = await fetch('/api/academic/learn');
+  const response = await fetch('/api/academic?view=learn');
   const payload = await parseApiResponse(response);
 
   if (!response.ok || payload?.success === false) {

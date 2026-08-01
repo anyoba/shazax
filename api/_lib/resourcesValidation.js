@@ -10,6 +10,7 @@ const ALLOWED_FIELDS = [
   'correctionTitle',
   'correctionUrl',
   'status',
+  'moduleIds',
 ];
 
 const MAX_LENGTHS = {
@@ -93,6 +94,29 @@ function cleanStatus(value) {
   return status;
 }
 
+function cleanModuleIds(value) {
+  if (value === undefined || value === null) return undefined;
+
+  if (!Array.isArray(value)) {
+    throw new HttpError(400, 'moduleIds must be an array.');
+  }
+
+  const ids = value.map((item) => {
+    if (typeof item !== 'string') {
+      throw new HttpError(400, 'moduleIds must contain only strings.');
+    }
+
+    const trimmed = item.trim();
+    if (!trimmed || trimmed.length > 160) {
+      throw new HttpError(400, 'moduleIds contains an invalid id.');
+    }
+
+    return trimmed;
+  });
+
+  return [...new Set(ids)];
+}
+
 export function validateResourcePayload(payload, { partial = false } = {}) {
   if (!isPlainObject(payload)) {
     throw new HttpError(400, 'Request body must be a JSON object.');
@@ -138,6 +162,10 @@ export function validateResourcePayload(payload, { partial = false } = {}) {
 
   if (!partial || payload.status !== undefined) {
     cleaned.status = cleanStatus(payload.status);
+  }
+
+  if (payload.moduleIds !== undefined) {
+    cleaned.moduleIds = cleanModuleIds(payload.moduleIds);
   }
 
   return cleaned;

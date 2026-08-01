@@ -14,7 +14,7 @@ Ce document decrit la consommation Firestore actuelle et les precautions a garde
   - Lit `waitlist` seulement quand l onglet `Emails & Contact` est ouvert.
   - Lit `analytics_visits` seulement quand l onglet `Live Analytics` est ouvert.
   - Lit `users` seulement quand l onglet `Users` est ouvert.
-  - Lit les institutions via les API serveur `/api/academic/institutions`.
+  - Lit les institutions via l'API serveur consolidee `/api/academic?entity=institutions`.
 
 - Routes protegees par roles
   - `useUserRole` lit temporairement `user_roles/{clerkUserId}` cote client.

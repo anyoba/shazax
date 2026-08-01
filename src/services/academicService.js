@@ -1,4 +1,5 @@
 import { sortByOrder } from '../utils/academicValidation';
+import { fallbackAcademicTree } from '../data/academicFallback';
 
 export class AcademicServiceError extends Error {
   constructor(message, cause) {
@@ -8,6 +9,7 @@ export class AcademicServiceError extends Error {
   }
 }
 
+const ACADEMIC_TREE_STORAGE_KEY = 'shazax_academic_tree_v1';
 let academicTreeCache = null;
 let academicTreePromise = null;
 
@@ -19,6 +21,31 @@ function normalizeResponsePayload(payload) {
     semesters: Array.isArray(payload?.semesters) ? payload.semesters : [],
     modules: Array.isArray(payload?.modules) ? payload.modules : [],
   };
+}
+
+function readCachedAcademicTree() {
+  try {
+    const cached = window.localStorage.getItem(ACADEMIC_TREE_STORAGE_KEY);
+    if (!cached) return null;
+
+    const parsed = JSON.parse(cached);
+    const tree = normalizeResponsePayload(parsed);
+    return tree.institutions.length > 0 ? tree : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedAcademicTree(tree) {
+  try {
+    window.localStorage.setItem(ACADEMIC_TREE_STORAGE_KEY, JSON.stringify(tree));
+  } catch {
+    // Ignore localStorage failures.
+  }
+}
+
+function getFallbackAcademicTree() {
+  return readCachedAcademicTree() || fallbackAcademicTree;
 }
 
 async function parseApiResponse(response) {
@@ -40,7 +67,12 @@ async function fetchAcademicTree() {
     throw new AcademicServiceError(message);
   }
 
-  return normalizeResponsePayload(payload);
+  const tree = normalizeResponsePayload(payload);
+  if (tree.institutions.length > 0) {
+    saveCachedAcademicTree(tree);
+  }
+
+  return tree;
 }
 
 export async function getAcademicTree({ force = false } = {}) {
@@ -51,6 +83,12 @@ export async function getAcademicTree({ force = false } = {}) {
     .then((tree) => {
       academicTreeCache = tree;
       return tree;
+    })
+    .catch((error) => {
+      const fallbackTree = getFallbackAcademicTree();
+      academicTreeCache = fallbackTree;
+      console.warn('Using cached academic tree because the server tree could not be loaded.', error?.message);
+      return fallbackTree;
     })
     .finally(() => {
       academicTreePromise = null;

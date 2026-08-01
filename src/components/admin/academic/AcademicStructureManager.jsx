@@ -626,6 +626,8 @@ export default function AcademicStructureManager({ initialInstitutionId = '' }) 
   const selectedProgram = programs.find((program) => program.id === selectedProgramId);
   const selectedProgramYear = programYears.find((programYear) => programYear.id === selectedProgramYearId);
   const selectedSemester = semesters.find((semester) => semester.id === selectedSemesterId);
+  const isFstSettat = selectedInstitution?.slug === 'fst-settat';
+  const hasNoStructureYet = Boolean(selectedInstitutionId && !loading.programs && programs.length === 0);
 
   function clearFeedback() {
     setError('');
@@ -1080,10 +1082,10 @@ export default function AcademicStructureManager({ initialInstitutionId = '' }) 
         <div>
           <h2 className="flex items-center gap-2 text-xl font-bold">
             <Layers size={20} />
-            Structure academique
+            Gestion des ressources
           </h2>
           <p className="mt-1 text-sm text-white/40">
-            Etablissement, filiere, annee, semestre, module.
+            Meme espace pour chaque etablissement: filiere, annee, semestre, module et ressources.
           </p>
         </div>
 
@@ -1095,7 +1097,7 @@ export default function AcademicStructureManager({ initialInstitutionId = '' }) 
           <RefreshCw size={15} />
           Actualiser
         </button>
-        {canEdit && selectedInstitutionId ? (
+        {canEdit && isFstSettat ? (
           <button
             type="button"
             disabled={actionLoadingId === 'structure:fst-msd'}
@@ -1130,9 +1132,24 @@ export default function AcademicStructureManager({ initialInstitutionId = '' }) 
           onChange={setSelectedInstitutionId}
         />
         {selectedInstitution ? (
-          <p className="mt-3 text-sm text-white/40">
-            Selection actuelle: <span className="font-semibold text-white/70">{selectedInstitution.name}</span>
-          </p>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-lg font-bold text-white">{selectedInstitution.name}</div>
+            <p className="mt-1 text-sm text-white/45">
+              Gestion des ressources pour {selectedInstitution.shortName || selectedInstitution.name}. L'etablissement
+              vient de la selection, donc il ne sera pas redemande dans les formulaires enfants.
+            </p>
+            {isFstSettat ? (
+              <p className="mt-3 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2 text-sm text-primary">
+                Objectif FST: afficher S1, S2, S3, S4 et placer les 5 modules historiques directement dans S2.
+              </p>
+            ) : null}
+            {hasNoStructureYet ? (
+              <p className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/50">
+                Les contenus de cet etablissement seront bientot disponibles. Ajoute d'abord une filiere, puis les
+                annees, semestres et modules.
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </div>
 

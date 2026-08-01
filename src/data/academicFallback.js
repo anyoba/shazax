@@ -157,3 +157,77 @@ export const fallbackAcademicTree = {
     },
   ],
 };
+
+export function buildFstFallbackTreeForInstitution(institution) {
+  const institutionId = institution.id;
+  const programId = `fallback_${institutionId}_msd`;
+  const firstYearId = `fallback_${institutionId}_msd_1ere_annee`;
+  const secondYearId = `fallback_${institutionId}_msd_2eme_annee`;
+  const s1Id = `fallback_${institutionId}_msd_s1`;
+  const s2Id = `fallback_${institutionId}_msd_s2`;
+  const s3Id = `fallback_${institutionId}_msd_s3`;
+  const s4Id = `fallback_${institutionId}_msd_s4`;
+
+  return {
+    institutions: [institution],
+    programs: [
+      {
+        ...fallbackAcademicTree.programs[0],
+        id: programId,
+        institutionId,
+      },
+    ],
+    programYears: [
+      {
+        ...fallbackAcademicTree.programYears[0],
+        id: firstYearId,
+        institutionId,
+        programId,
+      },
+      {
+        ...fallbackAcademicTree.programYears[1],
+        id: secondYearId,
+        institutionId,
+        programId,
+      },
+    ],
+    semesters: [
+      {
+        ...fallbackAcademicTree.semesters[0],
+        id: s1Id,
+        institutionId,
+        programId,
+        programYearId: firstYearId,
+      },
+      {
+        ...fallbackAcademicTree.semesters[1],
+        id: s2Id,
+        institutionId,
+        programId,
+        programYearId: firstYearId,
+      },
+      {
+        ...fallbackAcademicTree.semesters[2],
+        id: s3Id,
+        institutionId,
+        programId,
+        programYearId: secondYearId,
+      },
+      {
+        ...fallbackAcademicTree.semesters[3],
+        id: s4Id,
+        institutionId,
+        programId,
+        programYearId: secondYearId,
+      },
+    ],
+    modules: fallbackAcademicTree.modules.map((moduleItem) => ({
+      ...moduleItem,
+      id: `fallback_${institutionId}_msd_s2_${moduleItem.slug.replace(/-/g, '_')}`,
+      institutionId,
+      programId,
+      programYearId: firstYearId,
+      semesterId: s2Id,
+    })),
+  };
+}

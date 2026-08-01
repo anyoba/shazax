@@ -41,6 +41,20 @@ function ActionButton({ children, disabled, onClick, title }) {
   );
 }
 
+function TextActionButton({ children, disabled, onClick, title }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      title={title}
+      className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary/30 px-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function InstitutionsTable({
   institutions,
   canEdit,
@@ -63,7 +77,7 @@ export default function InstitutionsTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
       <div className="hidden divide-y divide-white/5 md:block">
-        <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr_0.8fr] gap-4 px-4 py-3 text-xs uppercase tracking-wide text-white/35">
+        <div className="grid grid-cols-[1.2fr_0.7fr_0.65fr_0.55fr_1fr] gap-4 px-4 py-3 text-xs uppercase tracking-wide text-white/35">
           <div>Nom</div>
           <div>Ville</div>
           <div>Type</div>
@@ -75,7 +89,7 @@ export default function InstitutionsTable({
           return (
             <div
               key={institution.id}
-              className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.6fr_0.8fr] items-center gap-4 px-4 py-4"
+              className="grid grid-cols-[1.2fr_0.7fr_0.65fr_0.55fr_1fr] items-center gap-4 px-4 py-4"
             >
               <div className="min-w-0">
                 <div className="truncate font-medium">{institution.name}</div>
@@ -104,13 +118,14 @@ export default function InstitutionsTable({
                   </ActionButton>
                 ) : null}
                 {onManageStructure ? (
-                  <ActionButton
+                  <TextActionButton
                     disabled={loading}
                     onClick={() => onManageStructure(institution)}
-                    title="Gerer la structure et les ressources"
+                    title="Manage Resources"
                   >
                     <Layers size={15} />
-                  </ActionButton>
+                    <span>Manage Resources</span>
+                  </TextActionButton>
                 ) : null}
                 {canChangeStatus && institution.status !== ACADEMIC_STATUSES.PUBLISHED ? (
                   <ActionButton disabled={loading} onClick={() => onPublish(institution)} title="Publier">
@@ -169,13 +184,14 @@ export default function InstitutionsTable({
                   </ActionButton>
                 ) : null}
                 {onManageStructure ? (
-                  <ActionButton
+                  <TextActionButton
                     disabled={loading}
                     onClick={() => onManageStructure(institution)}
-                    title="Gerer la structure et les ressources"
+                    title="Manage Resources"
                   >
                     <Layers size={15} />
-                  </ActionButton>
+                    <span>Manage Resources</span>
+                  </TextActionButton>
                 ) : null}
                 {canChangeStatus && institution.status !== ACADEMIC_STATUSES.PUBLISHED ? (
                   <ActionButton disabled={loading} onClick={() => onPublish(institution)} title="Publier">

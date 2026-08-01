@@ -150,7 +150,7 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
 
     if (canAccessInstitutions) {
       nextTabs.push(['institutions', 'Etablissements', Building2]);
-      nextTabs.push(['academic-structure', 'Structure', Layers]);
+      nextTabs.push(['academic-structure', 'Manage Resources', Layers]);
     }
 
     if (canManageResources) {

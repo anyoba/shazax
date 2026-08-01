@@ -106,6 +106,19 @@ const ENTITY_CONFIGS = {
   },
 };
 
+const FST_S2_MODULES = [
+  { name: 'Analyse 2', shortName: 'Analyse 2', slug: 'analyse-2', order: 1 },
+  { name: 'Algebre 2', shortName: 'Algebre 2', slug: 'algebre-2', order: 2 },
+  { name: 'Mecanique', shortName: 'Mecanique', slug: 'mecanique', order: 3 },
+  { name: 'Thermodynamique', shortName: 'Thermodynamique', slug: 'thermodynamique', order: 4 },
+  {
+    name: 'Structure de la matiere',
+    shortName: 'Structure matiere',
+    slug: 'structure-de-la-matiere',
+    order: 5,
+  },
+];
+
 function StatusBadge({ status }) {
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASSES[status] || STATUS_CLASSES.draft}`}>
@@ -451,6 +464,7 @@ function EntityPanel({
   onPublish,
   onRestore,
   onSelect,
+  extraAction,
 }) {
   const config = ENTITY_CONFIGS[entityType];
   const Icon = config.icon;
@@ -493,16 +507,19 @@ function EntityPanel({
           </h3>
           <p className="mt-1 text-sm text-white/40">{items.length} element(s)</p>
         </div>
-        {canEdit && parentReady ? (
-          <button
-            type="button"
-            onClick={startCreate}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
-          >
-            <Plus size={15} />
-            Ajouter
-          </button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {extraAction}
+          {canEdit && parentReady ? (
+            <button
+              type="button"
+              onClick={startCreate}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
+            >
+              <Plus size={15} />
+              Ajouter
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {!parentReady ? (
@@ -812,6 +829,52 @@ export default function AcademicStructureManager() {
     );
   }
 
+  async function createFstS2Modules() {
+    if (!selectedInstitutionId || !selectedProgramId || !selectedProgramYearId || !selectedSemesterId) {
+      setError('Selectionne FST Settat, MSD, 1ere annee et S2 avant de placer les modules.');
+      return;
+    }
+
+    const existingSlugs = new Set(modules.map((moduleItem) => moduleItem.slug));
+    const missingModules = FST_S2_MODULES.filter((moduleItem) => !existingSlugs.has(moduleItem.slug));
+
+    if (missingModules.length === 0) {
+      setMessage('Les 5 modules FST S2 existent deja dans ce semestre.');
+      return;
+    }
+
+    setActionLoadingId('modules:fst-s2');
+    clearFeedback();
+
+    try {
+      const parent = parentPayload('modules');
+      const status = canChangeStatus ? ACADEMIC_STATUSES.PUBLISHED : ACADEMIC_STATUSES.DRAFT;
+
+      for (const moduleItem of missingModules) {
+        await createAcademicItem(
+          'modules',
+          {
+            ...parent,
+            ...moduleItem,
+            description: '',
+            status,
+          },
+          getToken,
+        );
+      }
+
+      setMessage(
+        `${missingModules.length} module(s) FST S2 ajoute(s) directement dans ${selectedSemester?.name || 'ce semestre'}.`,
+      );
+      await loadEntity('modules', parent);
+    } catch (createError) {
+      console.error('Unable to create FST S2 modules', createError);
+      setError(formatAcademicApiError(createError, 'Impossible de placer les modules FST S2.'));
+    } finally {
+      setActionLoadingId('');
+    }
+  }
+
   if (!canReadAdmin) {
     return (
       <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-6 text-red-200">
@@ -953,6 +1016,19 @@ export default function AcademicStructureManager() {
           onPublish={publishItem}
           onRestore={restoreItem}
           onSelect={() => {}}
+          extraAction={
+            canEdit && selectedSemesterId ? (
+              <button
+                type="button"
+                disabled={actionLoadingId === 'modules:fst-s2'}
+                onClick={createFstS2Modules}
+                className="inline-flex items-center gap-2 rounded-xl border border-primary/40 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus size={15} />
+                {actionLoadingId === 'modules:fst-s2' ? 'Placement...' : 'Placer les 5 modules FST S2'}
+              </button>
+            ) : null
+          }
         />
       </div>
     </section>

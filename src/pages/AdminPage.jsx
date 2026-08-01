@@ -17,6 +17,7 @@ import {
   Users,
   CheckCircle,
   Globe,
+  Layers,
 } from 'lucide-react';
 import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';

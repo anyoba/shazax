@@ -7,11 +7,11 @@ import {
   ACADEMIC_PUBLISH_ROLES,
   ACADEMIC_STATUSES,
   ACADEMIC_STATUS_VALUES,
-} from '../../../src/constants/academic.js';
+} from '../../_lib/serverConstants.js';
 import { getAdminDb, FieldValue } from '../../_lib/firebaseAdmin.js';
 import {
+  createFirestoreHttpError,
   HttpError,
-  isFirestoreQuotaError,
   requireRole,
   sendError,
   sendJson,
@@ -32,6 +32,10 @@ const CREATE_STAGES = {
   VALIDATION: 'VALIDATION',
   SLUG_CHECK: 'SLUG_CHECK',
   FIRESTORE_WRITE: 'FIRESTORE_WRITE',
+};
+const GET_STAGES = {
+  AUTH: 'GET_AUTH',
+  FIRESTORE_READ: 'GET_FIRESTORE_READ',
 };
 
 function getRequestId(req) {
@@ -97,10 +101,7 @@ async function assertSlugAvailable(db, slug, excludeId = null) {
   try {
     snapshot = await db.collection(COLLECTION).where('slug', '==', slug).limit(2).get();
   } catch (error) {
-    if (isFirestoreQuotaError(error)) {
-      throw new HttpError(500, 'Firestore quota exceeded while checking slug.', 'FIRESTORE_QUOTA_EXCEEDED');
-    }
-    throw new HttpError(500, 'Unable to verify institution slug availability.', 'SLUG_CHECK_FAILED');
+    throw createFirestoreHttpError(error, 'Unable to verify institution slug availability.');
   }
 
   const duplicate = snapshot.docs.find((doc) => doc.id !== excludeId);
@@ -117,10 +118,7 @@ async function assertNameCityAvailable(db, name, city, excludeId = null) {
   try {
     snapshot = await db.collection(COLLECTION).where('city', '==', city).limit(25).get();
   } catch (error) {
-    if (isFirestoreQuotaError(error)) {
-      throw new HttpError(500, 'Firestore quota exceeded while checking institution name.', 'FIRESTORE_QUOTA_EXCEEDED');
-    }
-    throw new HttpError(500, 'Unable to verify institution name availability.', 'NAME_CITY_CHECK_FAILED');
+    throw createFirestoreHttpError(error, 'Unable to verify institution name availability.');
   }
 
   const targetName = normalizeComparable(name);
@@ -144,31 +142,23 @@ function removeUndefinedFields(data) {
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
 }
 
-async function handleGet(req, res) {
+async function handleGet(req, res, setStage) {
   const includeAdminData = getQueryValue(req.query?.admin) === 'true';
   const limit = parseLimit(req.query?.limit);
   const db = getAdminDb();
   let isAdminRequest = false;
 
   if (includeAdminData) {
-    await requireRole(req, ACADEMIC_ADMIN_READ_ROLES);
+    await requireRole(req, ACADEMIC_ADMIN_READ_ROLES, { onStage: setStage });
     isAdminRequest = true;
   }
 
-  let institutionsQuery = db
-    .collection(COLLECTION)
-    .where('isDeleted', '==', false)
-    .orderBy('order', 'asc')
-    .orderBy('name', 'asc')
-    .limit(limit);
+  let institutionsQuery = db.collection(COLLECTION).limit(limit);
 
   if (!isAdminRequest) {
     institutionsQuery = db
       .collection(COLLECTION)
       .where('status', '==', ACADEMIC_STATUSES.PUBLISHED)
-      .where('isDeleted', '==', false)
-      .orderBy('order', 'asc')
-      .orderBy('name', 'asc')
       .limit(limit);
   } else {
     const status = getQueryValue(req.query?.status);
@@ -179,16 +169,21 @@ async function handleGet(req, res) {
 
       institutionsQuery = db
         .collection(COLLECTION)
-        .where('isDeleted', '==', false)
         .where('status', '==', status)
-        .orderBy('order', 'asc')
-        .orderBy('name', 'asc')
         .limit(limit);
     }
   }
 
-  const snapshot = await institutionsQuery.get();
+  let snapshot;
+  try {
+    setStage(GET_STAGES.FIRESTORE_READ);
+    snapshot = await institutionsQuery.get();
+  } catch (error) {
+    throw createFirestoreHttpError(error, 'Unable to load institutions.');
+  }
+
   const institutions = snapshot.docs
+    .filter((doc) => doc.data()?.isDeleted !== true)
     .map((doc) => serializeInstitution(doc, { admin: isAdminRequest }))
     .sort(sortInstitutions);
 
@@ -241,10 +236,7 @@ async function handlePost(req, res, setStage) {
     setStage(CREATE_STAGES.FIRESTORE_WRITE);
     await docRef.set(institution);
   } catch (error) {
-    if (isFirestoreQuotaError(error)) {
-      throw new HttpError(500, 'Firestore quota exceeded while creating institution.', 'FIRESTORE_QUOTA_EXCEEDED');
-    }
-    throw error;
+    throw createFirestoreHttpError(error, 'Unable to create institution in Firestore.');
   }
 
   sendJson(res, 201, {
@@ -273,20 +265,23 @@ async function handlePost(req, res, setStage) {
 export default async function handler(req, res) {
   setMethodHeader(res, ['GET', 'POST']);
   const requestId = getRequestId(req);
-  let stage = req.method === 'POST' ? CREATE_STAGES.AUTH : 'GET';
+  let stage = req.method === 'POST' ? CREATE_STAGES.AUTH : GET_STAGES.FIRESTORE_READ;
   const setStage = (nextStage) => {
     stage = nextStage;
   };
 
   try {
-    if (req.method === 'GET') return await handleGet(req, res);
+    if (req.method === 'GET') return await handleGet(req, res, setStage);
     if (req.method === 'POST') return await handlePost(req, res, setStage);
 
     throw new HttpError(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED');
   } catch (error) {
     if (req.method === 'GET') {
       console.error('[INSTITUTIONS_GET_FAILED]', {
+        requestId,
+        stage,
         name: error?.name,
+        code: error?.code,
         message: error?.message,
       });
     }
@@ -301,6 +296,6 @@ export default async function handler(req, res) {
       });
     }
 
-    return sendError(res, error, { requestId });
+    return sendError(res, error, { requestId, stage });
   }
 }

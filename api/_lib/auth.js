@@ -1,6 +1,6 @@
 import { verifyToken } from '@clerk/backend';
 import { getAdminDb } from './firebaseAdmin.js';
-import { USER_ROLE_STATUS, USER_ROLE_VALUES } from '../../src/constants/roles.js';
+import { USER_ROLE_STATUS, USER_ROLE_VALUES } from './serverConstants.js';
 
 export class HttpError extends Error {
   constructor(statusCode, message, code = null) {
@@ -11,7 +11,35 @@ export class HttpError extends Error {
 }
 
 export function isFirestoreQuotaError(error) {
-  return error?.code === 'resource-exhausted';
+  return error?.code === 'resource-exhausted' || error?.code === 8;
+}
+
+export function createFirestoreHttpError(error, fallbackMessage = 'Firestore operation failed.') {
+  if (isFirestoreQuotaError(error)) {
+    return new HttpError(500, 'Firestore quota exceeded.', 'FIRESTORE_QUOTA_EXCEEDED');
+  }
+
+  if (error?.code === 'permission-denied' || error?.code === 7) {
+    return new HttpError(500, 'Firebase Admin does not have permission for this Firestore operation.', 'FIRESTORE_PERMISSION_DENIED');
+  }
+
+  if (error?.code === 'unauthenticated' || error?.code === 16) {
+    return new HttpError(500, 'Firebase Admin authentication failed.', 'FIREBASE_ADMIN_AUTH_FAILED');
+  }
+
+  if (error?.code === 'not-found' || error?.code === 5) {
+    return new HttpError(500, 'Firestore database or document path was not found.', 'FIRESTORE_NOT_FOUND');
+  }
+
+  if (error?.code === 'failed-precondition' || error?.code === 9) {
+    return new HttpError(500, 'Firestore operation requires an index or a valid database state.', 'FIRESTORE_PRECONDITION_FAILED');
+  }
+
+  if (error?.code === 'invalid-argument' || error?.code === 3) {
+    return new HttpError(400, 'Firestore rejected invalid data.', 'FIRESTORE_INVALID_ARGUMENT');
+  }
+
+  return new HttpError(500, fallbackMessage, 'FIRESTORE_OPERATION_FAILED');
 }
 
 function getBearerToken(req) {
@@ -57,7 +85,7 @@ export function sendJson(res, statusCode, body) {
   res.status(statusCode).json(body);
 }
 
-export function sendError(res, error, { requestId } = {}) {
+export function sendError(res, error, { requestId, stage } = {}) {
   const statusCode = error instanceof HttpError ? error.statusCode : 500;
   const message = error instanceof HttpError ? error.message : 'Internal server error.';
   const code =
@@ -72,6 +100,7 @@ export function sendError(res, error, { requestId } = {}) {
     error: message,
     code,
     ...(requestId ? { requestId } : {}),
+    ...(stage ? { stage } : {}),
   });
 }
 
@@ -134,10 +163,7 @@ export async function requireRole(req, allowedRoles, { onStage } = {}) {
       name: error?.name,
       message: error?.message,
     });
-    if (isFirestoreQuotaError(error)) {
-      throw new HttpError(500, 'Firestore quota exceeded while verifying role.', 'FIRESTORE_QUOTA_EXCEEDED');
-    }
-    throw new HttpError(500, 'Unable to verify user role.', 'ROLE_LOOKUP_FAILED');
+    throw createFirestoreHttpError(error, 'Unable to verify user role.');
   }
 
   if (!roleSnapshot.exists) {

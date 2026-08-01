@@ -32,6 +32,7 @@ function formatApiError(error, fallback) {
 
   if (error?.status) details.push(`HTTP ${error.status}`);
   if (error?.code) details.push(`code: ${error.code}`);
+  if (error?.stage) details.push(`stage: ${error.stage}`);
   if (error?.requestId) details.push(`requestId: ${error.requestId}`);
 
   const message = error?.message || fallback;
@@ -132,6 +133,10 @@ export default function InstitutionsManager() {
         if (!createdInstitution?.id) {
           throw new Error('Institution creation was not confirmed by the API.');
         }
+        setInstitutions((current) => [
+          createdInstitution,
+          ...current.filter((institution) => institution.id !== createdInstitution.id),
+        ]);
         setMessage(`Etablissement cree en brouillon. ID: ${createdInstitution.id}`);
       }
 

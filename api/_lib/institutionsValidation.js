@@ -2,8 +2,7 @@ import {
   ACADEMIC_STATUSES,
   ACADEMIC_STATUS_VALUES,
   INSTITUTION_TYPE_VALUES,
-} from '../../src/constants/academic.js';
-import { normalizeSlug, isValidSlug } from '../../src/utils/academicValidation.js';
+} from './serverConstants.js';
 import { HttpError } from './auth.js';
 
 const ALLOWED_FIELDS = [
@@ -32,6 +31,21 @@ export function isPlainObject(value) {
 
 export function normalizeSpaces(value) {
   return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+export function normalizeSlug(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+export function isValidSlug(value) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 }
 
 function assertNoUnexpectedFields(data) {

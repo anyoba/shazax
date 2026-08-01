@@ -3,7 +3,7 @@ import {
   ACADEMIC_CONTENT_WRITE_ROLES,
   ACADEMIC_PUBLISH_ROLES,
   ACADEMIC_STATUSES,
-} from '../../../src/constants/academic.js';
+} from '../../_lib/serverConstants.js';
 import { getAdminDb, FieldValue } from '../../_lib/firebaseAdmin.js';
 import { HttpError, requireRole, sendError, sendJson } from '../../_lib/auth.js';
 import { readJsonBody, setMethodHeader } from '../../_lib/request.js';

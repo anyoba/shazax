@@ -1,10 +1,11 @@
 export class InstitutionsApiError extends Error {
-  constructor(message, { status = 0, code = 'REQUEST_FAILED', requestId = '' } = {}) {
+  constructor(message, { status = 0, code = 'REQUEST_FAILED', requestId = '', stage = '' } = {}) {
     super(message);
     this.name = 'InstitutionsApiError';
     this.status = status;
     this.code = code;
     this.requestId = requestId;
+    this.stage = stage;
   }
 }
 
@@ -49,6 +50,7 @@ async function parseResponse(response) {
       status: response.status,
       code: body.code || `HTTP_${response.status}`,
       requestId: body.requestId || '',
+      stage: body.stage || '',
     });
   }
 
@@ -64,6 +66,7 @@ function assertInstitutionCreated(body, response) {
       status: response.status,
       code: body?.code || 'INSTITUTION_CREATE_NOT_CONFIRMED',
       requestId: body?.requestId || '',
+      stage: body?.stage || '',
     });
   }
 

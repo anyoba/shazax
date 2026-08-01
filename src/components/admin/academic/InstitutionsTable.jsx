@@ -1,4 +1,4 @@
-import { Archive, Edit3, ExternalLink, RotateCcw, Send } from 'lucide-react';
+import { Archive, Edit3, ExternalLink, Layers, RotateCcw, Send } from 'lucide-react';
 import { ACADEMIC_STATUSES } from '../../../constants/academic.js';
 
 const STATUS_LABELS = {
@@ -48,6 +48,7 @@ export default function InstitutionsTable({
   actionLoadingId,
   onArchive,
   onEdit,
+  onManageStructure,
   onPublish,
   onRestore,
 }) {
@@ -100,6 +101,15 @@ export default function InstitutionsTable({
                 {canEdit ? (
                   <ActionButton disabled={loading} onClick={() => onEdit(institution)} title="Modifier">
                     <Edit3 size={15} />
+                  </ActionButton>
+                ) : null}
+                {onManageStructure ? (
+                  <ActionButton
+                    disabled={loading}
+                    onClick={() => onManageStructure(institution)}
+                    title="Gerer la structure et les ressources"
+                  >
+                    <Layers size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && institution.status !== ACADEMIC_STATUSES.PUBLISHED ? (
@@ -156,6 +166,15 @@ export default function InstitutionsTable({
                 {canEdit ? (
                   <ActionButton disabled={loading} onClick={() => onEdit(institution)} title="Modifier">
                     <Edit3 size={15} />
+                  </ActionButton>
+                ) : null}
+                {onManageStructure ? (
+                  <ActionButton
+                    disabled={loading}
+                    onClick={() => onManageStructure(institution)}
+                    title="Gerer la structure et les ressources"
+                  >
+                    <Layers size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && institution.status !== ACADEMIC_STATUSES.PUBLISHED ? (

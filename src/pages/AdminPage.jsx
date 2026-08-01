@@ -118,6 +118,7 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [firebaseAnalytics, setFirebaseAnalytics] = useState([]);
   const [newEmailCount, setNewEmailCount] = useState(0);
+  const [selectedStructureInstitutionId, setSelectedStructureInstitutionId] = useState('');
   const [resForm, setResForm] = useState({
     module: MODULES[0].id,
     category: CATEGORIES[0].id,
@@ -325,6 +326,11 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
       console.error('Failed to delete resource', error);
       window.alert(error?.message || 'Unable to delete resource.');
     }
+  }
+
+  function openStructureForInstitution(institution) {
+    setSelectedStructureInstitutionId(institution.id);
+    setActiveTab('academic-structure');
   }
 
   async function handleContactSubmit(event) {
@@ -586,9 +592,13 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
           </div>
         ) : null}
 
-        {canAccessInstitutions && activeTab === 'institutions' ? <InstitutionsManager /> : null}
+        {canAccessInstitutions && activeTab === 'institutions' ? (
+          <InstitutionsManager onManageStructure={openStructureForInstitution} />
+        ) : null}
 
-        {canAccessInstitutions && activeTab === 'academic-structure' ? <AcademicStructureManager /> : null}
+        {canAccessInstitutions && activeTab === 'academic-structure' ? (
+          <AcademicStructureManager initialInstitutionId={selectedStructureInstitutionId} />
+        ) : null}
 
         {canManageResources && activeTab === 'resources' ? (
           <div className="space-y-6">

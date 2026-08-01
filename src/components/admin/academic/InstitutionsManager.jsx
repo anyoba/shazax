@@ -39,7 +39,7 @@ function formatApiError(error, fallback) {
   return details.length > 0 ? `${message} (${details.join(' | ')})` : message;
 }
 
-export default function InstitutionsManager() {
+export default function InstitutionsManager({ onManageStructure }) {
   const { getToken } = useAuth();
   const { role } = useUserRole();
   const [institutions, setInstitutions] = useState([]);
@@ -298,6 +298,7 @@ export default function InstitutionsManager() {
           actionLoadingId={actionLoadingId}
           onArchive={handleArchive}
           onEdit={startEdit}
+          onManageStructure={onManageStructure}
           onPublish={handlePublish}
           onRestore={handleRestore}
         />

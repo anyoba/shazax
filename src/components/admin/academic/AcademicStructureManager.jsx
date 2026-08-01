@@ -119,6 +119,37 @@ const FST_S2_MODULES = [
   },
 ];
 
+const FST_MSD_PROGRAM = {
+  name: 'Mathematiques et Science des Donnees',
+  shortName: 'MSD',
+  slug: 'mathematiques-science-donnees',
+  description: '',
+  order: 1,
+};
+
+const FST_MSD_YEARS = [
+  {
+    name: '1ere annee',
+    slug: '1ere-annee',
+    yearNumber: 1,
+    order: 1,
+    semesters: [
+      { name: 'S1', slug: 's1', semesterNumber: 1, order: 1 },
+      { name: 'S2', slug: 's2', semesterNumber: 2, order: 2 },
+    ],
+  },
+  {
+    name: '2eme annee',
+    slug: '2eme-annee',
+    yearNumber: 2,
+    order: 2,
+    semesters: [
+      { name: 'S3', slug: 's3', semesterNumber: 3, order: 3 },
+      { name: 'S4', slug: 's4', semesterNumber: 4, order: 4 },
+    ],
+  },
+];
+
 function StatusBadge({ status }) {
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASSES[status] || STATUS_CLASSES.draft}`}>
@@ -564,7 +595,7 @@ function EntityPanel({
   );
 }
 
-export default function AcademicStructureManager() {
+export default function AcademicStructureManager({ initialInstitutionId = '' }) {
   const { getToken } = useAuth();
   const { role } = useUserRole();
   const [institutions, setInstitutions] = useState([]);
@@ -613,7 +644,9 @@ export default function AcademicStructureManager() {
         getToken,
       });
       setInstitutions(nextInstitutions);
-      if (!selectedInstitutionId && nextInstitutions.length > 0) {
+      if (initialInstitutionId && nextInstitutions.some((institution) => institution.id === initialInstitutionId)) {
+        setSelectedInstitutionId(initialInstitutionId);
+      } else if (!selectedInstitutionId && nextInstitutions.length > 0) {
         setSelectedInstitutionId(nextInstitutions[0].id);
       }
     } catch (loadError) {
@@ -622,7 +655,13 @@ export default function AcademicStructureManager() {
     } finally {
       setLoading((current) => ({ ...current, institutions: false }));
     }
-  }, [canReadAdmin, getToken, selectedInstitutionId]);
+  }, [canReadAdmin, getToken, initialInstitutionId, selectedInstitutionId]);
+
+  useEffect(() => {
+    if (initialInstitutionId && initialInstitutionId !== selectedInstitutionId) {
+      setSelectedInstitutionId(initialInstitutionId);
+    }
+  }, [initialInstitutionId, selectedInstitutionId]);
 
   const loadEntity = useCallback(
     async (entityType, filters = {}) => {
@@ -875,6 +914,158 @@ export default function AcademicStructureManager() {
     }
   }
 
+  async function findOrCreateAcademicItem(entityType, items, slug, payload, filters, status) {
+    const existingItem = items.find((item) => item.slug === slug);
+    if (existingItem) return existingItem;
+
+    return createAcademicItem(
+      entityType,
+      {
+        ...filters,
+        ...payload,
+        status,
+      },
+      getToken,
+    );
+  }
+
+  async function prepareFstMsdStructure() {
+    if (!selectedInstitutionId) {
+      setError('Selectionne FST Settat avant de preparer MSD/S1-S4.');
+      return;
+    }
+
+    setActionLoadingId('structure:fst-msd');
+    clearFeedback();
+
+    try {
+      const status = canChangeStatus ? ACADEMIC_STATUSES.PUBLISHED : ACADEMIC_STATUSES.DRAFT;
+      const programFilters = { institutionId: selectedInstitutionId };
+      const currentPrograms = await listAcademicItems('programs', {
+        getToken,
+        status: 'all',
+        filters: programFilters,
+      });
+      const program = await findOrCreateAcademicItem(
+        'programs',
+        currentPrograms,
+        FST_MSD_PROGRAM.slug,
+        FST_MSD_PROGRAM,
+        programFilters,
+        status,
+      );
+
+      let s2Semester = null;
+      let firstYear = null;
+
+      for (const yearConfig of FST_MSD_YEARS) {
+        const yearFilters = {
+          institutionId: selectedInstitutionId,
+          programId: program.id,
+        };
+        const currentYears = await listAcademicItems('program_years', {
+          getToken,
+          status: 'all',
+          filters: yearFilters,
+        });
+        const programYear = await findOrCreateAcademicItem(
+          'program_years',
+          currentYears,
+          yearConfig.slug,
+          {
+            name: yearConfig.name,
+            slug: yearConfig.slug,
+            yearNumber: yearConfig.yearNumber,
+            order: yearConfig.order,
+          },
+          yearFilters,
+          status,
+        );
+
+        if (yearConfig.slug === '1ere-annee') {
+          firstYear = programYear;
+        }
+
+        const semesterFilters = {
+          institutionId: selectedInstitutionId,
+          programId: program.id,
+          programYearId: programYear.id,
+        };
+        const currentSemesters = await listAcademicItems('semesters', {
+          getToken,
+          status: 'all',
+          filters: semesterFilters,
+        });
+
+        for (const semesterConfig of yearConfig.semesters) {
+          const semester = await findOrCreateAcademicItem(
+            'semesters',
+            currentSemesters,
+            semesterConfig.slug,
+            semesterConfig,
+            semesterFilters,
+            status,
+          );
+
+          if (semesterConfig.slug === 's2') {
+            s2Semester = semester;
+          }
+        }
+      }
+
+      if (!firstYear?.id || !s2Semester?.id) {
+        throw new Error('S2 could not be prepared.');
+      }
+
+      const moduleFilters = {
+        institutionId: selectedInstitutionId,
+        programId: program.id,
+        programYearId: firstYear.id,
+        semesterId: s2Semester.id,
+      };
+      const currentModules = await listAcademicItems('modules', {
+        getToken,
+        status: 'all',
+        filters: moduleFilters,
+      });
+      const existingModuleSlugs = new Set(currentModules.map((moduleItem) => moduleItem.slug));
+
+      for (const moduleItem of FST_S2_MODULES) {
+        if (existingModuleSlugs.has(moduleItem.slug)) continue;
+
+        await createAcademicItem(
+          'modules',
+          {
+            ...moduleFilters,
+            ...moduleItem,
+            description: '',
+            status,
+          },
+          getToken,
+        );
+      }
+
+      setSelectedProgramId(program.id);
+      setSelectedProgramYearId(firstYear.id);
+      setSelectedSemesterId(s2Semester.id);
+      setMessage('FST MSD prepare: S1, S2, S3, S4 crees et les 5 modules places dans S2.');
+
+      await loadEntity('programs', { institutionId: selectedInstitutionId });
+      await loadEntity('program_years', { institutionId: selectedInstitutionId, programId: program.id });
+      await loadEntity('semesters', {
+        institutionId: selectedInstitutionId,
+        programId: program.id,
+        programYearId: firstYear.id,
+      });
+      await loadEntity('modules', moduleFilters);
+    } catch (prepareError) {
+      console.error('Unable to prepare FST MSD structure', prepareError);
+      setError(formatAcademicApiError(prepareError, 'Impossible de preparer FST MSD.'));
+    } finally {
+      setActionLoadingId('');
+    }
+  }
+
   if (!canReadAdmin) {
     return (
       <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-6 text-red-200">
@@ -904,6 +1095,17 @@ export default function AcademicStructureManager() {
           <RefreshCw size={15} />
           Actualiser
         </button>
+        {canEdit && selectedInstitutionId ? (
+          <button
+            type="button"
+            disabled={actionLoadingId === 'structure:fst-msd'}
+            onClick={prepareFstMsdStructure}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Plus size={15} />
+            {actionLoadingId === 'structure:fst-msd' ? 'Preparation...' : 'Preparer FST MSD S1-S4'}
+          </button>
+        ) : null}
       </div>
 
       {message ? (

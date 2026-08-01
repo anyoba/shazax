@@ -3,10 +3,15 @@ import { getAdminDb } from './firebaseAdmin.js';
 import { USER_ROLE_STATUS, USER_ROLE_VALUES } from '../../src/constants/roles.js';
 
 export class HttpError extends Error {
-  constructor(statusCode, message) {
+  constructor(statusCode, message, code = null) {
     super(message);
     this.statusCode = statusCode;
+    this.code = code;
   }
+}
+
+export function isFirestoreQuotaError(error) {
+  return error?.code === 'resource-exhausted';
 }
 
 function getBearerToken(req) {
@@ -52,10 +57,22 @@ export function sendJson(res, statusCode, body) {
   res.status(statusCode).json(body);
 }
 
-export function sendError(res, error) {
+export function sendError(res, error, { requestId } = {}) {
   const statusCode = error instanceof HttpError ? error.statusCode : 500;
-  const message = statusCode === 500 ? 'Internal server error.' : error.message;
-  sendJson(res, statusCode, { error: message });
+  const message = error instanceof HttpError ? error.message : 'Internal server error.';
+  const code =
+    error instanceof HttpError && error.code
+      ? error.code
+      : statusCode === 500
+        ? 'INTERNAL_SERVER_ERROR'
+        : `HTTP_${statusCode}`;
+
+  sendJson(res, statusCode, {
+    success: false,
+    error: message,
+    code,
+    ...(requestId ? { requestId } : {}),
+  });
 }
 
 export async function requireAuthenticatedUser(req) {
@@ -65,7 +82,7 @@ export async function requireAuthenticatedUser(req) {
       name: 'MissingSession',
       message: 'No Clerk session token found in Authorization header or cookie.',
     });
-    throw new HttpError(401, 'Authentication required.');
+    throw new HttpError(401, 'Authentication required.', 'AUTHENTICATION_REQUIRED');
   }
 
   if (!process.env.CLERK_SECRET_KEY) {
@@ -73,7 +90,7 @@ export async function requireAuthenticatedUser(req) {
       name: 'MissingClerkSecret',
       message: 'Clerk server configuration is missing.',
     });
-    throw new HttpError(500, 'Clerk server configuration is missing.');
+    throw new HttpError(500, 'Clerk server configuration is missing.', 'CLERK_CONFIG_MISSING');
   }
 
   try {
@@ -86,7 +103,7 @@ export async function requireAuthenticatedUser(req) {
         name: 'MissingSubject',
         message: 'Clerk token does not contain a user subject.',
       });
-      throw new HttpError(401, 'Invalid authentication token.');
+      throw new HttpError(401, 'Invalid authentication token.', 'INVALID_AUTH_TOKEN');
     }
 
     return {
@@ -99,15 +116,17 @@ export async function requireAuthenticatedUser(req) {
       name: error?.name,
       message: error?.message,
     });
-    throw new HttpError(401, 'Invalid authentication token.');
+    throw new HttpError(401, 'Invalid authentication token.', 'INVALID_AUTH_TOKEN');
   }
 }
 
-export async function requireRole(req, allowedRoles) {
+export async function requireRole(req, allowedRoles, { onStage } = {}) {
+  onStage?.('AUTH');
   const user = await requireAuthenticatedUser(req);
   let roleSnapshot;
 
   try {
+    onStage?.('ROLE_LOOKUP');
     roleSnapshot = await getAdminDb().collection('user_roles').doc(user.userId).get();
   } catch (error) {
     console.error('[ROLE_LOOKUP_FAILED]', {
@@ -115,11 +134,14 @@ export async function requireRole(req, allowedRoles) {
       name: error?.name,
       message: error?.message,
     });
-    throw new HttpError(500, 'Unable to verify user role.');
+    if (isFirestoreQuotaError(error)) {
+      throw new HttpError(500, 'Firestore quota exceeded while verifying role.', 'FIRESTORE_QUOTA_EXCEEDED');
+    }
+    throw new HttpError(500, 'Unable to verify user role.', 'ROLE_LOOKUP_FAILED');
   }
 
   if (!roleSnapshot.exists) {
-    throw new HttpError(403, 'Access forbidden.');
+    throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
   }
 
   const roleData = roleSnapshot.data() || {};
@@ -127,11 +149,11 @@ export async function requireRole(req, allowedRoles) {
   const status = typeof roleData.status === 'string' ? roleData.status : null;
 
   if (!USER_ROLE_VALUES.includes(role) || status !== USER_ROLE_STATUS.ACTIVE) {
-    throw new HttpError(403, 'Access forbidden.');
+    throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
   }
 
   if (!allowedRoles.includes(role)) {
-    throw new HttpError(403, 'Access forbidden.');
+    throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
   }
 
   return {

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, limit, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { useClerk } from '@clerk/clerk-react';
 
 import {
@@ -23,6 +23,8 @@ import { submitFormspreeContact } from '../formspree';
 import InstitutionsManager from '../components/admin/academic/InstitutionsManager.jsx';
 import { USER_ROLES } from '../constants/roles.js';
 import { useUserRole } from '../hooks/useUserRole.js';
+import { useResources } from '../hooks/useResources.js';
+import { getFirestoreErrorMessage } from '../utils/firebaseErrors.js';
 
 const MODULES = [
   { id: 'Thermodynamics', label: 'Thermodynamics' },
@@ -41,6 +43,8 @@ const CATEGORIES = [
 
 const VISITS_KEY = 'admin_dashboard_visits';
 const FORMSPREE_ID = 'mjgjpnbb'; // Replace with your Formspree ID
+const ADMIN_LIST_LIMIT = 100;
+const ANALYTICS_LIST_LIMIT = 50;
 
 function readJson(key, fallback) {
   try {
@@ -95,10 +99,11 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-export default function AdminPage({ resources, onAddResource, onDeleteResource }) {
+export default function AdminPage({ onAddResource, onDeleteResource }) {
   const { signOut } = useClerk();
   const { role } = useUserRole();
   const [activeTab, setActiveTab] = useState('analytics');
+  const lastEmailCountRef = useRef(0);
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
   const [users, setUsers] = useState([]);
@@ -111,7 +116,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [firebaseAnalytics, setFirebaseAnalytics] = useState([]);
   const [newEmailCount, setNewEmailCount] = useState(0);
-  const [lastEmailCount, setLastEmailCount] = useState(0);
   const [resForm, setResForm] = useState({
     module: MODULES[0].id,
     category: CATEGORIES[0].id,
@@ -151,6 +155,9 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
 
     return nextTabs;
   }, [canAccessInstitutions, canManageResources, canViewAdminData]);
+  const { resources } = useResources({
+    enabled: canManageResources && activeTab === 'resources',
+  });
 
   useEffect(() => {
     setVisits(recordVisit());
@@ -163,32 +170,40 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   }, [activeTab, tabs]);
 
   function handleFirestoreError(error) {
-    console.error('Firebase snapshot failed', error);
-    setFirestoreError(
-      'Impossible de charger les données Firebase. Vérifie le projet Firebase et les règles de lecture.'
+    const message = getFirestoreErrorMessage(
+      error,
+      'Impossible de charger les donnees Firebase. Verifie le projet Firebase et les regles de lecture.',
     );
+    console.error('Firebase snapshot failed', message);
+    setFirestoreError(message);
   }
 
   useEffect(() => {
     if (!canViewAdminData) {
       setEmails([]);
       setNewEmailCount(0);
-      setLastEmailCount(0);
+      lastEmailCountRef.current = 0;
       return undefined;
     }
 
-    const unsubscribe = onSnapshot(
+    if (activeTab !== 'emails') return undefined;
+
+    const waitlistQuery = query(
       collection(db, 'waitlist'),
+      orderBy('createdAt', 'desc'),
+      limit(ADMIN_LIST_LIMIT),
+    );
+    const unsubscribe = onSnapshot(
+      waitlistQuery,
       (snapshot) => {
         const newEmails = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setEmails(newEmails);
         
-        // Detect new emails
-        if (lastEmailCount !== 0 && newEmails.length > lastEmailCount) {
-          setNewEmailCount(newEmails.length - lastEmailCount);
+        if (lastEmailCountRef.current !== 0 && newEmails.length > lastEmailCountRef.current) {
+          setNewEmailCount(newEmails.length - lastEmailCountRef.current);
           window.setTimeout(() => setNewEmailCount(0), 5000);
         }
-        setLastEmailCount(newEmails.length);
+        lastEmailCountRef.current = newEmails.length;
       },
       (error) => {
         setEmails([]);
@@ -197,7 +212,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, [canViewAdminData, lastEmailCount]);
+  }, [activeTab, canViewAdminData]);
 
   useEffect(() => {
     if (!canViewAdminData) {
@@ -205,11 +220,17 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       return undefined;
     }
 
-    const q = query(collection(db, 'analytics_visits'), orderBy('createdAt', 'desc'));
+    if (activeTab !== 'analytics-live') return undefined;
+
+    const q = query(
+      collection(db, 'analytics_visits'),
+      orderBy('createdAt', 'desc'),
+      limit(ANALYTICS_LIST_LIMIT),
+    );
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setFirebaseAnalytics(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).slice(0, 50));
+        setFirebaseAnalytics(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       },
       (error) => {
         setFirebaseAnalytics([]);
@@ -218,7 +239,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, [canViewAdminData]);
+  }, [activeTab, canViewAdminData]);
 
   useEffect(() => {
     if (!canViewAdminData) {
@@ -226,7 +247,13 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
       return undefined;
     }
 
-    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+    if (activeTab !== 'users') return undefined;
+
+    const q = query(
+      collection(db, 'users'),
+      orderBy('createdAt', 'desc'),
+      limit(ADMIN_LIST_LIMIT),
+    );
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -239,7 +266,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, [canViewAdminData]);
+  }, [activeTab, canViewAdminData]);
 
   const stats = useMemo(
     () => getStats(visits, resources, emails),
@@ -338,6 +365,15 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
                 {label}
               </button>
             ))}
+            {canAccessInstitutions ? (
+              <a
+                href="/admin/concours"
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white"
+              >
+                <BookOpen size={14} />
+                Concours
+              </a>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-4">

@@ -27,6 +27,17 @@ const STATUS_LABELS = {
   [ACADEMIC_STATUSES.ARCHIVED]: 'Archive',
 };
 
+function formatApiError(error, fallback) {
+  const details = [];
+
+  if (error?.status) details.push(`HTTP ${error.status}`);
+  if (error?.code) details.push(`code: ${error.code}`);
+  if (error?.requestId) details.push(`requestId: ${error.requestId}`);
+
+  const message = error?.message || fallback;
+  return details.length > 0 ? `${message} (${details.join(' | ')})` : message;
+}
+
 export default function InstitutionsManager() {
   const { getToken } = useAuth();
   const { role } = useUserRole();
@@ -60,7 +71,7 @@ export default function InstitutionsManager() {
       setInstitutions(nextInstitutions);
     } catch (loadError) {
       console.error('Unable to load institutions', loadError);
-      setError(loadError?.message || 'Impossible de charger les etablissements.');
+      setError(formatApiError(loadError, 'Impossible de charger les etablissements.'));
     } finally {
       setLoading(false);
     }
@@ -117,15 +128,18 @@ export default function InstitutionsManager() {
         await updateInstitution(editingInstitution.id, payload, getToken);
         setMessage('Etablissement mis a jour.');
       } else {
-        await createInstitution(payload, getToken);
-        setMessage('Etablissement cree en brouillon.');
+        const createdInstitution = await createInstitution(payload, getToken);
+        if (!createdInstitution?.id) {
+          throw new Error('Institution creation was not confirmed by the API.');
+        }
+        setMessage(`Etablissement cree en brouillon. ID: ${createdInstitution.id}`);
       }
 
       closeForm();
       await loadInstitutions();
     } catch (submitError) {
       console.error('Unable to save institution', submitError);
-      setError(submitError?.message || 'Impossible d enregistrer cet etablissement.');
+      setError(formatApiError(submitError, 'Impossible d enregistrer cet etablissement.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +155,7 @@ export default function InstitutionsManager() {
       await loadInstitutions();
     } catch (actionError) {
       console.error('Institution action failed', actionError);
-      setError(actionError?.message || 'Action impossible pour cet etablissement.');
+      setError(formatApiError(actionError, 'Action impossible pour cet etablissement.'));
     } finally {
       setActionLoadingId('');
     }

@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -11,8 +12,10 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sampleResources } from '../data/modules';
+import { getFirestoreErrorMessage } from '../utils/firebaseErrors';
 
 const RESOURCES_STORAGE_KEY = 'shazax_resources_cache';
+const DEFAULT_RESOURCE_LIMIT = 200;
 
 function readLocalResources() {
   try {
@@ -32,11 +35,17 @@ function saveLocalResources(resources) {
   }
 }
 
-export function useResources() {
+export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIMIT } = {}) {
   const [resources, setResources] = useState(() => readLocalResources() || sampleResources);
 
   useEffect(() => {
-    const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
+    if (!enabled) return undefined;
+
+    const resourcesQuery = query(
+      collection(db, 'resources'),
+      orderBy('createdAt', 'desc'),
+      limit(maxResults),
+    );
     const unsubscribe = onSnapshot(
       resourcesQuery,
       (snapshot) => {
@@ -51,14 +60,14 @@ export function useResources() {
         saveLocalResources(nextResources);
       },
       (error) => {
-        console.error('Failed to load resources', error);
+        console.error('Failed to load resources', getFirestoreErrorMessage(error));
         const cached = readLocalResources();
         setResources(cached || sampleResources);
       },
     );
 
     return unsubscribe;
-  }, []);
+  }, [enabled, maxResults]);
 
   const addResource = async (resource) => {
     const id = resource.id || `resource-${Date.now()}`;

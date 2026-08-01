@@ -1,11 +1,27 @@
+export class InstitutionsApiError extends Error {
+  constructor(message, { status = 0, code = 'REQUEST_FAILED', requestId = '' } = {}) {
+    super(message);
+    this.name = 'InstitutionsApiError';
+    this.status = status;
+    this.code = code;
+    this.requestId = requestId;
+  }
+}
+
 async function getAuthHeaders(getToken) {
   if (typeof getToken !== 'function') {
-    throw new Error('Authentication is required.');
+    throw new InstitutionsApiError('Authentication is required.', {
+      status: 401,
+      code: 'AUTHENTICATION_REQUIRED',
+    });
   }
 
   const token = await getToken();
   if (!token) {
-    throw new Error('Authentication is required.');
+    throw new InstitutionsApiError('Authentication is required.', {
+      status: 401,
+      code: 'AUTHENTICATION_REQUIRED',
+    });
   }
 
   return {
@@ -17,18 +33,41 @@ async function parseResponse(response) {
   const contentType = response.headers.get('content-type') || '';
   let body = {};
 
-  if (contentType.includes('application/json')) {
-    body = await response.json();
-  } else {
-    const text = await response.text();
-    body = text ? { error: text } : {};
+  try {
+    if (contentType.includes('application/json')) {
+      body = await response.json();
+    } else {
+      const text = await response.text();
+      body = text ? { error: text } : {};
+    }
+  } catch {
+    body = {};
   }
 
   if (!response.ok) {
-    throw new Error(body.error || `Request failed with status ${response.status}.`);
+    throw new InstitutionsApiError(body.error || `Request failed with status ${response.status}.`, {
+      status: response.status,
+      code: body.code || `HTTP_${response.status}`,
+      requestId: body.requestId || '',
+    });
   }
 
   return body;
+}
+
+function assertInstitutionCreated(body, response) {
+  const institution = body?.institution;
+  const institutionId = institution?.id;
+
+  if (body?.success !== true || typeof institutionId !== 'string' || institutionId.trim().length === 0) {
+    throw new InstitutionsApiError('Institution creation was not confirmed by the API.', {
+      status: response.status,
+      code: body?.code || 'INSTITUTION_CREATE_NOT_CONFIRMED',
+      requestId: body?.requestId || '',
+    });
+  }
+
+  return institution;
 }
 
 function buildInstitutionUrl(id = '', params = {}) {
@@ -77,7 +116,7 @@ export async function createInstitution(payload, getToken) {
     body: JSON.stringify(payload),
   });
   const body = await parseResponse(response);
-  return body.institution;
+  return assertInstitutionCreated(body, response);
 }
 
 export async function updateInstitution(id, payload, getToken) {

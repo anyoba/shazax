@@ -1,6 +1,7 @@
 import { db } from "./firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { submitFormspreeContact } from "./formspree";
+import { getFirestoreErrorMessage } from "./utils/firebaseErrors";
 
 export async function addEmail(email) {
   try {
@@ -15,7 +16,7 @@ export async function addEmail(email) {
 
     return { success: true };
   } catch (error) {
-    console.error('Error adding email:', error);
+    console.error('Error adding email:', getFirestoreErrorMessage(error));
     throw error;
   }
 }

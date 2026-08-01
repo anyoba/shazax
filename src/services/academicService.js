@@ -6,6 +6,7 @@ import {
 } from '../constants/academic';
 import { db } from '../firebase';
 import { sortByOrder } from '../utils/academicValidation';
+import { getFirestoreErrorMessage } from '../utils/firebaseErrors';
 
 export class AcademicServiceError extends Error {
   constructor(message, cause) {
@@ -42,7 +43,7 @@ async function readAcademicCollection(collectionName, constraints, label) {
 
     return sortByOrder(withoutDeleted(snapshot.docs.map(serializeDoc)));
   } catch (error) {
-    throw new AcademicServiceError(`Unable to load ${label}.`, error);
+    throw new AcademicServiceError(getFirestoreErrorMessage(error, `Unable to load ${label}.`), error);
   }
 }
 

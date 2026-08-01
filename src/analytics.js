@@ -1,5 +1,6 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { getFirestoreErrorMessage } from './utils/firebaseErrors';
 
 const SESSION_KEY = 'analytics_session_id';
 const LAST_TRACK_KEY = 'analytics_last_track';
@@ -36,14 +37,19 @@ export async function trackPageVisit(pathname) {
     }),
   );
 
-  await addDoc(collection(db, 'analytics_visits'), {
-    pathname,
-    sessionId: getSessionId(),
-    referrer: document.referrer || 'direct',
-    userAgent: navigator.userAgent,
-    language: navigator.language || 'unknown',
-    screenWidth: window.innerWidth,
-    screenHeight: window.innerHeight,
-    createdAt: serverTimestamp(),
-  });
+  try {
+    await addDoc(collection(db, 'analytics_visits'), {
+      pathname,
+      sessionId: getSessionId(),
+      referrer: document.referrer || 'direct',
+      userAgent: navigator.userAgent,
+      language: navigator.language || 'unknown',
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Unable to track analytics visit', getFirestoreErrorMessage(error));
+    throw error;
+  }
 }

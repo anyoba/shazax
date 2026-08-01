@@ -1,0 +1,51 @@
+export const concoursSubjects = [
+  {
+    id: 'math',
+    name: 'Mathematiques',
+    slug: 'mathematiques',
+    description: 'Calcul, analyse, algebre, fonctions et raisonnement.',
+    order: 1,
+  },
+  {
+    id: 'physics',
+    name: 'Physique',
+    slug: 'physique',
+    description: 'Mecanique, electricite, ondes et thermodynamique.',
+    order: 2,
+  },
+  {
+    id: 'chemistry',
+    name: 'Chimie',
+    slug: 'chimie',
+    description: 'Transformations chimiques, dosage, structure et energie.',
+    order: 3,
+  },
+  {
+    id: 'svt',
+    name: 'SVT',
+    slug: 'svt',
+    description: 'Biologie, geologie et analyse de documents scientifiques.',
+    order: 4,
+  },
+  {
+    id: 'french',
+    name: 'Francais',
+    slug: 'francais',
+    description: 'Comprehension, langue, argumentation et vocabulaire.',
+    order: 5,
+  },
+  {
+    id: 'logic',
+    name: 'Logique',
+    slug: 'logique',
+    description: 'Suites, analogies, raisonnement et rapidite.',
+    order: 6,
+  },
+  {
+    id: 'general_culture',
+    name: 'Culture generale',
+    slug: 'culture-generale',
+    description: 'Actualite, institutions, economie et societe.',
+    order: 7,
+  },
+];

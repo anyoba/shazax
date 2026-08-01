@@ -5,6 +5,18 @@ import { readJsonBody, setMethodHeader } from '../_lib/request.js';
 import { isPublicResource, validateResourcePayload } from '../_lib/resourcesValidation.js';
 
 const WRITE_ROLES = [USER_ROLES.EDITOR, USER_ROLES.ADMIN, USER_ROLES.OWNER];
+const DEFAULT_RESOURCE_LIMIT = 200;
+const MAX_RESOURCE_LIMIT = 300;
+
+function getQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseLimit(value) {
+  const parsed = Number(getQueryValue(value) || DEFAULT_RESOURCE_LIMIT);
+  if (!Number.isInteger(parsed) || parsed < 1) return DEFAULT_RESOURCE_LIMIT;
+  return Math.min(parsed, MAX_RESOURCE_LIMIT);
+}
 
 function serializeResource(doc) {
   const data = doc.data() || {};
@@ -15,7 +27,11 @@ function serializeResource(doc) {
 }
 
 async function listResources(req, res) {
-  const snapshot = await getAdminDb().collection('resources').orderBy('createdAt', 'desc').get();
+  const snapshot = await getAdminDb()
+    .collection('resources')
+    .orderBy('createdAt', 'desc')
+    .limit(parseLimit(req.query?.limit))
+    .get();
   const resources = snapshot.docs.map(serializeResource).filter(isPublicResource);
 
   sendJson(res, 200, { resources });

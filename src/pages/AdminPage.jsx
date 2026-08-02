@@ -23,6 +23,7 @@ import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';
 import AcademicStructureManager from '../components/admin/academic/AcademicStructureManager.jsx';
 import InstitutionsManager from '../components/admin/academic/InstitutionsManager.jsx';
+import AdminShell from '../components/admin/layout/AdminShell.jsx';
 import AcademicResourcesManager from '../components/admin/resources/AcademicResourcesManager.jsx';
 import { USER_ROLES } from '../constants/roles.js';
 import { useUserRole } from '../hooks/useUserRole.js';
@@ -92,12 +93,16 @@ function getStats(visits, resources, emails) {
 
 function StatCard({ icon, label, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
-        {icon}
+    <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.22)] transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]">
+      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.7),transparent)] opacity-35" />
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-[0_16px_35px_rgba(139,92,246,0.22)]">
+          {icon}
+        </div>
+        <div className="h-2 w-2 rounded-full bg-blue-300/80 shadow-[0_0_18px_rgba(147,197,253,0.9)]" />
       </div>
-      <div className="text-3xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-sm text-white/50">{label}</div>
+      <div className="text-3xl font-black tracking-tight text-white">{value}</div>
+      <div className="mt-1 text-sm font-medium text-white/48">{label}</div>
     </div>
   );
 }
@@ -359,61 +364,18 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-white/10 px-6 py-4">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/5 p-1">
-            {tabs.map(([id, label, Icon]) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
-                  activeTab === id ? 'bg-white/15 text-white' : 'text-white/50'
-                }`}
-              >
-                <Icon size={14} />
-                {label}
-              </button>
-            ))}
-            {canAccessInstitutions ? (
-              <a
-                href="/admin/concours"
-                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white"
-              >
-                <BookOpen size={14} />
-                Concours
-              </a>
-            ) : null}
-          </div>
-
-          <div className="flex items-center gap-4">
-            {newEmailCount > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-2 rounded-full bg-green-500/20 px-4 py-2 text-sm text-green-400"
-              >
-                <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                {newEmailCount} new email{newEmailCount !== 1 ? 's' : ''}
-              </motion.div>
-            )}
-            {lastRefresh ? <span className="text-xs text-white/30">Last refresh: {lastRefresh.toLocaleTimeString()}</span> : null}
-            <button onClick={refreshDashboard} className="flex items-center gap-2 text-sm text-white/60 hover:text-white">
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
-            <button
-              onClick={() => signOut({ redirectUrl: '/' })}
-              className="flex items-center gap-2 text-sm text-white/60 hover:text-red-400"
-            >
-              <LogOut size={14} />
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <AdminShell
+      activeTab={activeTab}
+      canAccessInstitutions={canAccessInstitutions}
+      loading={loading}
+      newEmailCount={newEmailCount}
+      onChangeTab={setActiveTab}
+      onRefresh={refreshDashboard}
+      onSignOut={() => signOut({ redirectUrl: '/' })}
+      role={role}
+      tabs={tabs}
+      lastRefresh={lastRefresh}
+    >
         {firestoreError ? (
           <div className="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {firestoreError}
@@ -718,7 +680,6 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
             </div>
           </div>
         ) : null}
-      </main>
-    </div>
+    </AdminShell>
   );
 }

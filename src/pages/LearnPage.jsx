@@ -3,13 +3,16 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
+  Atom,
   BookOpen,
   Building2,
+  Calculator,
   CheckCircle2,
   ChevronRight,
   Circle,
   Download,
   FileText,
+  FlaskConical,
   GraduationCap,
   Layers,
   Loader2,
@@ -237,36 +240,84 @@ function SemesterCard({ institution, program, semester, modulesCount }) {
   );
 }
 
+const MODULE_CARD_THEMES = [
+  {
+    match: ['thermodynamics', 'thermodynamique'],
+    icon: FlaskConical,
+    card: 'border-orange-100 bg-[linear-gradient(135deg,#fff4df_0%,#fff7ec_55%,#fff2f2_100%)]',
+    iconColor: 'text-orange-500',
+    linkColor: 'text-orange-400',
+  },
+  {
+    match: ['mechanics', 'mecanique', 'mécanique'],
+    icon: Layers,
+    card: 'border-sky-100 bg-[linear-gradient(135deg,#eaf5ff_0%,#f2fbff_55%,#eef9ff_100%)]',
+    iconColor: 'text-sky-500',
+    linkColor: 'text-sky-400',
+  },
+  {
+    match: ['analysis', 'analyse'],
+    icon: Calculator,
+    card: 'border-cyan-100 bg-[linear-gradient(135deg,#dffbfb_0%,#ecfffd_55%,#f1fff8_100%)]',
+    iconColor: 'text-cyan-600',
+    linkColor: 'text-cyan-600',
+  },
+  {
+    match: ['algebra', 'algebre', 'algèbre'],
+    icon: BookOpen,
+    card: 'border-violet-100 bg-[linear-gradient(135deg,#f3eaff_0%,#faf3ff_55%,#f8f3ff_100%)]',
+    iconColor: 'text-violet-500',
+    linkColor: 'text-violet-400',
+  },
+  {
+    match: ['structure of matter', 'structure de la matiere', 'structure de la matière'],
+    icon: Atom,
+    card: 'border-emerald-100 bg-[linear-gradient(135deg,#dcfce7_0%,#ecfff5_55%,#effef6_100%)]',
+    iconColor: 'text-emerald-500',
+    linkColor: 'text-emerald-500',
+  },
+];
+
+function normalizeModuleName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function getModuleCardTheme(moduleName) {
+  const normalizedName = normalizeModuleName(moduleName);
+  return (
+    MODULE_CARD_THEMES.find((theme) =>
+      theme.match.some((keyword) => normalizedName.includes(normalizeModuleName(keyword))),
+    ) || {
+      icon: Layers,
+      card: 'border-slate-100 bg-white',
+      iconColor: 'text-primary',
+      linkColor: 'text-primary',
+    }
+  );
+}
+
 function ModuleCard({ institution, program, semester, moduleItem, resources }) {
   const linkedResources = resources.filter((resource) => isResourceLinkedToModule(resource, moduleItem));
-  const counts = linkedResources.reduce(
-    (acc, resource) => {
-      const category = getNormalizedResourceCategory(resource.category);
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    },
-    { course: 0, td: 0, tp: 0, exam: 0 },
-  );
+  const theme = getModuleCardTheme(moduleItem.name);
+  const Icon = theme.icon;
 
   return (
     <Link
       to={`/learn/${institution.slug}/${program.slug}/${semester.slug}/${moduleItem.slug}`}
-      className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+      className={`group min-h-[180px] rounded-[2rem] border p-7 shadow-[0_18px_45px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.09)] ${theme.card}`}
     >
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <Layers size={25} />
+      <div className={`mb-8 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/45 shadow-sm ${theme.iconColor}`}>
+        <Icon size={25} strokeWidth={2.4} />
       </div>
-      <h2 className="font-heading text-xl font-black text-slate-900">{moduleItem.name}</h2>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-slate-500">
-        <span className="rounded-xl bg-slate-50 px-3 py-2">Cours: {counts.course || 0}</span>
-        <span className="rounded-xl bg-slate-50 px-3 py-2">TD: {counts.td || 0}</span>
-        <span className="rounded-xl bg-slate-50 px-3 py-2">TP: {counts.tp || 0}</span>
-        <span className="rounded-xl bg-slate-50 px-3 py-2">Examens: {counts.exam || 0}</span>
+      <h2 className="font-heading text-xl font-black tracking-tight text-slate-900">{moduleItem.name}</h2>
+      <div className={`mt-3 inline-flex items-center gap-1 text-sm font-bold ${theme.linkColor}`}>
+        Open module
+        <ChevronRight size={15} className="transition group-hover:translate-x-1" />
       </div>
-      <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">
-        Ouvrir
-        <ChevronRight size={16} />
-      </div>
+      <span className="sr-only">{linkedResources.length} resources available</span>
     </Link>
   );
 }
@@ -488,9 +539,12 @@ function SemesterView({ institution, program, semester, modules, resources }) {
           { label: semester.name },
         ]}
       />
-      <div className="mb-7">
-        <h1 className="font-heading text-3xl font-black text-slate-950">{semester.name}</h1>
-        <p className="mt-2 text-sm text-slate-500">Choisis un module pour accéder aux ressources.</p>
+      <div className="mb-10 text-center">
+        <p className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-primary">{semester.name}</p>
+        <h1 className="font-heading text-4xl font-black tracking-tight text-slate-950">Your Modules</h1>
+        <p className="mx-auto mt-3 max-w-xl text-base font-medium text-slate-500">
+          Select a module to access courses, TDs, TPs, and exams
+        </p>
       </div>
 
       {modules.length === 0 ? (

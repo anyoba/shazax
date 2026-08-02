@@ -2,6 +2,11 @@ import { verifyToken } from '@clerk/backend';
 import { getAdminDb } from './firebaseAdmin.js';
 import { USER_ROLE_STATUS, USER_ROLE_VALUES } from './serverConstants.js';
 
+const SERVER_ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
+const authenticatedUserRequestCache = Symbol('authenticatedUserRequestCache');
+const roleRequestCache = Symbol('roleRequestCache');
+const serverRoleCache = new Map();
+
 export class HttpError extends Error {
   constructor(statusCode, message, code = null) {
     super(message);
@@ -16,7 +21,7 @@ export function isFirestoreQuotaError(error) {
 
 export function createFirestoreHttpError(error, fallbackMessage = 'Firestore operation failed.') {
   if (isFirestoreQuotaError(error)) {
-    return new HttpError(500, 'Firestore quota exceeded.', 'FIRESTORE_QUOTA_EXCEEDED');
+    return new HttpError(503, 'Firestore quota exceeded.', 'FIRESTORE_QUOTA_EXCEEDED');
   }
 
   if (error?.code === 'permission-denied' || error?.code === 7) {
@@ -99,12 +104,17 @@ export function sendError(res, error, { requestId, stage } = {}) {
     success: false,
     error: message,
     code,
+    ...(code === 'FIRESTORE_QUOTA_EXCEEDED' ? { retryable: true } : {}),
     ...(requestId ? { requestId } : {}),
     ...(stage ? { stage } : {}),
   });
 }
 
 export async function requireAuthenticatedUser(req) {
+  if (req[authenticatedUserRequestCache]) {
+    return req[authenticatedUserRequestCache];
+  }
+
   const token = getRequestToken(req);
   if (!token) {
     console.error('[CLERK_AUTH_FAILED]', {
@@ -135,10 +145,13 @@ export async function requireAuthenticatedUser(req) {
       throw new HttpError(401, 'Invalid authentication token.', 'INVALID_AUTH_TOKEN');
     }
 
-    return {
+    const authenticatedUser = {
       userId: payload.sub,
       sessionId: payload.sid || null,
     };
+    req[authenticatedUserRequestCache] = authenticatedUser;
+
+    return authenticatedUser;
   } catch (error) {
     if (error instanceof HttpError) throw error;
     console.error('[CLERK_AUTH_FAILED]', {
@@ -149,9 +162,74 @@ export async function requireAuthenticatedUser(req) {
   }
 }
 
+function getRoleCacheEntry(userId) {
+  const entry = serverRoleCache.get(userId);
+  if (!entry) return null;
+
+  if (entry.expiresAt <= Date.now()) {
+    serverRoleCache.delete(userId);
+    return null;
+  }
+
+  return entry;
+}
+
+function setRoleCacheEntry(userId, roleData) {
+  serverRoleCache.set(userId, {
+    ...roleData,
+    expiresAt: Date.now() + SERVER_ROLE_CACHE_TTL_MS,
+  });
+}
+
+export function invalidateServerRoleCache(userId) {
+  if (userId) {
+    serverRoleCache.delete(userId);
+    return;
+  }
+
+  serverRoleCache.clear();
+}
+
+function shouldRefreshRole(req) {
+  const headerValue = req.headers['x-shazax-refresh-role'];
+  return Array.isArray(headerValue)
+    ? headerValue.includes('true')
+    : headerValue === 'true';
+}
+
 export async function requireRole(req, allowedRoles, { onStage } = {}) {
   onStage?.('AUTH');
   const user = await requireAuthenticatedUser(req);
+  const allowedRoleList = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+  const forceRefresh = shouldRefreshRole(req);
+
+  if (!forceRefresh && req[roleRequestCache]?.userId === user.userId) {
+    const cachedRequestRole = req[roleRequestCache];
+    if (!allowedRoleList.includes(cachedRequestRole.role)) {
+      throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
+    }
+
+    return cachedRequestRole;
+  }
+
+  if (!forceRefresh) {
+    const cachedRole = getRoleCacheEntry(user.userId);
+    if (cachedRole) {
+      const userWithRole = {
+        ...user,
+        role: cachedRole.role,
+        status: cachedRole.status,
+      };
+      req[roleRequestCache] = userWithRole;
+
+      if (!allowedRoleList.includes(userWithRole.role)) {
+        throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
+      }
+
+      return userWithRole;
+    }
+  }
+
   let roleSnapshot;
 
   try {
@@ -161,12 +239,18 @@ export async function requireRole(req, allowedRoles, { onStage } = {}) {
     console.error('[ROLE_LOOKUP_FAILED]', {
       userId: user.userId,
       name: error?.name,
+      code: error?.code,
       message: error?.message,
     });
     throw createFirestoreHttpError(error, 'Unable to verify user role.');
   }
 
   if (!roleSnapshot.exists) {
+    req[roleRequestCache] = {
+      ...user,
+      role: null,
+      status: null,
+    };
     throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
   }
 
@@ -175,16 +259,25 @@ export async function requireRole(req, allowedRoles, { onStage } = {}) {
   const status = typeof roleData.status === 'string' ? roleData.status : null;
 
   if (!USER_ROLE_VALUES.includes(role) || status !== USER_ROLE_STATUS.ACTIVE) {
+    req[roleRequestCache] = {
+      ...user,
+      role,
+      status,
+    };
     throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
   }
 
-  if (!allowedRoles.includes(role)) {
-    throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
-  }
-
-  return {
+  const userWithRole = {
     ...user,
     role,
     status,
   };
+  req[roleRequestCache] = userWithRole;
+  setRoleCacheEntry(user.userId, { role, status });
+
+  if (!allowedRoleList.includes(role)) {
+    throw new HttpError(403, 'Access forbidden.', 'ACCESS_FORBIDDEN');
+  }
+
+  return userWithRole;
 }

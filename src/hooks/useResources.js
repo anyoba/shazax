@@ -3,8 +3,8 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   limit,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -16,6 +16,10 @@ import { getFirestoreErrorMessage } from '../utils/firebaseErrors';
 
 const RESOURCES_STORAGE_KEY = 'shazax_resources_cache';
 const DEFAULT_RESOURCE_LIMIT = 200;
+const RESOURCE_CACHE_TTL_MS = 2 * 60 * 1000;
+let resourcesCache = null;
+let resourcesCacheExpiresAt = 0;
+let resourcesRequest = null;
 
 function readLocalResources() {
   try {
@@ -35,38 +39,71 @@ function saveLocalResources(resources) {
   }
 }
 
-export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIMIT } = {}) {
-  const [resources, setResources] = useState(() => readLocalResources() || sampleResources);
+async function fetchResources(maxResults) {
+  if (resourcesCache && resourcesCacheExpiresAt > Date.now()) {
+    return resourcesCache;
+  }
 
-  useEffect(() => {
-    if (!enabled) return undefined;
+  if (resourcesRequest) return resourcesRequest;
 
+  resourcesRequest = (async () => {
     const resourcesQuery = query(
       collection(db, 'resources'),
       orderBy('createdAt', 'desc'),
       limit(maxResults),
     );
-    const unsubscribe = onSnapshot(
-      resourcesQuery,
-      (snapshot) => {
-        if (snapshot.empty) {
-          const cached = readLocalResources();
-          setResources(cached || sampleResources);
-          return;
-        }
+    const snapshot = await getDocs(resourcesQuery);
 
-        const nextResources = snapshot.docs.map((docItem) => ({ id: docItem.id, ...docItem.data() }));
+    const nextResources = snapshot.empty
+      ? readLocalResources() || sampleResources
+      : snapshot.docs.map((docItem) => ({ id: docItem.id, ...docItem.data() }));
+
+    resourcesCache = nextResources;
+    resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
+    saveLocalResources(nextResources);
+
+    return nextResources;
+  })().finally(() => {
+    resourcesRequest = null;
+  });
+
+  return resourcesRequest;
+}
+
+export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIMIT } = {}) {
+  const [resources, setResources] = useState(() => readLocalResources() || sampleResources);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    let cancelled = false;
+
+    async function loadResources() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const nextResources = await fetchResources(maxResults);
+        if (cancelled) return;
         setResources(nextResources);
-        saveLocalResources(nextResources);
-      },
-      (error) => {
-        console.error('Failed to load resources', getFirestoreErrorMessage(error));
+      } catch (loadError) {
+        if (cancelled) return;
+        const message = getFirestoreErrorMessage(loadError);
+        console.error('Failed to load resources', message);
+        setError(message);
         const cached = readLocalResources();
         setResources(cached || sampleResources);
-      },
-    );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
 
-    return unsubscribe;
+    loadResources();
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled, maxResults]);
 
   const addResource = async (resource) => {
@@ -80,18 +117,26 @@ export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIM
     await setDoc(doc(db, 'resources', id), nextResource);
 
     const cached = readLocalResources() || resources;
-    saveLocalResources([...cached, { ...resource, id, createdAt: new Date().toISOString() }]);
+    const nextResources = [...cached, { ...resource, id, createdAt: new Date().toISOString() }];
+    resourcesCache = nextResources;
+    resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
+    saveLocalResources(nextResources);
   };
 
   const removeResource = async (resourceId) => {
     await deleteDoc(doc(db, 'resources', resourceId));
 
     const cached = readLocalResources() || resources;
-    saveLocalResources(cached.filter((resource) => resource.id !== resourceId));
+    const nextResources = cached.filter((resource) => resource.id !== resourceId);
+    resourcesCache = nextResources;
+    resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
+    saveLocalResources(nextResources);
   };
 
   return {
     resources,
+    loading,
+    error,
     addResource,
     removeResource,
   };

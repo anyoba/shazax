@@ -2,23 +2,23 @@ import { randomUUID } from 'node:crypto';
 import {
   HttpError,
   sendError,
-} from './_lib/auth.js';
-import { setMethodHeader } from './_lib/request.js';
+} from '../server/_lib/auth.js';
+import { setMethodHeader } from '../server/_lib/request.js';
 import {
   archiveInstitution,
   createInstitution,
   getInstitution,
   listInstitutions,
   updateInstitution,
-} from './_lib/academicInstitutionsHandlers.js';
+} from '../server/_lib/academicInstitutionsHandlers.js';
 import {
   handleAcademicEntityArchive,
   handleAcademicEntityCreate,
   handleAcademicEntityGetOne,
   handleAcademicEntityList,
   handleAcademicEntityPatch,
-} from './_lib/academicEntityHandlers.js';
-import { getAcademicLearnTree } from './_lib/academicLearnHandler.js';
+} from '../server/_lib/academicEntityHandlers.js';
+import { getAcademicLearnTree } from '../server/_lib/academicLearnHandler.js';
 
 const ENTITY_MAP = {
   institutions: 'institutions',

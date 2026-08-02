@@ -31,6 +31,7 @@ Objectif: transformer l'application React/Vite actuelle en plateforme marocaine 
 - Ajouter des filtres par ville, type d'etablissement, domaine et niveau.
 - Prevoir une validation admin avant publication des institutions.
 - Structurer les donnees pour couvrir les universites, FST, ENSA, ENCG, EST, facultes et ecoles privees.
+- Dy !!
 
 ## Phase 4 - Programmes
 

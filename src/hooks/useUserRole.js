@@ -7,6 +7,7 @@ import { getFirestoreErrorMessage } from '../utils/firebaseErrors';
 
 const userRoleCache = new Map();
 const userRoleRequests = new Map();
+const USER_ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function createRoleState({ role = null, status = null, loading = false, error = null } = {}) {
   return {
@@ -18,8 +19,13 @@ function createRoleState({ role = null, status = null, loading = false, error = 
 }
 
 async function fetchUserRole(clerkUserId) {
-  if (userRoleCache.has(clerkUserId)) {
-    return userRoleCache.get(clerkUserId);
+  const cachedRole = userRoleCache.get(clerkUserId);
+  if (cachedRole && cachedRole.expiresAt > Date.now()) {
+    return cachedRole.state;
+  }
+
+  if (cachedRole) {
+    userRoleCache.delete(clerkUserId);
   }
 
   if (userRoleRequests.has(clerkUserId)) {
@@ -61,7 +67,10 @@ async function fetchUserRole(clerkUserId) {
 
   const result = await request;
   if (!result.error) {
-    userRoleCache.set(clerkUserId, result);
+    userRoleCache.set(clerkUserId, {
+      state: result,
+      expiresAt: Date.now() + USER_ROLE_CACHE_TTL_MS,
+    });
   }
 
   return result;

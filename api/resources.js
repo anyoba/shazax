@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { USER_ROLES } from './_lib/serverConstants.js';
+import { USER_ROLES } from '../server/_lib/serverConstants.js';
 import {
   createFirestoreHttpError,
   HttpError,
   requireRole,
   sendError,
   sendJson,
-} from './_lib/auth.js';
-import { FieldValue, getAdminDb } from './_lib/firebaseAdmin.js';
-import { readJsonBody, setMethodHeader } from './_lib/request.js';
-import { isPublicResource, validateResourcePayload } from './_lib/resourcesValidation.js';
+} from '../server/_lib/auth.js';
+import { FieldValue, getAdminDb } from '../server/_lib/firebaseAdmin.js';
+import { readJsonBody, setMethodHeader } from '../server/_lib/request.js';
+import { isPublicResource, validateResourcePayload } from '../server/_lib/resourcesValidation.js';
 
 const WRITE_ROLES = [USER_ROLES.EDITOR, USER_ROLES.ADMIN, USER_ROLES.OWNER];
 const DELETE_ROLES = [USER_ROLES.ADMIN, USER_ROLES.OWNER];
@@ -55,7 +55,13 @@ async function listResources(req, res) {
   const id = getQueryValue(req.query?.id);
 
   if (id) {
-    const snapshot = await getAdminDb().collection('resources').doc(id).get();
+    let snapshot;
+    try {
+      snapshot = await getAdminDb().collection('resources').doc(id).get();
+    } catch (error) {
+      throw createFirestoreHttpError(error, 'Unable to load resource.');
+    }
+
     if (!snapshot.exists || !isPublicResource(snapshot.data() || {})) {
       throw new HttpError(404, 'Resource not found.', 'RESOURCE_NOT_FOUND');
     }
@@ -113,7 +119,12 @@ async function updateResource(req, res) {
   const resourceId = getResourceId(req);
   const payload = validateResourcePayload(await readJsonBody(req), { partial: true });
   const resourceRef = getAdminDb().collection('resources').doc(resourceId);
-  const snapshot = await resourceRef.get();
+  let snapshot;
+  try {
+    snapshot = await resourceRef.get();
+  } catch (error) {
+    throw createFirestoreHttpError(error, 'Unable to load resource.');
+  }
 
   if (!snapshot.exists) {
     throw new HttpError(404, 'Resource not found.', 'RESOURCE_NOT_FOUND');
@@ -144,7 +155,12 @@ async function deleteResource(req, res) {
   await requireRole(req, DELETE_ROLES);
   const resourceId = getResourceId(req);
   const resourceRef = getAdminDb().collection('resources').doc(resourceId);
-  const snapshot = await resourceRef.get();
+  let snapshot;
+  try {
+    snapshot = await resourceRef.get();
+  } catch (error) {
+    throw createFirestoreHttpError(error, 'Unable to load resource.');
+  }
 
   if (!snapshot.exists) {
     throw new HttpError(404, 'Resource not found.', 'RESOURCE_NOT_FOUND');

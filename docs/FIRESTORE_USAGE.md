@@ -1,82 +1,91 @@
 # Firestore Usage
 
-Ce document decrit la consommation Firestore actuelle et les precautions a garder avant de connecter Shazax Concours a des donnees distantes.
+Ce document resume les lectures/ecritures Firestore actuelles et les limites a respecter avant de connecter Shazax Concours a Firebase.
 
-## Lectures par page
+## Collections
 
-- `/learn`
-  - Lit `resources` via `useResources`.
-  - Utilise un listener `onSnapshot` limite pour garder les ressources publiques a jour.
-  - Utilise le cache local `shazax_resources_cache` comme secours si Firestore echoue.
+### `user_roles`
+- Lecture client temporaire: `useUserRole` lit `user_roles/{clerkUserId}` pour afficher les routes protegees.
+- Lecture serveur: les API verifient le meme document avec Firebase Admin SDK avant toute operation sensible.
+- Optimisation: cache memoire cote serveur pendant 5 minutes maximum, et cache memoire cote navigateur pendant 5 minutes.
+- Important: ces caches reduisent les lectures, mais les permissions sensibles restent verifiees cote serveur.
 
-- `/admin`
-  - Lit `resources` seulement quand l onglet `Resources` est ouvert.
-  - Lit `waitlist` seulement quand l onglet `Emails & Contact` est ouvert.
-  - Lit `analytics_visits` seulement quand l onglet `Live Analytics` est ouvert.
-  - Lit `users` seulement quand l onglet `Users` est ouvert.
-  - Lit les institutions via l'API serveur consolidee `/api/academic?entity=institutions`.
+### `resources`
+- Lecture publique: `useResources` utilise une lecture ponctuelle limitee, pas un listener temps reel.
+- Cache local: `shazax_resources_cache` sert de secours si Firestore echoue.
+- Ecritures admin: creation, modification et suppression passent par `/api/resources`.
+- Limite actuelle: 200 documents par lecture client, 300 maximum cote API.
 
-- Routes protegees par roles
-  - `useUserRole` lit temporairement `user_roles/{clerkUserId}` cote client.
-  - Cette lecture est mise en cache en memoire pour la session navigateur afin d eviter les doublons UI.
-  - Les API serveur relisent toujours les roles avec Firebase Admin SDK pour les operations sensibles.
+### `institutions`
+- Lecture publique: `/api/academic?view=learn` et `/api/academic?entity=institutions` retournent les contenus publies.
+- Lecture admin: `/api/academic?entity=institutions&admin=true`.
+- Ecritures: CRUD admin via API serveur uniquement.
+- Les erreurs de quota doivent retourner `503` avec `FIRESTORE_QUOTA_EXCEEDED`.
 
-- Hooks academiques
-  - `useInstitutions`, `usePrograms`, `useProgramYears`, `useSemesters`, `useAcademicModules`.
-  - Utilisent `getDocs` avec filtre parent, `status == published`, tri par `order`, et limite.
-  - Les hooks dependants ne lancent pas de requete sans parent ID.
+### `programs`, `program_years`, `semesters`, `modules`
+- Lecture publique: via `/api/academic?view=learn` pour la navigation Learn.
+- Lecture admin: via `/api/academic?entity=...&admin=true`.
+- Ecritures: via `/api/academic`.
+- Chaque lecture dependante doit filtrer par parent (`institutionId`, `programId`, `programYearId`, `semesterId`) et utiliser une limite.
 
-- `/concours`
-  - Ne lit pas Firestore actuellement.
-  - Donnees, progression, favoris, erreurs et admin Concours restent locaux.
+### `waitlist`
+- Ecriture client: `addEmail` ajoute une adresse depuis la landing page.
+- Lecture admin: seulement quand l onglet `Emails & Contact` est ouvert.
+- Listener: limite a 100 documents.
 
-## Ecritures
+### `analytics_visits`
+- Ecriture client: `trackPageVisit`, dedupliquee par route dans `sessionStorage`.
+- Desactivation: definir `VITE_ENABLE_CUSTOM_ANALYTICS=false`.
+- Lecture admin: seulement quand l onglet `Live Analytics` est ouvert.
+- Listener: limite a 50 documents.
+- Vercel Analytics reste separe et peut continuer sans Firestore.
 
-- `analytics_visits`
-  - Ecriture client via `trackPageVisit`.
-  - Ignore les routes `/concours` et `/admin/concours`.
-  - Deduplication courte par chemin pour limiter les doubles effets React StrictMode.
+### `users`
+- Ecriture client: `UserSync` synchronise les donnees Clerk minimales.
+- Deduplication: cache memoire par utilisateur et valeurs stables pendant la session.
+- Lecture admin: seulement quand l onglet `Users` est ouvert, limite a 100 documents.
 
-- `waitlist`
-  - Ecriture client via `addEmail`.
-  - Envoie aussi le contact vers Formspree.
+## Listeners actifs
 
-- `users`
-  - Ecriture client via `UserSync` pour synchroniser les donnees Clerk minimales.
-  - Deduplication memoire par utilisateur et par donnees stables pendant la session.
+- `AdminPage` utilise encore `onSnapshot` pour:
+  - `waitlist`, uniquement onglet `Emails & Contact`;
+  - `analytics_visits`, uniquement onglet `Live Analytics`;
+  - `users`, uniquement onglet `Users`.
+- Chaque listener retourne `unsubscribe`.
+- `resources` n utilise plus `onSnapshot` cote public.
 
-- `resources`
-  - Lecture client temporaire via `useResources`.
-  - Creation/suppression admin via API serveur.
-  - Anciennes fonctions directes dans `useResources` restent pour compatibilite mais ne doivent plus etre utilisees pour l admin.
+## Gestion du quota
 
-- `institutions`
-  - Gestion admin via API serveur avec Firebase Admin SDK.
-  - Lecture publique possible uniquement pour les institutions publiees et non supprimees.
+- `resource-exhausted` est traite comme une limite temporaire.
+- Les API doivent retourner:
 
-## Risques de quota
+```json
+{
+  "success": false,
+  "error": "Firestore quota exceeded.",
+  "code": "FIRESTORE_QUOTA_EXCEEDED",
+  "retryable": true
+}
+```
 
-- Les listeners temps reel coutent une lecture initiale par document retourne, puis une lecture par changement recu.
-- Un listener ouvert sur une collection entiere devient dangereux quand la collection grandit.
-- React StrictMode peut relancer les effets en developpement. Les effets doivent donc etre idempotents.
-- Les ecritures analytics peuvent consommer vite le quota si elles sont declenchees a chaque rendu ou sur trop de routes.
-- Les dashboards admin doivent charger les collections seulement quand l onglet concerne est visible.
+- L interface doit afficher: `Le quota Firebase quotidien est temporairement epuise. Reessayez apres sa reinitialisation.`
+- Ne jamais afficher de faux succes apres une erreur 400, 401, 403, 409, 500 ou 503.
 
-## Bonnes pratiques pour Shazax Concours
+## Risques restants
 
-- Ne pas sauvegarder une reponse QCM distante apres chaque clic.
-- Garder l etat de session local pendant le quiz.
-- Synchroniser par lots :
-  - au demarrage de session;
+- Le quota peut encore etre epuise si plusieurs admins ouvrent simultanement les onglets avec listeners.
+- Le cache serveur Vercel est best-effort: il disparait si la fonction redemarre.
+- Les roles modifies peuvent prendre jusqu a 5 minutes a se propager dans une instance chaude, sauf invalidation forcee.
+- Le client lit encore `user_roles` temporairement pour l UI; la migration finale doit passer par une API securisee.
+
+## Shazax Concours
+
+- Ne pas ecrire une reponse QCM dans Firestore a chaque clic.
+- Garder la session QCM en local pendant le quiz.
+- Synchroniser par lots:
+  - au debut de session;
   - a la fin de session;
   - lors d une pause explicite;
   - eventuellement toutes les 30 a 60 secondes si le backend est pret.
-- Separer les lectures publiques des questions publiees et les operations admin.
-- Utiliser des API serveur pour toute creation, modification, publication, archivage ou code d activation.
-- Ajouter pagination, limites et filtres parent pour `concours_questions`.
-- Eviter `onSnapshot` pour les grandes banques de questions; preferer `getDocs` pagine ou API paginee.
-- Stocker les evenements fins comme temps par question, hints et choix dans un buffer local, puis envoyer un resume.
-
-## Messages de quota
-
-Les erreurs `resource-exhausted` doivent etre affichees comme des problemes de quota ou de limite de lecture, pas comme des erreurs generiques. Elles doivent inviter a attendre la remise a zero ou a reduire les lectures.
+- Eviter `onSnapshot` pour les questions, classements, erreurs et progression.
+- Utiliser API serveur, pagination, limites et filtres parent pour toute future banque de questions.

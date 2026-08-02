@@ -23,6 +23,7 @@ import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';
 import AcademicStructureManager from '../components/admin/academic/AcademicStructureManager.jsx';
 import InstitutionsManager from '../components/admin/academic/InstitutionsManager.jsx';
+import AcademicResourcesManager from '../components/admin/resources/AcademicResourcesManager.jsx';
 import { USER_ROLES } from '../constants/roles.js';
 import { useUserRole } from '../hooks/useUserRole.js';
 import { useResources } from '../hooks/useResources.js';
@@ -601,6 +602,14 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
         ) : null}
 
         {canManageResources && activeTab === 'resources' ? (
+          <AcademicResourcesManager
+            resources={resources}
+            onAddResource={onAddResource}
+            onDeleteResource={onDeleteResource}
+          />
+        ) : null}
+
+        {false && canManageResources && activeTab === 'resources' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Manage Resources</h2>
 

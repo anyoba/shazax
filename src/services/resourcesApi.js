@@ -1,11 +1,28 @@
+export class ResourcesApiError extends Error {
+  constructor(message, { status = 0, code = 'REQUEST_FAILED', requestId = '', stage = '' } = {}) {
+    super(message);
+    this.name = 'ResourcesApiError';
+    this.status = status;
+    this.code = code;
+    this.requestId = requestId;
+    this.stage = stage;
+  }
+}
+
 async function getAuthHeaders(getToken) {
   if (typeof getToken !== 'function') {
-    throw new Error('Authentication is required.');
+    throw new ResourcesApiError('Authentication is required.', {
+      status: 401,
+      code: 'AUTHENTICATION_REQUIRED',
+    });
   }
 
   const token = await getToken();
   if (!token) {
-    throw new Error('Authentication is required.');
+    throw new ResourcesApiError('Authentication is required.', {
+      status: 401,
+      code: 'AUTHENTICATION_REQUIRED',
+    });
   }
 
   return {
@@ -29,7 +46,12 @@ async function parseResponse(response) {
   }
 
   if (!response.ok) {
-    throw new Error(body.error || `Request failed with status ${response.status}.`);
+    throw new ResourcesApiError(body.error || `Request failed with status ${response.status}.`, {
+      status: response.status,
+      code: body.code || `HTTP_${response.status}`,
+      requestId: body.requestId || '',
+      stage: body.stage || '',
+    });
   }
 
   return body;

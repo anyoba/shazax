@@ -1,4 +1,5 @@
 import { categories, modules } from '../../src/data/modules.js';
+import { RESOURCE_CATEGORY_VALUES } from '../../src/constants/academic.js';
 import { HttpError } from './auth.js';
 
 const ALLOWED_FIELDS = [
@@ -14,7 +15,7 @@ const ALLOWED_FIELDS = [
 ];
 
 const MAX_LENGTHS = {
-  module: 80,
+  module: 140,
   category: 40,
   title: 180,
   fileName: 180,
@@ -74,14 +75,16 @@ function assertUrl(value, field, { required = false } = {}) {
   }
 }
 
-function validateModule(moduleName) {
+function validateModule(moduleName, { hasModuleIds = false } = {}) {
+  if (hasModuleIds) return;
+
   if (!modules.includes(moduleName)) {
     throw new HttpError(400, 'module is invalid.');
   }
 }
 
 function validateCategory(categoryName) {
-  if (!categories.includes(categoryName)) {
+  if (!categories.includes(categoryName) && !RESOURCE_CATEGORY_VALUES.includes(categoryName)) {
     throw new HttpError(400, 'category is invalid.');
   }
 }
@@ -129,10 +132,11 @@ export function validateResourcePayload(payload, { partial = false } = {}) {
   }
 
   const cleaned = {};
+  const hasModuleIds = Array.isArray(payload.moduleIds) && payload.moduleIds.length > 0;
 
   if (!partial || payload.module !== undefined) {
     cleaned.module = cleanString(payload.module, 'module', { required: true });
-    validateModule(cleaned.module);
+    validateModule(cleaned.module, { hasModuleIds });
   }
 
   if (!partial || payload.category !== undefined) {

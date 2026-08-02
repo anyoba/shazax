@@ -12,7 +12,7 @@ import { readJsonBody, setMethodHeader } from '../server/_lib/request.js';
 import { isPublicResource, validateResourcePayload } from '../server/_lib/resourcesValidation.js';
 
 const WRITE_ROLES = [USER_ROLES.EDITOR, USER_ROLES.ADMIN, USER_ROLES.OWNER];
-const DELETE_ROLES = [USER_ROLES.ADMIN, USER_ROLES.OWNER];
+const DELETE_ROLES = [USER_ROLES.OWNER];
 const DEFAULT_RESOURCE_LIMIT = 200;
 const MAX_RESOURCE_LIMIT = 300;
 

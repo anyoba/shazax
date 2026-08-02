@@ -2,6 +2,8 @@ import { useAuth } from '@clerk/clerk-react';
 import { BookOpen, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RESOURCE_CATEGORIES } from '../../../constants/academic.js';
+import { USER_ROLES } from '../../../constants/roles.js';
+import { useUserRole } from '../../../hooks/useUserRole.js';
 import { listAcademicItems } from '../../../services/academicAdminApi.js';
 import { listInstitutions } from '../../../services/institutionsApi.js';
 
@@ -75,6 +77,8 @@ function getApiErrorMessage(error, fallback) {
 
 export default function AcademicResourcesManager({ resources, onAddResource, onDeleteResource }) {
   const { getToken } = useAuth();
+  const { role } = useUserRole();
+  const canDeleteResources = role === USER_ROLES.OWNER;
   const [form, setForm] = useState(initialForm);
   const [institutions, setInstitutions] = useState([]);
   const [programs, setPrograms] = useState([]);
@@ -433,14 +437,17 @@ export default function AcademicResourcesManager({ resources, onAddResource, onD
                     {Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0 ? ' - moduleIds' : ' - legacy'}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(resource.id)}
-                  className="text-white/40 hover:text-red-400"
-                  aria-label="Supprimer la ressource"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {canDeleteResources ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(resource.id)}
+                    className="text-white/40 hover:text-red-400"
+                    aria-label="Supprimer la ressource"
+                    title="Suppression reservee au owner"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>

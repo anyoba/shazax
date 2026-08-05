@@ -29,6 +29,7 @@ import {
   isResourceLinkedToModule,
 } from '../utils/learnCompatibility';
 import { sortByOrder } from '../utils/academicValidation';
+import BrandLogo from '../components/BrandLogo';
 
 const COMPLETED_KEY = 'learn_completed_resources';
 
@@ -138,9 +139,7 @@ function Header({ canGoBack }) {
             </button>
           ) : null}
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
-              S
-            </div>
+            <BrandLogo className="h-9 w-9 rounded-xl" alt="Shazax" />
             <span className="font-heading text-lg font-black tracking-tight">Shazax Learn</span>
           </Link>
         </div>

@@ -17,6 +17,7 @@ import {
   User,
 } from 'lucide-react';
 import { useClerk } from '@clerk/clerk-react';
+import BrandLogo from '../../BrandLogo';
 
 export const concoursNavItems = [
   { to: '/concours', label: 'Accueil', icon: Home },
@@ -41,9 +42,7 @@ export default function ConcoursSidebar({ collapsed, onToggle, onNavigate }) {
     <div className="flex h-full flex-col">
       <div className="mb-6 flex items-center justify-between gap-3">
         <NavLink to="/concours" onClick={onNavigate} className="flex min-w-0 items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-black text-white">
-            S
-          </div>
+          <BrandLogo className="h-11 w-11 rounded-2xl" alt="Shazax" />
           {!collapsed ? (
             <div className="min-w-0">
               <div className="truncate text-lg font-black text-slate-950">Shazax Concours</div>

@@ -1,5 +1,6 @@
 import { BookOpen, LogOut, Menu, RefreshCw, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import BrandLogo from '../../BrandLogo';
 
 function getActiveTabLabel(tabs, activeTab) {
   return tabs.find(([id]) => id === activeTab)?.[1] || 'Admin';
@@ -28,7 +29,7 @@ function NavButton({ active, icon: Icon, label, onClick }) {
   );
 }
 
-function AdminNav({ tabs, activeTab, onChangeTab, canAccessInstitutions, onNavigate }) {
+function AdminNav({ tabs, activeTab, onChangeTab, canAccessConcours, onNavigate }) {
   return (
     <nav className="space-y-2">
       {tabs.map(([id, label, Icon]) => (
@@ -43,7 +44,7 @@ function AdminNav({ tabs, activeTab, onChangeTab, canAccessInstitutions, onNavig
           }}
         />
       ))}
-      {canAccessInstitutions ? (
+      {canAccessConcours ? (
         <a
           href="/admin/concours"
           className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-white/55 transition hover:bg-white/8 hover:text-white"
@@ -61,7 +62,7 @@ function AdminNav({ tabs, activeTab, onChangeTab, canAccessInstitutions, onNavig
 
 export default function AdminShell({
   activeTab,
-  canAccessInstitutions,
+  canAccessConcours,
   children,
   loading,
   newEmailCount,
@@ -93,9 +94,7 @@ export default function AdminShell({
       <aside className="fixed left-0 top-0 hidden h-screen w-80 border-r border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl xl:block">
         <div className="mb-8 rounded-3xl border border-white/10 bg-white/[0.06] p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-xl font-black text-white shadow-[0_20px_45px_rgba(139,92,246,0.35)]">
-              S
-            </div>
+            <BrandLogo className="h-12 w-12 rounded-2xl shadow-[0_20px_45px_rgba(59,130,246,0.24)]" alt="Shazax" />
             <div>
               <div className="font-heading text-xl font-black">Shazax Admin</div>
               <div className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/35">Control center</div>
@@ -112,7 +111,7 @@ export default function AdminShell({
           tabs={tabs}
           activeTab={activeTab}
           onChangeTab={onChangeTab}
-          canAccessInstitutions={canAccessInstitutions}
+          canAccessConcours={canAccessConcours}
         />
       </aside>
 
@@ -140,7 +139,7 @@ export default function AdminShell({
               tabs={tabs}
               activeTab={activeTab}
               onChangeTab={onChangeTab}
-              canAccessInstitutions={canAccessInstitutions}
+              canAccessConcours={canAccessConcours}
               onNavigate={() => setMobileOpen(false)}
             />
           </div>

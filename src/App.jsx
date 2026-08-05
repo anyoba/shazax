@@ -12,6 +12,8 @@ import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
 import LearnPage from './pages/LearnPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
@@ -45,13 +47,15 @@ function LoadingRoute() {
 
 function concoursRoute(page) {
   return (
-    <ProtectedRoute
-      element={
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.OWNER]}>
+      <ProtectedRoute
+        element={
         <ConcoursLayout>
           {page}
         </ConcoursLayout>
-      }
-    />
+        }
+      />
+    </RoleProtectedRoute>
   );
 }
 
@@ -81,6 +85,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/learn" element={<LearnRoute />} />
             <Route path="/learn/:institutionSlug" element={<LearnRoute />} />
             <Route path="/learn/:institutionSlug/:programSlug" element={<LearnRoute />} />
@@ -90,7 +96,14 @@ export default function App() {
             <Route path="/concours/concours" element={concoursRoute(<ContestsPage />)} />
             <Route path="/concours/concours/:contestSlug" element={concoursRoute(<ContestsPage />)} />
             <Route path="/concours/training" element={concoursRoute(<TrainingSetupPage />)} />
-            <Route path="/concours/session/:sessionId" element={<ProtectedRoute element={<QuizSessionPage />} />} />
+            <Route
+              path="/concours/session/:sessionId"
+              element={
+                <RoleProtectedRoute allowedRoles={[USER_ROLES.OWNER]}>
+                  <ProtectedRoute element={<QuizSessionPage />} />
+                </RoleProtectedRoute>
+              }
+            />
             <Route path="/concours/results/:sessionId" element={concoursRoute(<QuizResultsPage />)} />
             <Route path="/concours/progress" element={concoursRoute(<ProgressPage />)} />
             <Route path="/concours/ranking" element={concoursRoute(<RankingPage />)} />
@@ -103,12 +116,7 @@ export default function App() {
               path="/admin/concours/*"
               element={
                 <RoleProtectedRoute
-                  allowedRoles={[
-                    USER_ROLES.MODERATOR,
-                    USER_ROLES.EDITOR,
-                    USER_ROLES.ADMIN,
-                    USER_ROLES.OWNER,
-                  ]}
+                  allowedRoles={[USER_ROLES.OWNER]}
                 >
                   <ConcoursAdminPage />
                 </RoleProtectedRoute>

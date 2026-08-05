@@ -1,6 +1,13 @@
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, animate, motion, useScroll, useTransform } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+} from 'framer-motion';
 import {
   ArrowRight,
   Book,
@@ -17,7 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import logo from '../assets/he.png';
+import BrandLogo from '../components/BrandLogo';
 import { addEmail } from '../waitlist';
 
 
@@ -94,12 +101,13 @@ function WaitlistModal({ isOpen, onClose }) {
                       We&apos;ll notify you when Shazaxx launches any{' '}
                       <span className="font-bold text-foreground">Update</span>
                     </p>
-                    <button
+                    <motion.button
                       onClick={handleClose}
+                      whileTap={{ scale: 0.97 }}
                       className="mt-8 w-full rounded-xl bg-primary py-3 text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       Got it!
-                    </button>
+                    </motion.button>
                   </motion.div>
                 ) : (
                   <motion.div key="form">
@@ -129,9 +137,10 @@ function WaitlistModal({ isOpen, onClose }) {
     />
   </div>
 
-  <button
+  <motion.button
     type="submit"
     disabled={status === "loading"}
+    whileTap={{ scale: status === "loading" ? 1 : 0.96 }}
     data-testid="button-waitlist-submit"
     className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-base font-black text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95 disabled:scale-100 disabled:opacity-70"
   >
@@ -144,7 +153,7 @@ function WaitlistModal({ isOpen, onClose }) {
         Notify Me <ArrowRight size={18} />
       </>
     )}
-  </button>
+  </motion.button>
 
   {/* ✅ feedback utilisateur */}
   {status === "success" && (
@@ -297,14 +306,15 @@ function InteractiveDemo() {
                   ) : null}
                 </AnimatePresence>
 
-                <button
+                <motion.button
                   onClick={launch}
                   disabled={animating}
+                  whileTap={{ scale: animating ? 1 : 0.97 }}
                   data-testid="button-launch-demo"
                   className="mt-4 w-full rounded-xl bg-foreground py-4 font-bold text-background shadow-lg transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {animating ? 'In flight...' : 'Launch Projectile'}
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -369,10 +379,15 @@ function TestimonialCard({ name, handle, quote, delay }) {
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll();
+  const { scrollY, scrollYProgress } = useScroll();
   const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    setHeaderScrolled(latest > 24);
+  });
 
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background selection:bg-primary selection:text-white">
@@ -416,45 +431,65 @@ export default function HomePage() {
         <div className="absolute bottom-[10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-accent/10 blur-[100px]" />
       </div>
 
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 items-center justify-between px-6">
+      <motion.header
+        className={`fixed left-0 right-0 top-0 z-50 w-full transition-all duration-500 ${
+          headerScrolled ? 'px-3 py-3' : 'border-b border-border bg-background/80 backdrop-blur-xl'
+        }`}
+      >
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+          className={`container mx-auto flex items-center justify-between px-6 transition-all duration-500 ${
+            headerScrolled
+              ? 'h-16 max-w-6xl rounded-full border border-white/45 bg-white/58 shadow-[0_18px_55px_rgba(15,23,42,0.16)] ring-1 ring-slate-900/5 backdrop-blur-2xl'
+              : 'h-20'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Shazaxx Logo"
-              className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20"
-            />
+            <BrandLogo className="h-10 w-10" alt="Shazax" />
             <span className="font-heading text-2xl font-black tracking-tight">Shazaxx</span>
           </div>
           <nav className="hidden items-center gap-8 md:flex">
             <a
               href="#how-it-works"
-              className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-bold transition-colors hover:text-foreground ${
+                headerScrolled ? 'text-slate-700' : 'text-muted-foreground'
+              }`}
             >
               How it works
             </a>
             <a
               href="#demo"
-              className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-bold transition-colors hover:text-foreground ${
+                headerScrolled ? 'text-slate-700' : 'text-muted-foreground'
+              }`}
             >
               Play Demo
             </a>
             <a
               href="#reviews"
-              className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-bold transition-colors hover:text-foreground ${
+                headerScrolled ? 'text-slate-700' : 'text-muted-foreground'
+              }`}
             >
               Reviews
             </a>
           </nav>
-          <button
+          <motion.button
             onClick={() => navigate('/auth')}
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.96 }}
             data-testid="button-nav-login"
-            className="rounded-full bg-secondary px-6 py-2.5 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/80"
+            className={`rounded-full px-6 py-2.5 text-sm font-bold transition-all ${
+              headerScrolled
+                ? 'border border-slate-900/10 bg-white/35 text-slate-900 shadow-sm hover:bg-white/60'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
           >
             Log In
-          </button>
-        </div>
-      </header>
+          </motion.button>
+        </motion.div>
+      </motion.header>
 
       <main className="relative z-10">
         <section className="px-6 pb-20 pt-24 md:pb-32 md:pt-36">
@@ -471,28 +506,45 @@ export default function HomePage() {
                   <span>The new way to learn STEM</span>
                 </div>
                 <h1 className="font-heading text-6xl font-black leading-[1.05] tracking-tight md:text-7xl lg:text-8xl">
-                  Stop Reading.
-                  <br />
-                  <span className="text-primary">Start Doing.</span>
+                  <motion.span
+                    initial={{ clipPath: 'inset(0 100% 0 0)', y: 8 }}
+                    animate={{ clipPath: 'inset(0 0% 0 0)', y: 0 }}
+                    transition={{ delay: 1.05, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                    className="block"
+                  >
+                    Stop Reading.
+                  </motion.span>
+                  <motion.span
+                    initial={{ clipPath: 'inset(0 100% 0 0)', y: 8 }}
+                    animate={{ clipPath: 'inset(0 0% 0 0)', y: 0 }}
+                    transition={{ delay: 1.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    className="block text-primary"
+                  >
+                    Start Doing.
+                  </motion.span>
                 </h1>
                 <p className="max-w-lg text-xl font-medium leading-relaxed text-muted-foreground">
                   Bridge the gap between lectures and exams. Master universities with organized TD, solutions, and interactive tools for total success.
                 </p>
                 <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-                      <button
+                      <motion.button
   onClick={() => window.location.href = '/auth'}
+  whileHover={{ y: -2 }}
+  whileTap={{ scale: 0.95 }}
   data-testid="button-hero-cta"
   className="flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
 >
   Start Learning <ArrowRight size={20} />
-</button>
-                  <button
+</motion.button>
+                  <motion.button
                     onClick={() => setWaitlistOpen(true)}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     data-testid="button-hero-secondary"
                     className="rounded-full border border-border bg-secondary px-8 py-4 text-lg font-bold text-secondary-foreground transition-all hover:bg-secondary/80"
                   >
                     Join Waitlist
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
 
@@ -684,46 +736,79 @@ export default function HomePage() {
               <br />
               Your Brain?
             </h2>
-            <button
+            <motion.button
               onClick={() => setWaitlistOpen(true)}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               data-testid="button-final-cta"
               className="inline-flex items-center gap-3 rounded-full bg-accent px-10 py-5 text-xl font-black text-accent-foreground shadow-2xl transition-all hover:scale-105 hover:bg-white hover:text-foreground active:scale-95"
             >
               Get Early Access Now !! <Zap size={24} fill="currentColor" />
-            </button>
+            </motion.button>
           </div>
         </section>
       </main>
 
-      <footer className="bg-foreground px-6 py-12 text-background">
-        <div className="container mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex items-center gap-2">
-            <img
-              src={logo}
-              alt="Shazaxx Logo"
-              className="h-8 w-8 rounded-lg"
-            />
-            <span className="font-heading text-xl font-bold tracking-tight">Shazaxx</span>
-          </div>
-          <div className="flex gap-6 text-sm font-medium opacity-70">
-            <span>© 2025 Shazaxx Inc.</span>
-            <a href="#" className="transition-opacity hover:opacity-100">
-              Privacy
-            </a>
-            <a href="#" className="transition-opacity hover:opacity-100">
-              Terms
-            </a>
-            <span className="text-white">
-              made by{' '}
-              <a
-                href="https://www.instagram.com/med_shazaxx/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 transition-colors"
+      <footer className="relative overflow-hidden bg-[#080a13] px-6 py-16 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.18),transparent_38%,rgba(59,130,246,0.14))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:54px_54px] opacity-25" />
+
+        <div className="container relative mx-auto max-w-6xl">
+          <div className="grid gap-10 rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl md:grid-cols-[1.25fr_0.75fr_0.75fr] md:p-8">
+            <div>
+              <div className="flex items-center gap-3">
+                <BrandLogo className="h-11 w-11" alt="Shazax" />
+                <span className="font-heading text-2xl font-black tracking-tight">Shazaxx</span>
+              </div>
+              <p className="mt-5 max-w-md text-sm font-medium leading-6 text-white/55">
+                Organized courses, TDs, exams, and academic resources built for Moroccan students who want to move faster.
+              </p>
+              <button
+                type="button"
+                onClick={() => setWaitlistOpen(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:bg-primary hover:text-white"
               >
-                med_shazaxx
-              </a>
-            </span>
+                Get early access
+                <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div>
+              <h3 className="font-heading text-sm font-black uppercase tracking-[0.22em] text-white/35">Explore</h3>
+              <div className="mt-5 grid gap-3 text-sm font-bold text-white/62">
+                <a href="#how-it-works" className="transition hover:text-white">How it works</a>
+                <a href="#demo" className="transition hover:text-white">Play Demo</a>
+                <a href="#reviews" className="transition hover:text-white">Reviews</a>
+                <button
+                  type="button"
+                  onClick={() => navigate('/auth')}
+                  className="w-fit text-left transition hover:text-white"
+                >
+                  Log In
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-heading text-sm font-black uppercase tracking-[0.22em] text-white/35">Legal</h3>
+              <div className="mt-5 grid gap-3 text-sm font-bold text-white/62">
+                <Link to="/privacy" className="transition hover:text-white">Privacy</Link>
+                <Link to="/terms" className="transition hover:text-white">Terms</Link>
+                <a
+                  href="https://www.instagram.com/med_shazaxx/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition hover:text-white"
+                >
+                  med_shazaxx
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs font-semibold text-white/38 md:flex-row">
+            <span>© 2025 Shazaxx Inc. All rights reserved.</span>
+            <span>Made for focused students, one module at a time.</span>
           </div>
         </div>
       </footer>

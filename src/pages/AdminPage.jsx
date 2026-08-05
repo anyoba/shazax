@@ -366,7 +366,7 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
   return (
     <AdminShell
       activeTab={activeTab}
-      canAccessInstitutions={canAccessInstitutions}
+      canAccessConcours={role === USER_ROLES.OWNER}
       loading={loading}
       newEmailCount={newEmailCount}
       onChangeTab={setActiveTab}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { collection, limit, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { useClerk } from '@clerk/clerk-react';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 
 import {
   Activity,
@@ -29,6 +29,7 @@ import { USER_ROLES } from '../constants/roles.js';
 import { useUserRole } from '../hooks/useUserRole.js';
 import { useResources } from '../hooks/useResources.js';
 import { getFirestoreErrorMessage } from '../utils/firebaseErrors.js';
+import { getAdminDashboard, getAdminUsers, updateAdminUserRole } from '../services/concoursApi.js';
 
 const MODULES = [
   { id: 'Thermodynamics', label: 'Thermodynamics' },
@@ -109,12 +110,18 @@ function StatCard({ icon, label, value }) {
 
 export default function AdminPage({ onAddResource, onDeleteResource }) {
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
   const { role } = useUserRole();
   const [activeTab, setActiveTab] = useState('analytics');
   const lastEmailCountRef = useRef(0);
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
   const [users, setUsers] = useState([]);
+  const [adminStats, setAdminStats] = useState(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userQuery, setUserQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [roleSavingUserId, setRoleSavingUserId] = useState('');
   const [firestoreError, setFirestoreError] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -259,35 +266,88 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
 
     if (activeTab !== 'users') return undefined;
 
-    const q = query(
-      collection(db, 'users'),
-      orderBy('createdAt', 'desc'),
-      limit(ADMIN_LIST_LIMIT),
-    );
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        setUsers(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      },
-      (error) => {
-        setUsers([]);
-        handleFirestoreError(error);
-      },
-    );
+    let cancelled = false;
+    setUsersLoading(true);
+    getAdminUsers(getToken)
+      .then((body) => {
+        if (!cancelled) setUsers(body.users || []);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setUsers([]);
+          setFirestoreError(error?.message || 'Unable to load users.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setUsersLoading(false);
+      });
 
-    return () => unsubscribe();
-  }, [activeTab, canViewAdminData]);
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, canViewAdminData, getToken]);
 
   const stats = useMemo(
     () => getStats(visits, resources, emails),
     [visits, resources, emails],
   );
 
-  function refreshDashboard() {
+  useEffect(() => {
+    if (!canViewAdminData || activeTab !== 'analytics') return undefined;
+    let cancelled = false;
+    getAdminDashboard(getToken)
+      .then((body) => {
+        if (!cancelled) setAdminStats(body.stats || null);
+      })
+      .catch((error) => {
+        if (!cancelled) setFirestoreError(error?.message || 'Unable to load admin stats.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, canViewAdminData, getToken]);
+
+  const filteredUsers = useMemo(() => {
+    const normalized = userQuery.trim().toLowerCase();
+    return users.filter((userItem) => {
+      const matchesRole = userRoleFilter === 'all' || userItem.role === userRoleFilter;
+      const matchesText = !normalized || [userItem.fullName, userItem.email, userItem.id].some((value) => String(value || '').toLowerCase().includes(normalized));
+      return matchesRole && matchesText;
+    });
+  }, [userQuery, userRoleFilter, users]);
+
+  async function refreshDashboard() {
     setLoading(true);
     setVisits(recordVisit());
     setLastRefresh(new Date());
-    window.setTimeout(() => setLoading(false), 300);
+    try {
+      if (canViewAdminData) {
+        const body = await getAdminDashboard(getToken);
+        setAdminStats(body.stats || null);
+        if (activeTab === 'users') {
+          const usersBody = await getAdminUsers(getToken);
+          setUsers(usersBody.users || []);
+        }
+      }
+    } catch (error) {
+      setFirestoreError(error?.message || 'Unable to refresh dashboard.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function changeUserRole(userId, nextRole, nextStatus = 'active') {
+    setRoleSavingUserId(userId);
+    setFirestoreError('');
+    try {
+      await updateAdminUserRole({ userId, role: nextRole, status: nextStatus }, getToken);
+      const usersBody = await getAdminUsers(getToken);
+      setUsers(usersBody.users || []);
+    } catch (error) {
+      setFirestoreError(error?.message || 'Unable to update role.');
+    } finally {
+      setRoleSavingUserId('');
+    }
   }
 
   async function addResource(event) {
@@ -366,7 +426,7 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
   return (
     <AdminShell
       activeTab={activeTab}
-      canAccessConcours={role === USER_ROLES.OWNER}
+      canAccessConcours={[USER_ROLES.ADMIN, USER_ROLES.OWNER].includes(role)}
       loading={loading}
       newEmailCount={newEmailCount}
       onChangeTab={setActiveTab}
@@ -385,9 +445,13 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Dashboard</h2>
             <div className="grid gap-4 md:grid-cols-4">
-              <StatCard icon={<Eye size={18} />} label="Page Views" value={stats.pageViews} />
-              <StatCard icon={<Users size={18} />} label="Today's Views" value={stats.todayViews} />
-              <StatCard icon={<BookOpen size={18} />} label="Resources" value={stats.resourceCount} />
+              <StatCard icon={<Users size={18} />} label="Total users" value={adminStats?.totalUsers ?? 0} />
+              <StatCard icon={<Activity size={18} />} label="Active users" value={adminStats?.activeUsers ?? 0} />
+              <StatCard icon={<BookOpen size={18} />} label="Total concours" value={adminStats?.totalConcours ?? 0} />
+              <StatCard icon={<Layers size={18} />} label="Total questions" value={adminStats?.totalQuestions ?? 0} />
+              <StatCard icon={<Eye size={18} />} label="Total attempts" value={adminStats?.totalAttempts ?? 0} />
+              <StatCard icon={<CheckCircle size={18} />} label="Average score" value={(adminStats?.averageScore ?? 0) + '%'} />
+              <StatCard icon={<Users size={18} />} label="New users this week" value={adminStats?.newUsersThisWeek ?? 0} />
               <StatCard icon={<Mail size={18} />} label="Waitlist Emails" value={stats.emailCount} />
             </div>
           </div>
@@ -534,19 +598,60 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
 
         {canViewAdminData && activeTab === 'users' ? (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold">Registered Users</h2>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className="text-xl font-bold">Registered Users</h2>
+              <div className="grid gap-3 md:grid-cols-[1fr_12rem]">
+                <input
+                  value={userQuery}
+                  onChange={(event) => setUserQuery(event.target.value)}
+                  placeholder="Search users"
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25 focus:border-primary/50 focus:outline-none"
+                />
+                <select
+                  value={userRoleFilter}
+                  onChange={(event) => setUserRoleFilter(event.target.value)}
+                  className="rounded-xl border border-white/10 bg-gray-950 px-4 py-3 text-white focus:border-primary/50 focus:outline-none"
+                >
+                  <option value="all">All roles</option>
+                  {Object.values(USER_ROLES).map((roleValue) => <option key={roleValue} value={roleValue}>{roleValue}</option>)}
+                </select>
+              </div>
+            </div>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-              {users.length === 0 ? (
-                <div className="p-6 text-white/40">No registered users found yet.</div>
+              {usersLoading ? (
+                <div className="p-6 text-white/40">Loading users...</div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="p-6 text-white/40">No registered users found.</div>
               ) : (
                 <div className="divide-y divide-white/5">
-                  {users.map((userItem) => (
-                    <div key={userItem.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  {filteredUsers.map((userItem) => (
+                    <div key={userItem.id} className="grid gap-4 p-4 lg:grid-cols-[1fr_10rem_13rem_10rem] lg:items-center">
                       <div>
                         <div className="font-medium">{userItem.fullName || userItem.email || 'Student'}</div>
                         <div className="text-sm text-white/40">{userItem.email || 'No email yet'}</div>
+                        <div className="mt-1 text-xs text-white/25">Joined {formatTimestamp(userItem.createdAt)}</div>
                       </div>
-                      <div className="text-sm text-white/40">Joined {formatTimestamp(userItem.createdAt)}</div>
+                      <div className="text-sm text-white/45">
+                        <div>{userItem.attemptsCount || 0} attempts</div>
+                        <div>{userItem.bestScore || 0}% best</div>
+                      </div>
+                      <select
+                        value={userItem.role || USER_ROLES.STUDENT}
+                        disabled={role !== USER_ROLES.OWNER || roleSavingUserId === userItem.id}
+                        onChange={(event) => changeUserRole(userItem.id, event.target.value, userItem.roleStatus || 'active')}
+                        className="rounded-xl border border-white/10 bg-gray-950 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        {Object.values(USER_ROLES).map((roleValue) => <option key={roleValue} value={roleValue}>{roleValue}</option>)}
+                      </select>
+                      <select
+                        value={userItem.roleStatus || 'active'}
+                        disabled={role !== USER_ROLES.OWNER || roleSavingUserId === userItem.id}
+                        onChange={(event) => changeUserRole(userItem.id, userItem.role || USER_ROLES.STUDENT, event.target.value)}
+                        className="rounded-xl border border-white/10 bg-gray-950 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        <option value="active">active</option>
+                        <option value="suspended">suspended</option>
+                      </select>
                     </div>
                   ))}
                 </div>

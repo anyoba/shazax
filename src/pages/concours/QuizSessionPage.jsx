@@ -1,394 +1,208 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Clock, Lightbulb, Menu, SkipForward, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Flag, Loader2, Menu, Send, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import ConfirmDialog from '../../components/concours/common/ConfirmDialog.jsx';
 import EmptyState from '../../components/concours/common/EmptyState.jsx';
+import LoadingState from '../../components/concours/common/LoadingState.jsx';
 import Toast from '../../components/concours/common/Toast.jsx';
 import ChoiceButton from '../../components/concours/quiz/ChoiceButton.jsx';
-import ExplanationPanel from '../../components/concours/quiz/ExplanationPanel.jsx';
-import FavoriteQuestionButton from '../../components/concours/quiz/FavoriteQuestionButton.jsx';
-import HintPanel from '../../components/concours/quiz/HintPanel.jsx';
-import NumericAnswerInput from '../../components/concours/quiz/NumericAnswerInput.jsx';
 import QuestionMedia from '../../components/concours/quiz/QuestionMedia.jsx';
-import ReportQuestionButton from '../../components/concours/quiz/ReportQuestionButton.jsx';
-import {
-  addReport,
-  answerQuestion,
-  completeSession,
-  getFavorites,
-  getSession,
-  getSettings,
-  toggleFavorite,
-  updateSession,
-} from '../../services/concoursLocalStorage.js';
-import { getQuestionMeta } from '../../utils/concours/catalog.js';
-import { playConcoursSound } from '../../utils/concours/sounds.js';
+import NumericAnswerInput from '../../components/concours/quiz/NumericAnswerInput.jsx';
+import { getAttempt, saveAttemptAnswer, submitAttempt } from '../../services/concoursApi.js';
+
+function formatClock(seconds = 0) {
+  const safe = Math.max(0, seconds);
+  const minutes = Math.floor(safe / 60);
+  const rest = safe % 60;
+  return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
 
 export default function QuizSessionPage() {
-  const { sessionId } = useParams();
+  const params = useParams();
+  const attemptId = params.attemptId || params.sessionId;
   const navigate = useNavigate();
-  const [session, setSession] = useState(() => getSession(sessionId));
-  const [selectedAnswer, setSelectedAnswer] = useState('');
-  const [hintVisible, setHintVisible] = useState(false);
-  const [seconds, setSeconds] = useState(session?.elapsedSeconds || 0);
-  const [favorites, setFavorites] = useState(() => getFavorites());
+  const { getToken } = useAuth();
+  const [attempt, setAttempt] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [toast, setToast] = useState('');
-  const [confirmQuit, setConfirmQuit] = useState(false);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [questionMenuOpen, setQuestionMenuOpen] = useState(false);
-  const touchStart = useRef(null);
-  const settings = getSettings();
-
-  const questionIds = session?.questionIds || [];
-  const currentIndex = session?.currentIndex || 0;
-  const currentQuestionId = questionIds[currentIndex];
-  const question = session?.questionsById?.[currentQuestionId];
-  const answer = session?.answers?.[currentQuestionId];
-  const locked = Boolean(answer);
-  const mode = session?.mode || 'training';
-  const meta = getQuestionMeta(question);
-  const isLast = currentIndex === questionIds.length - 1;
-  const isFavorite = favorites.includes(currentQuestionId);
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
-    const nextAnswer = session?.answers?.[currentQuestionId];
-    setSelectedAnswer(nextAnswer?.answerValue || '');
-    setHintVisible(Boolean(nextAnswer?.usedHint));
-  }, [currentQuestionId, session]);
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError('');
+      try {
+        const body = await getAttempt(attemptId, getToken);
+        if (cancelled) return;
+        setAttempt(body.attempt);
+        setQuestions(body.questions || []);
+        setAnswers(body.answersByQuestionId || {});
+        setCurrentIndex(Math.min(body.attempt?.currentIndex || 0, Math.max(0, (body.questions || []).length - 1)));
+        setRemainingSeconds(body.remainingSeconds || 0);
+        if (body.attempt?.status !== 'IN_PROGRESS') {
+          navigate(`/concours/${body.attempt.concoursSlug}/results/${body.attempt.id}`, { replace: true });
+        }
+      } catch (err) {
+        if (!cancelled) setError(err?.message || 'Session introuvable.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [attemptId, getToken, navigate]);
 
   useEffect(() => {
-    if (!session || session.status === 'completed') return undefined;
-    const interval = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    if (!attempt || attempt.status !== 'IN_PROGRESS') return undefined;
+    const interval = window.setInterval(() => {
+      setRemainingSeconds((value) => Math.max(0, value - 1));
+    }, 1000);
     return () => window.clearInterval(interval);
-  }, [session]);
+  }, [attempt]);
 
   useEffect(() => {
-    if (!session) return;
-    updateSession(session.id, { elapsedSeconds: seconds });
-  }, [seconds, session]);
+    if (!attempt || remainingSeconds > 0 || autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    finish({ expired: true });
+  }, [attempt, remainingSeconds]);
 
-  if (!session || !question) {
-    return <EmptyState title="Session introuvable" description="Cette session locale n existe plus ou a ete reinitialisee." />;
+  const question = questions[currentIndex];
+  const answer = question ? answers[question.id] : null;
+  const selectedAnswer = answer?.answerValue || '';
+  const flagged = Boolean(answer?.flagged);
+  const progressPercent = questions.length ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  const answeredCount = useMemo(() => Object.values(answers).filter((item) => item?.answerValue).length, [answers]);
+
+  if (loading) return <LoadingState label="Chargement de l examen..." />;
+  if (error) return <EmptyState title="Session indisponible" description={error} />;
+  if (!attempt || !question) return <EmptyState title="Session vide" description="Aucune question publiee pour cet examen." />;
+
+  async function persistAnswer(questionId, answerValue, nextFlagged = flagged, nextIndex = currentIndex) {
+    const previous = answers[questionId];
+    const optimistic = {
+      ...(previous || {}),
+      questionId,
+      answerValue,
+      flagged: nextFlagged,
+      updatedAt: new Date().toISOString(),
+    };
+    setAnswers((current) => ({ ...current, [questionId]: optimistic }));
+    setSaving(true);
+    try {
+      await saveAttemptAnswer({ attemptId: attempt.id, questionId, answerValue, flagged: nextFlagged, currentIndex: nextIndex }, getToken);
+    } catch (err) {
+      setAnswers((current) => ({ ...current, [questionId]: previous }));
+      setToast(err?.message || 'Sauvegarde impossible.');
+      window.setTimeout(() => setToast(''), 2200);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function goToIndex(index) {
-    if (index < 0 || index >= questionIds.length) return;
-    updateSession(session.id, { currentIndex: index });
-    setSession(getSession(sessionId));
+    const nextIndex = Math.max(0, Math.min(index, questions.length - 1));
+    setCurrentIndex(nextIndex);
     setQuestionMenuOpen(false);
+    if (question) persistAnswer(question.id, selectedAnswer, flagged, nextIndex);
   }
 
-  function handleCheck({ skipped = false } = {}) {
-    if (locked) return;
-    const needsAnswer = !skipped && selectedAnswer !== '';
-    if (!needsAnswer && !skipped) return;
+  function toggleFlag() {
+    persistAnswer(question.id, selectedAnswer, !flagged);
+  }
 
-    const updated = answerQuestion(session.id, currentQuestionId, selectedAnswer, {
-      usedHint: hintVisible,
-      skipped,
-    });
-    setSession(updated);
-
-    const nextAnswer = updated?.answers?.[currentQuestionId];
-    if (mode === 'training') {
-      playConcoursSound(nextAnswer?.correct ? 'correct' : 'wrong');
-    }
-
-    if (mode === 'exam' && !isLast) {
-      goToIndex(currentIndex + 1);
+  async function finish({ expired = false } = {}) {
+    if (submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const body = await submitAttempt(attempt.id, getToken, { expired });
+      navigate(`/concours/${body.attempt.concoursSlug}/results/${body.attempt.id}`, { replace: true });
+    } catch (err) {
+      setError(err?.message || 'Soumission impossible.');
+      setSubmitting(false);
     }
   }
-
-  function handleNext() {
-    if (!isLast) goToIndex(currentIndex + 1);
-  }
-
-  function handlePrevious() {
-    goToIndex(currentIndex - 1);
-  }
-
-  function handleFinish() {
-    const completed = completeSession(session.id, seconds);
-    playConcoursSound(completed?.badgesUnlocked?.length ? 'badge' : 'finish');
-    navigate(`/concours/results/${session.id}`);
-  }
-
-  function handleQuit() {
-    if (settings.confirmBeforeQuit) {
-      setConfirmQuit(true);
-      return;
-    }
-    navigate('/concours');
-  }
-
-  function showHint() {
-    if (mode === 'exam' || locked) return;
-    setHintVisible(true);
-  }
-
-  function handleFavorite() {
-    const nextFavorites = toggleFavorite(currentQuestionId);
-    setFavorites(nextFavorites);
-    setToast(nextFavorites.includes(currentQuestionId) ? 'Question ajoutee aux favoris.' : 'Question retiree des favoris.');
-    window.setTimeout(() => setToast(''), 1800);
-  }
-
-  function handleReport(report) {
-    addReport({
-      ...report,
-      questionId: currentQuestionId,
-      sessionId: session.id,
-    });
-    setToast('Signalement enregistre localement.');
-    window.setTimeout(() => setToast(''), 1800);
-  }
-
-  function handleTouchStart(event) {
-    const touch = event.touches[0];
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-  }
-
-  function handleTouchEnd(event) {
-    if (!touchStart.current) return;
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - touchStart.current.x;
-    const dy = touch.clientY - touchStart.current.y;
-    touchStart.current = null;
-
-    if (Math.abs(dy) > 45 || Math.abs(dx) < 70) return;
-    if (dx < 0 && (locked || mode === 'exam')) handleNext();
-    if (dx > 0) handlePrevious();
-  }
-
-  const canCheck = selectedAnswer !== '' && !locked;
-  const canGoNext = currentIndex < questionIds.length - 1 && (locked || mode === 'exam');
-  const canGoPrevious = currentIndex > 0;
-  const progressPercent = questionIds.length ? ((currentIndex + 1) / questionIds.length) * 100 : 0;
 
   function getQuestionButtonClass(questionId, index) {
-    const item = session.answers?.[questionId];
-
-    if (index === currentIndex) return 'border-white bg-slate-950 text-white shadow-lg';
-    if (!item) return 'border-white/70 bg-white/85 text-slate-700 hover:bg-white';
-    if (item.skipped) return 'border-slate-300 bg-slate-500 text-white';
-    if (item.correct) return 'border-emerald-300 bg-emerald-500 text-white';
-    return 'border-red-300 bg-red-500 text-white';
+    const item = answers[questionId];
+    if (index === currentIndex) return 'border-slate-950 bg-slate-950 text-white shadow-lg';
+    if (item?.flagged) return 'border-amber-300 bg-amber-100 text-amber-800';
+    if (item?.answerValue) return 'border-emerald-300 bg-emerald-100 text-emerald-800';
+    return 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50';
   }
 
   return (
-    <main
-      className="min-h-screen overflow-hidden bg-cover bg-center bg-fixed text-white"
-      style={{
-        backgroundImage:
-          "linear-gradient(180deg, rgba(18, 12, 34, 0.54), rgba(28, 18, 46, 0.36)), url('/background-sh.png')",
-      }}
-    >
+    <main className="min-h-screen overflow-hidden bg-cover bg-center bg-fixed text-white" style={{ backgroundImage: "linear-gradient(180deg, rgba(18, 12, 34, 0.62), rgba(28, 18, 46, 0.42)), url('/background-sh.png')" }}>
       <Toast message={toast} />
-      <button
-        type="button"
-        onClick={handleQuit}
-        className="fixed left-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white shadow-lg backdrop-blur transition hover:bg-black/50 focus:outline-none focus:ring-4 focus:ring-white/30"
-        aria-label="Quitter le QCM"
-      >
-        <X size={22} />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setQuestionMenuOpen((value) => !value)}
-        className="fixed right-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white shadow-lg backdrop-blur transition hover:bg-black/50 focus:outline-none focus:ring-4 focus:ring-white/30"
-        aria-label="Ouvrir le menu des questions"
-      >
-        <Menu size={22} />
-      </button>
+      <button type="button" onClick={() => navigate('/concours')} className="fixed left-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white shadow-lg backdrop-blur" aria-label="Quitter"><X size={22} /></button>
+      <button type="button" onClick={() => setQuestionMenuOpen((value) => !value)} className="fixed right-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white shadow-lg backdrop-blur" aria-label="Questions"><Menu size={22} /></button>
 
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6">
         <header className="mx-auto w-full max-w-3xl pt-12 text-center sm:pt-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/75">
-            {meta.contest?.name} · {meta.subject?.name} · {meta.chapter?.name}
-          </p>
-          <h1 className="mt-2 text-3xl font-black text-white drop-shadow sm:text-4xl">Shazax QCM</h1>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/75">{attempt.concoursName}</p>
+          <h1 className="mt-2 text-3xl font-black text-white drop-shadow sm:text-4xl">Examen Shazaxx</h1>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs font-black uppercase text-white/80">
-            <span className="rounded-full bg-white/16 px-3 py-1 backdrop-blur">{mode === 'exam' ? 'Mode examen' : 'Mode entrainement'}</span>
-            <span className="rounded-full bg-white/16 px-3 py-1 backdrop-blur">{question.difficulty}</span>
-            {settings.timerVisible ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/16 px-3 py-1 backdrop-blur">
-                <Clock size={14} />
-                {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
-              </span>
-            ) : null}
+            <span className="rounded-full bg-white/16 px-3 py-1 backdrop-blur">{answeredCount}/{questions.length} repondues</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/16 px-3 py-1 backdrop-blur"><Clock size={14} />{formatClock(remainingSeconds)}</span>
+            {saving ? <span className="inline-flex items-center gap-1 rounded-full bg-white/16 px-3 py-1 backdrop-blur"><Loader2 size={14} className="animate-spin" />saving</span> : null}
           </div>
         </header>
 
-        <section className="mx-auto mt-5 w-full max-w-3xl" aria-label="Progression de la serie">
-          <div className="mb-2 flex items-center justify-between text-xs font-black uppercase text-white/85">
-            <span>
-              Question {currentIndex + 1}/{questionIds.length}
-            </span>
-            <span>{Math.round(progressPercent)}%</span>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-white/25 shadow-inner">
-            <div className="h-full rounded-full bg-white transition-all duration-300" style={{ width: `${progressPercent}%` }} />
-          </div>
+        <section className="mx-auto mt-5 w-full max-w-3xl">
+          <div className="mb-2 flex items-center justify-between text-xs font-black uppercase text-white/85"><span>Question {currentIndex + 1}/{questions.length}</span><span>{Math.round(progressPercent)}%</span></div>
+          <div className="h-3 overflow-hidden rounded-full bg-white/25 shadow-inner"><div className="h-full rounded-full bg-white transition-all duration-300" style={{ width: `${progressPercent}%` }} /></div>
         </section>
 
         {questionMenuOpen ? (
-          <aside className="fixed right-4 top-20 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-[1.5rem] border border-white/30 bg-white/92 p-4 text-slate-900 shadow-2xl backdrop-blur">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-black">Choisir une question</h2>
-              <button
-                type="button"
-                onClick={() => setQuestionMenuOpen(false)}
-                className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
-                aria-label="Fermer le menu des questions"
-              >
-                <X size={18} />
-              </button>
-            </div>
+          <aside className="fixed right-4 top-20 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-[1.5rem] border border-white/30 bg-white/95 p-4 text-slate-900 shadow-2xl backdrop-blur">
+            <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-black">Questions</h2><button type="button" onClick={() => setQuestionMenuOpen(false)} className="rounded-full p-2 text-slate-500"><X size={18} /></button></div>
             <div className="grid grid-cols-5 gap-2">
-              {questionIds.map((questionId, index) => (
-                <button
-                  key={questionId}
-                  type="button"
-                  onClick={() => goToIndex(index)}
-                  className={`h-11 rounded-2xl border text-sm font-black transition ${getQuestionButtonClass(questionId, index)}`}
-                  aria-label={`Aller a la question ${index + 1}`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+              {questions.map((item, index) => <button key={item.id} type="button" onClick={() => goToIndex(index)} className={`h-11 rounded-2xl border text-sm font-black transition ${getQuestionButtonClass(item.id, index)}`}>{index + 1}</button>)}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-500">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Juste</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Faux</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-500" /> Passee</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-200" /> Vide</span>
-            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-500"><span>Vert: repondu</span><span>Jaune: flag</span></div>
           </aside>
         ) : null}
 
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          className="mx-auto mt-6 flex w-full max-w-3xl flex-1 items-center pb-24 transition-transform duration-200"
-        >
+        <div className="mx-auto mt-6 flex w-full max-w-3xl flex-1 items-center pb-24">
           <article className="w-full rounded-[1.6rem] border-[3px] border-slate-950 bg-white p-5 text-slate-900 shadow-2xl sm:p-7">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Question {currentIndex + 1}</p>
                 <h2 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{question.statement}</h2>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <FavoriteQuestionButton active={isFavorite} onToggle={handleFavorite} />
-                <ReportQuestionButton onReport={handleReport} />
-              </div>
+              <button type="button" onClick={toggleFlag} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${flagged ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-500'}`} aria-label="Flag question"><Flag size={19} fill={flagged ? 'currentColor' : 'none'} /></button>
             </div>
-
             <QuestionMedia imageUrl={question.imageUrl} />
-
-            {question.statementLatex ? (
-              <div className="mt-5 rounded-[1.25rem] border border-violet-100 bg-violet-50 px-4 py-4 text-center text-lg font-black text-violet-900">
-                {question.statementLatex}
-              </div>
-            ) : null}
-
-            {question.type === 'numeric' ? (
-              <NumericAnswerInput disabled={locked} value={selectedAnswer} onChange={setSelectedAnswer} />
-            ) : (
+            {question.type === 'numeric' ? <NumericAnswerInput value={selectedAnswer} onChange={(value) => persistAnswer(question.id, value)} /> : (
               <div className="mt-6 grid gap-3">
-                {question.choices.map((choice) => (
-                  <ChoiceButton
-                    key={choice.id}
-                    choice={choice}
-                    disabled={locked}
-                    isCorrect={locked && choice.id === question.correctChoiceId}
-                    isSelected={selectedAnswer === choice.id}
-                    isWrong={locked && selectedAnswer === choice.id && !answer?.correct}
-                    onSelect={setSelectedAnswer}
-                  />
-                ))}
+                {question.choices.map((choice) => <ChoiceButton key={choice.id} choice={choice} disabled={false} isCorrect={false} isSelected={selectedAnswer === choice.id} isWrong={false} onSelect={(value) => persistAnswer(question.id, value)} />)}
               </div>
             )}
-
-            <HintPanel hint={question.hint} visible={hintVisible} />
-            <ExplanationPanel answer={answer} question={question} visible={mode === 'training' && locked} />
           </article>
         </div>
       </div>
 
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/35 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:justify-between">
-          <button
-            type="button"
-            disabled={!canGoPrevious}
-            onClick={handlePrevious}
-            className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/12 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronLeft size={18} />
-            Precedent
-          </button>
-
-          {mode === 'training' ? (
-            <button
-              type="button"
-              disabled={locked || hintVisible}
-              onClick={showHint}
-              className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-900 shadow-lg transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Lightbulb size={18} />
-              Hint
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            disabled={locked}
-            onClick={() => handleCheck({ skipped: true })}
-            className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/12 px-4 py-3 text-sm font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <SkipForward size={18} />
-            Passer
-          </button>
-
-          {!locked ? (
-            <button
-              type="button"
-              disabled={!canCheck}
-              onClick={() => handleCheck()}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Check size={18} />
-              Check Answer
-            </button>
-          ) : isLast ? (
-            <button
-              type="button"
-              onClick={handleFinish}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-violet-50"
-            >
-              Terminer
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={!canGoNext}
-              onClick={handleNext}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Suivant
-              <ChevronRight size={18} />
-            </button>
-          )}
+          <button type="button" disabled={currentIndex === 0} onClick={() => goToIndex(currentIndex - 1)} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/12 px-4 py-3 text-sm font-black text-white disabled:opacity-40"><ChevronLeft size={18} />Precedent</button>
+          <button type="button" onClick={() => setConfirmSubmit(true)} disabled={submitting} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl disabled:opacity-50">{submitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}Submit</button>
+          <button type="button" disabled={currentIndex >= questions.length - 1} onClick={() => goToIndex(currentIndex + 1)} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/12 px-4 py-3 text-sm font-black text-white disabled:opacity-40">Suivant<ChevronRight size={18} /></button>
         </div>
       </footer>
 
-      <ConfirmDialog
-        open={confirmQuit}
-        title="Quitter la session ?"
-        message="Ta progression locale de cette session sera conservee, mais la serie ne sera pas terminee."
-        confirmLabel="Quitter"
-        onCancel={() => setConfirmQuit(false)}
-        onConfirm={() => navigate('/concours')}
-      />
+      <ConfirmDialog open={confirmSubmit} title="Soumettre l examen ?" message="Le score sera calcule cote serveur. Tu ne pourras plus modifier tes reponses." confirmLabel="Soumettre" onCancel={() => setConfirmSubmit(false)} onConfirm={() => finish()} />
+      {error ? <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-2xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-xl">{error}</div> : null}
     </main>
   );
 }

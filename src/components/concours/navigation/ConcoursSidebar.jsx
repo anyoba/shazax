@@ -46,7 +46,7 @@ export default function ConcoursSidebar({ collapsed, onToggle, onNavigate }) {
           {!collapsed ? (
             <div className="min-w-0">
               <div className="truncate text-lg font-black text-slate-950">Shazax Concours</div>
-              <div className="text-xs font-bold text-slate-400">Premium QCM local</div>
+              <div className="text-xs font-bold text-slate-400">Premium QCM</div>
             </div>
           ) : null}
         </NavLink>

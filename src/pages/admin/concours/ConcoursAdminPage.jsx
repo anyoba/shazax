@@ -1,340 +1,198 @@
-import { useMemo, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Archive, Copy, Eye, FileQuestion, Plus, Save, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
+import { Archive, Copy, FileQuestion, Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
 import Badge from '../../../components/concours/common/Badge.jsx';
-import Modal from '../../../components/concours/common/Modal.jsx';
+import EmptyState from '../../../components/concours/common/EmptyState.jsx';
+import LoadingState from '../../../components/concours/common/LoadingState.jsx';
 import Tabs from '../../../components/concours/common/Tabs.jsx';
-import QuestionRenderer from '../../../components/concours/quiz/QuestionRenderer.jsx';
 import {
-  concoursChapters,
-  concoursContests,
-  concoursSubjects,
-  QUESTION_TYPES,
-} from '../../../data/concours/index.js';
-import {
+  archiveAdminConcours,
+  createAdminConcours,
+  createAdminQuestion,
+  deleteAdminQuestion,
+  getAdminConcours,
+  getAdminDashboard,
   getAdminQuestions,
-  getReports,
-  saveAdminQuestions,
-} from '../../../services/concoursLocalStorage.js';
-import { getQuestionMeta } from '../../../utils/concours/catalog.js';
+  updateAdminConcours,
+  updateAdminQuestion,
+} from '../../../services/concoursApi.js';
 
-const ADMIN_ITEMS = [
-  ['dashboard', '/admin/concours', 'Dashboard'],
-  ['contests', '/admin/concours/contests', 'Concours'],
-  ['subjects', '/admin/concours/subjects', 'Matieres'],
-  ['chapters', '/admin/concours/chapters', 'Chapitres'],
-  ['questions', '/admin/concours/questions', 'Questions'],
-  ['series', '/admin/concours/series', 'Series'],
-  ['exams', '/admin/concours/exams', 'Examens blancs'],
-  ['activation-codes', '/admin/concours/activation-codes', 'Codes'],
-  ['reports', '/admin/concours/reports', 'Signalements'],
-  ['stats', '/admin/concours/statistics', 'Statistiques'],
-];
+const EMPTY_CONCOURS = { name: '', slug: '', school: '', description: '', year: String(new Date().getFullYear()), category: '', difficulty: 'medium', durationMinutes: 60, status: 'draft', coverImageUrl: '' };
+const EMPTY_QUESTION = { questionText: '', imageUrl: '', subject: '', difficulty: 'medium', points: 1, order: 1, status: 'draft', explanation: '', options: [{ id: 'A', text: '' }, { id: 'B', text: '' }, { id: 'C', text: '' }, { id: 'D', text: '' }], correctOptionId: 'A' };
+const TABS = [{ id: 'dashboard', label: 'Dashboard' }, { id: 'contests', label: 'Concours' }, { id: 'questions', label: 'Questions' }];
 
-const EMPTY_QUESTION = {
-  contestId: 'medicine',
-  year: '2026',
-  subjectId: 'math',
-  chapterId: 'limits',
-  type: 'single_choice',
-  difficulty: 'easy',
-  statement: '',
-  statementLatex: '',
-  imageUrl: '',
-  choices: [
-    { id: 'A', text: '' },
-    { id: 'B', text: '' },
-    { id: 'C', text: '' },
-    { id: 'D', text: '' },
-  ],
-  correctChoiceId: 'A',
-  correctNumericValue: '',
-  tolerance: 0,
-  hint: '',
-  explanation: '',
-  quickTip: '',
-  source: 'Question creee par Shazax',
-  status: 'draft',
-};
-
-function getSection(pathname) {
-  const found = ADMIN_ITEMS.find((item) => pathname === item[1]);
-  return found?.[0] || 'dashboard';
+function Field({ label, children }) {
+  return <label className="block"><span className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-white/40">{label}</span>{children}</label>;
 }
 
-function AdminNav() {
-  return (
-    <div className="flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 p-1">
-      {ADMIN_ITEMS.map(([id, to, label]) => (
-        <NavLink
-          key={id}
-          to={to}
-          end={to === '/admin/concours'}
-          className={({ isActive }) =>
-            `whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold ${
-              isActive ? 'bg-white/15 text-white' : 'text-white/50 hover:text-white'
-            }`
-          }
-        >
-          {label}
-        </NavLink>
-      ))}
-    </div>
-  );
+const inputClass = 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white placeholder:text-white/25 focus:border-primary/50 focus:outline-none';
+const selectClass = 'w-full rounded-xl border border-white/10 bg-gray-950 px-4 py-3 text-sm font-bold text-white focus:border-primary/50 focus:outline-none';
+
+function Stat({ label, value }) {
+  return <div className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="text-3xl font-black text-white">{value}</div><div className="mt-1 text-sm text-white/45">{label}</div></div>;
 }
 
-function LocalSummary({ questions }) {
-  const reports = getReports();
-  return (
-    <div className="grid gap-4 md:grid-cols-4">
-      {[
-        ['Questions', questions.length],
-        ['Publiees', questions.filter((question) => question.status === 'published').length],
-        ['Brouillons', questions.filter((question) => question.status === 'draft').length],
-        ['Signalements', reports.length],
-      ].map(([label, value]) => (
-        <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-3xl font-black text-white">{value}</div>
-          <div className="mt-1 text-sm text-white/45">{label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function QuestionForm({ initialValue, onSubmit }) {
-  const [form, setForm] = useState(initialValue || EMPTY_QUESTION);
-
-  function update(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function updateChoice(id, value) {
-    setForm((current) => ({
-      ...current,
-      choices: current.choices.map((choice) => (choice.id === id ? { ...choice, text: value } : choice)),
-    }));
-  }
-
-  function submit(event) {
-    event.preventDefault();
-    onSubmit(form);
-    setForm(EMPTY_QUESTION);
-  }
-
+function ConcoursForm({ initialValue, saving, onSubmit, onCancel }) {
+  const [form, setForm] = useState(initialValue || EMPTY_CONCOURS);
+  useEffect(() => setForm(initialValue || EMPTY_CONCOURS), [initialValue]);
+  function update(field, value) { setForm((current) => ({ ...current, [field]: value })); }
+  function submit(event) { event.preventDefault(); onSubmit(form); }
   return (
     <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <div className="grid gap-4 md:grid-cols-3">
-        <select value={form.contestId} onChange={(event) => update('contestId', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {concoursContests.map((contest) => <option key={contest.id} value={contest.id}>{contest.name}</option>)}
-        </select>
-        <select value={form.subjectId} onChange={(event) => update('subjectId', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {concoursSubjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
-        </select>
-        <select value={form.chapterId} onChange={(event) => update('chapterId', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {concoursChapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{chapter.name}</option>)}
-        </select>
-        <select value={form.type} onChange={(event) => update('type', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {QUESTION_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-        </select>
-        <select value={form.difficulty} onChange={(event) => update('difficulty', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {['easy', 'medium', 'hard'].map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
-        </select>
-        <select value={form.status} onChange={(event) => update('status', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {['draft', 'review', 'published', 'archived'].map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
+        <Field label="Name"><input required value={form.name} onChange={(e) => update('name', e.target.value)} className={inputClass} placeholder="ENSA 2026" /></Field>
+        <Field label="Slug"><input value={form.slug} onChange={(e) => update('slug', e.target.value)} className={inputClass} placeholder="ensa-2026" /></Field>
+        <Field label="School"><input value={form.school} onChange={(e) => update('school', e.target.value)} className={inputClass} placeholder="ENSA" /></Field>
+        <Field label="Year"><input value={form.year} onChange={(e) => update('year', e.target.value)} className={inputClass} /></Field>
+        <Field label="Category"><input value={form.category} onChange={(e) => update('category', e.target.value)} className={inputClass} placeholder="Engineering" /></Field>
+        <Field label="Duration"><input type="number" min="1" value={form.durationMinutes} onChange={(e) => update('durationMinutes', e.target.value)} className={inputClass} /></Field>
+        <Field label="Difficulty"><select value={form.difficulty} onChange={(e) => update('difficulty', e.target.value)} className={selectClass}>{['easy', 'medium', 'hard', 'mixed'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
+        <Field label="Status"><select value={form.status} onChange={(e) => update('status', e.target.value)} className={selectClass}>{['draft', 'published', 'archived'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
+        <Field label="Cover"><input value={form.coverImageUrl} onChange={(e) => update('coverImageUrl', e.target.value)} className={inputClass} placeholder="https://..." /></Field>
       </div>
-
-      <textarea value={form.statement} onChange={(event) => update('statement', event.target.value)} required rows={3} placeholder="Enonce" className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-      <input value={form.statementLatex} onChange={(event) => update('statementLatex', event.target.value)} placeholder="LaTeX facultatif" className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-      <input value={form.imageUrl} onChange={(event) => update('imageUrl', event.target.value)} placeholder="Image URL facultative" className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        {form.choices.map((choice) => (
-          <input key={choice.id} value={choice.text} onChange={(event) => updateChoice(choice.id, event.target.value)} placeholder={`Choix ${choice.id}`} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-        ))}
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <select value={form.correctChoiceId} onChange={(event) => update('correctChoiceId', event.target.value)} className="rounded-xl bg-gray-950 px-4 py-3 text-white">
-          {['A', 'B', 'C', 'D'].map((choice) => <option key={choice} value={choice}>Bonne reponse {choice}</option>)}
-        </select>
-        <input value={form.correctNumericValue} onChange={(event) => update('correctNumericValue', event.target.value)} placeholder="Reponse numerique" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-      </div>
-
-      <textarea value={form.hint} onChange={(event) => update('hint', event.target.value)} rows={2} placeholder="Hint" className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-      <textarea value={form.explanation} onChange={(event) => update('explanation', event.target.value)} rows={3} placeholder="Explication detaillee" className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-      <input value={form.quickTip} onChange={(event) => update('quickTip', event.target.value)} placeholder="Astuce rapide" className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-      <input value={form.source} onChange={(event) => update('source', event.target.value)} placeholder="Source" className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25" />
-
-      <button type="submit" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white">
-        <Save size={16} />
-        Enregistrer localement
-      </button>
+      <Field label="Description"><textarea value={form.description} onChange={(e) => update('description', e.target.value)} rows={3} className={`${inputClass} mt-4`} /></Field>
+      <div className="mt-4 flex flex-wrap gap-3"><button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Save size={16} />{saving ? 'Saving...' : 'Save concours'}</button>{onCancel ? <button type="button" onClick={onCancel} className="rounded-xl border border-white/10 px-5 py-3 text-sm font-bold text-white/60">Cancel</button> : null}</div>
     </form>
   );
 }
 
-function QuestionsPanel({ questions, setQuestions }) {
-  const [query, setQuery] = useState('');
-  const [editing, setEditing] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const filtered = questions.filter((question) => question.statement.toLowerCase().includes(query.toLowerCase()));
-
-  function upsertQuestion(payload) {
-    const nextStatus = editing && editing.status === 'published' ? 'review' : payload.status;
-    const question = {
-      ...payload,
-      id: editing?.id || `local-question-${Date.now()}`,
-      status: nextStatus,
-    };
-    const nextQuestions = editing
-      ? questions.map((item) => (item.id === editing.id ? question : item))
-      : [question, ...questions];
-    setQuestions(saveAdminQuestions(nextQuestions));
-    setEditing(null);
-  }
-
-  function duplicateQuestion(question) {
-    const copy = {
-      ...question,
-      id: `local-question-${Date.now()}`,
-      statement: `${question.statement} (Copie)`,
-      status: 'draft',
-    };
-    setQuestions(saveAdminQuestions([copy, ...questions]));
-  }
-
-  function archiveQuestion(question) {
-    setQuestions(saveAdminQuestions(questions.map((item) => item.id === question.id ? { ...item, status: 'archived' } : item)));
-  }
-
+function QuestionForm({ concoursId, initialValue, saving, onSubmit, onCancel }) {
+  const [form, setForm] = useState(initialValue || EMPTY_QUESTION);
+  useEffect(() => setForm(initialValue || EMPTY_QUESTION), [initialValue]);
+  function update(field, value) { setForm((current) => ({ ...current, [field]: value })); }
+  function choice(id, text) { setForm((current) => ({ ...current, options: current.options.map((item) => item.id === id ? { ...item, text } : item) })); }
+  function submit(event) { event.preventDefault(); onSubmit({ ...form, concoursId }); }
   return (
-    <div className="space-y-6">
-      <QuestionForm initialValue={editing} onSubmit={upsertQuestion} />
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <label className="relative block">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une question" className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-white placeholder:text-white/25" />
-        </label>
+    <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Field label="Subject"><input value={form.subject} onChange={(e) => update('subject', e.target.value)} className={inputClass} /></Field>
+        <Field label="Difficulty"><select value={form.difficulty} onChange={(e) => update('difficulty', e.target.value)} className={selectClass}>{['easy', 'medium', 'hard'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
+        <Field label="Points"><input type="number" min="1" value={form.points} onChange={(e) => update('points', e.target.value)} className={inputClass} /></Field>
+        <Field label="Order"><input type="number" min="1" value={form.order} onChange={(e) => update('order', e.target.value)} className={inputClass} /></Field>
       </div>
-      <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-        {filtered.map((question) => {
-          const meta = getQuestionMeta(question);
-          return (
-            <div key={question.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">{meta.contestName}</span>
-                  <span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">{question.status}</span>
-                </div>
-                <p className="mt-2 font-medium text-white">{question.statement}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => setPreview(question)} className="rounded-xl border border-white/10 p-2 text-white/60 hover:text-white"><Eye size={16} /></button>
-                <button onClick={() => setEditing(question)} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/70">Modifier</button>
-                <button onClick={() => duplicateQuestion(question)} className="rounded-xl border border-white/10 p-2 text-white/60 hover:text-white"><Copy size={16} /></button>
-                <button onClick={() => archiveQuestion(question)} className="rounded-xl border border-red-400/20 p-2 text-red-300"><Archive size={16} /></button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <Modal open={Boolean(preview)} onClose={() => setPreview(null)} title="Apercu etudiant">
-        {preview ? (
-          <QuestionRenderer
-            question={preview}
-            meta={getQuestionMeta(preview)}
-            selectedAnswer=""
-            answer={null}
-            locked={false}
-            favorite={false}
-            hintVisible
-            onSelect={() => {}}
-            onToggleFavorite={() => {}}
-            onReport={() => {}}
-          />
-        ) : null}
-      </Modal>
-    </div>
-  );
-}
-
-function ComingSoonPanel({ title }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-      <FileQuestion className="text-primary" size={28} />
-      <h2 className="mt-4 text-2xl font-black text-white">{title}</h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-white/45">
-        Section locale preparee pour la suite. Aucun appel Firestore, aucune API et aucun paiement reel dans cette version.
-      </p>
-      {title === 'Import' ? (
-        <pre className="mt-5 overflow-x-auto rounded-xl bg-black/20 p-4 text-xs text-white/50">
-{`[
-  {
-    "contestId": "medicine",
-    "subjectId": "math",
-    "chapterId": "limits",
-    "type": "single_choice",
-    "statement": "...",
-    "choices": [{"id":"A","text":"..."}],
-    "correctChoiceId": "A"
-  }
-]`}
-        </pre>
-      ) : null}
-    </div>
-  );
-}
-
-function ReportsPanel() {
-  const reports = getReports();
-  return (
-    <div className="space-y-4">
-      {reports.length === 0 ? (
-        <ComingSoonPanel title="Signalements" />
-      ) : (
-        reports.map((report) => (
-          <div key={report.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="font-black text-white">{report.reason}</div>
-            <div className="mt-1 text-sm text-white/45">{report.questionId}</div>
-            {report.details ? <p className="mt-2 text-sm text-white/70">{report.details}</p> : null}
-          </div>
-        ))
-      )}
-    </div>
+      <Field label="Question"><textarea required value={form.questionText || form.statement || ''} onChange={(e) => update('questionText', e.target.value)} rows={3} className={`${inputClass} mt-4`} /></Field>
+      <input value={form.imageUrl || ''} onChange={(e) => update('imageUrl', e.target.value)} className={`${inputClass} mt-3`} placeholder="Image URL optional" />
+      <div className="mt-4 grid gap-3 md:grid-cols-2">{(form.options || EMPTY_QUESTION.options).map((item) => <input key={item.id} value={item.text} onChange={(e) => choice(item.id, e.target.value)} className={inputClass} placeholder={`Choice ${item.id}`} />)}</div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2"><Field label="Correct"><select value={form.correctOptionId || form.correctChoiceId || 'A'} onChange={(e) => update('correctOptionId', e.target.value)} className={selectClass}>{(form.options || EMPTY_QUESTION.options).map((item) => <option key={item.id} value={item.id}>{item.id}</option>)}</select></Field><Field label="Status"><select value={form.status} onChange={(e) => update('status', e.target.value)} className={selectClass}>{['draft', 'published', 'archived'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></div>
+      <Field label="Explanation"><textarea value={form.explanation || ''} onChange={(e) => update('explanation', e.target.value)} rows={3} className={`${inputClass} mt-4`} /></Field>
+      <div className="mt-4 flex flex-wrap gap-3"><button disabled={saving || !concoursId} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Save size={16} />{saving ? 'Saving...' : 'Save question'}</button>{onCancel ? <button type="button" onClick={onCancel} className="rounded-xl border border-white/10 px-5 py-3 text-sm font-bold text-white/60">Cancel</button> : null}</div>
+    </form>
   );
 }
 
 export default function ConcoursAdminPage() {
-  const location = useLocation();
-  const section = getSection(location.pathname);
-  const [questions, setQuestions] = useState(() => getAdminQuestions());
-  const tabs = useMemo(() => ADMIN_ITEMS.map(([id, , label]) => ({ id, label })), []);
+  const { getToken } = useAuth();
+  const [tab, setTab] = useState('dashboard');
+  const [stats, setStats] = useState(null);
+  const [concours, setConcours] = useState([]);
+  const [selectedConcoursId, setSelectedConcoursId] = useState('');
+  const [questions, setQuestions] = useState([]);
+  const [editingConcours, setEditingConcours] = useState(null);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function loadAll() {
+    setLoading(true);
+    setMessage('');
+    try {
+      const [statsBody, concoursBody] = await Promise.all([getAdminDashboard(getToken), getAdminConcours(getToken)]);
+      setStats(statsBody.stats);
+      setConcours(concoursBody.concours || []);
+      setSelectedConcoursId((current) => current || concoursBody.concours?.[0]?.id || '');
+    } catch (err) {
+      setMessage(err?.message || 'Unable to load admin data.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadQuestions(concoursId = selectedConcoursId) {
+    if (!concoursId) { setQuestions([]); return; }
+    setQuestionsLoading(true);
+    try {
+      const body = await getAdminQuestions(concoursId, getToken);
+      setQuestions(body.questions || []);
+    } catch (err) {
+      setMessage(err?.message || 'Unable to load questions.');
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }
+
+  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadQuestions(selectedConcoursId); }, [selectedConcoursId]);
+
+  async function saveConcours(payload) {
+    setSaving(true);
+    setMessage('');
+    try {
+      if (editingConcours) await updateAdminConcours(editingConcours.id, payload, getToken);
+      else await createAdminConcours(payload, getToken);
+      setEditingConcours(null);
+      setMessage('Concours saved.');
+      await loadAll();
+    } catch (err) {
+      setMessage(err?.message || 'Unable to save concours.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function archiveConcours(id) {
+    if (!window.confirm('Archive this concours?')) return;
+    setSaving(true);
+    try { await archiveAdminConcours(id, getToken); await loadAll(); setMessage('Concours archived.'); } catch (err) { setMessage(err?.message || 'Unable to archive.'); } finally { setSaving(false); }
+  }
+
+  async function saveQuestion(payload) {
+    setSaving(true);
+    setMessage('');
+    try {
+      if (editingQuestion) await updateAdminQuestion(editingQuestion.id, payload, getToken);
+      else await createAdminQuestion(payload, getToken);
+      setEditingQuestion(null);
+      setMessage('Question saved.');
+      await loadQuestions(payload.concoursId);
+      await loadAll();
+    } catch (err) {
+      setMessage(err?.message || 'Unable to save question.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function duplicateQuestion(question) {
+    const copy = { ...question, questionText: `${question.questionText || question.statement} (Copie)`, status: 'draft', order: Number(question.order || 0) + 1 };
+    delete copy.id;
+    await saveQuestion(copy);
+  }
+
+  async function removeQuestion(question) {
+    if (!window.confirm('Delete this question?')) return;
+    setSaving(true);
+    try { await deleteAdminQuestion(question.id, getToken); await loadQuestions(question.concoursId); await loadAll(); setMessage('Question deleted.'); } catch (err) { setMessage(err?.message || 'Unable to delete question.'); } finally { setSaving(false); }
+  }
+
+  const filteredQuestions = questions.filter((question) => String(question.questionText || question.statement || '').toLowerCase().includes(query.trim().toLowerCase()));
+  const selectedConcours = concours.find((item) => item.id === selectedConcoursId);
+
+  if (loading) return <div className="min-h-screen bg-gray-950 p-6 text-white"><LoadingState label="Loading concours admin..." /></div>;
 
   return (
     <div className="min-h-screen bg-gray-950 px-4 py-6 text-white sm:px-6">
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <Badge tone="violet">Admin local</Badge>
-            <h1 className="mt-3 text-3xl font-black">Administration Shazax Concours</h1>
-            <p className="mt-2 text-sm text-white/45">CRUD simule en localStorage. Aucune ecriture Firestore.</p>
-          </div>
-          <AdminNav />
-        </header>
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><Badge tone="violet">Admin Firestore</Badge><h1 className="mt-3 text-3xl font-black">Administration Shazaxx Concours</h1><p className="mt-2 text-sm text-white/45">CRUD reel, role-based API, scoring serveur.</p></div><Tabs tabs={TABS} activeTab={tab} onChange={setTab} /></header>
+        {message ? <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white/70">{message}</div> : null}
 
-        {section === 'dashboard' ? (
-          <div className="space-y-6">
-            <LocalSummary questions={questions} />
-            <ComingSoonPanel title="Import" />
-          </div>
-        ) : null}
-        {section === 'questions' ? <QuestionsPanel questions={questions} setQuestions={setQuestions} /> : null}
-        {section === 'reports' ? <ReportsPanel /> : null}
-        {!['dashboard', 'questions', 'reports'].includes(section) ? (
-          <ComingSoonPanel title={ADMIN_ITEMS.find(([id]) => id === section)?.[2] || 'Section'} />
-        ) : null}
+        {tab === 'dashboard' ? <div className="grid gap-4 md:grid-cols-4"><Stat label="Users" value={stats?.totalUsers || 0} /><Stat label="Concours" value={stats?.totalConcours || 0} /><Stat label="Questions" value={stats?.totalQuestions || 0} /><Stat label="Attempts" value={stats?.totalAttempts || 0} /><Stat label="Active users" value={stats?.activeUsers || 0} /><Stat label="Average score" value={`${stats?.averageScore || 0}%`} /><Stat label="New users/week" value={stats?.newUsersThisWeek || 0} /><Stat label="Published" value={concours.filter((item) => item.status === 'published').length} /></div> : null}
+
+        {tab === 'contests' ? <div className="space-y-6"><ConcoursForm initialValue={editingConcours} saving={saving} onSubmit={saveConcours} onCancel={editingConcours ? () => setEditingConcours(null) : null} /><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{concours.map((item) => <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="flex items-start justify-between gap-3"><div><Badge tone={item.status === 'published' ? 'green' : item.status === 'archived' ? 'slate' : 'amber'}>{item.status}</Badge><h3 className="mt-3 text-xl font-black">{item.name}</h3><p className="mt-1 text-sm text-white/45">{item.school} - {item.year}</p></div><div className="text-right text-sm font-black text-white/45">{item.questionCount || 0} Q</div></div><p className="mt-3 line-clamp-2 text-sm text-white/55">{item.description}</p><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => { setEditingConcours(item); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-gray-950">Edit</button><button onClick={() => { setSelectedConcoursId(item.id); setTab('questions'); }} className="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/70">Questions</button><button onClick={() => archiveConcours(item.id)} className="rounded-xl border border-amber-400/20 px-3 py-2 text-sm font-bold text-amber-200"><Archive size={15} /></button></div></article>)}</div></div> : null}
+
+        {tab === 'questions' ? <div className="space-y-6"><div className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="grid gap-4 md:grid-cols-[1fr_2fr]"><Field label="Concours"><select value={selectedConcoursId} onChange={(e) => setSelectedConcoursId(e.target.value)} className={selectClass}>{concours.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field><Field label="Search"><div className="relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" /><input value={query} onChange={(e) => setQuery(e.target.value)} className={`${inputClass} pl-10`} placeholder="Search questions" /></div></Field></div></div>{selectedConcours ? <QuestionForm concoursId={selectedConcours.id} initialValue={editingQuestion} saving={saving} onSubmit={saveQuestion} onCancel={editingQuestion ? () => setEditingQuestion(null) : null} /> : <EmptyState title="No concours" description="Create a concours first." />}{questionsLoading ? <LoadingState label="Loading questions..." /> : <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-white/5">{filteredQuestions.length === 0 ? <div className="p-6 text-white/40"><FileQuestion className="mb-3 text-primary" />No questions yet.</div> : filteredQuestions.map((question) => <div key={question.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex flex-wrap gap-2"><Badge tone={question.status === 'published' ? 'green' : 'amber'}>{question.status}</Badge><span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">Order {question.order}</span><span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">{question.subject || 'General'}</span></div><p className="mt-2 font-medium text-white">{question.questionText || question.statement}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setEditingQuestion(question)} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/70">Edit</button><button onClick={() => duplicateQuestion(question)} className="rounded-xl border border-white/10 p-2 text-white/60"><Copy size={16} /></button><button onClick={() => removeQuestion(question)} className="rounded-xl border border-red-400/20 p-2 text-red-300"><Trash2 size={16} /></button></div></div>)}</div>}</div> : null}
       </div>
     </div>
   );

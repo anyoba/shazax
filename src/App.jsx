@@ -4,10 +4,8 @@ import { Analytics } from '@vercel/analytics/react'
 import { trackPageVisit } from './analytics';
 import { useResources } from './hooks/useResources';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
 import { createResource, deleteResource } from './services/resourcesApi';
-import { getFirestoreErrorMessage } from './utils/firebaseErrors';
+import { syncCurrentUser } from './services/userApi.js';
 import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
@@ -47,15 +45,16 @@ function LoadingRoute() {
 
 function concoursRoute(page) {
   return (
-    <RoleProtectedRoute allowedRoles={[USER_ROLES.OWNER]}>
-      <ProtectedRoute
-        element={
-        <ConcoursLayout>
-          {page}
-        </ConcoursLayout>
-        }
-      />
-    </RoleProtectedRoute>
+    <ProtectedRoute
+      element={
+        <>
+          <UserSync />
+          <ConcoursLayout>
+            {page}
+          </ConcoursLayout>
+        </>
+      }
+    />
   );
 }
 
@@ -96,15 +95,10 @@ export default function App() {
             <Route path="/concours/concours" element={concoursRoute(<ContestsPage />)} />
             <Route path="/concours/concours/:contestSlug" element={concoursRoute(<ContestsPage />)} />
             <Route path="/concours/training" element={concoursRoute(<TrainingSetupPage />)} />
-            <Route
-              path="/concours/session/:sessionId"
-              element={
-                <RoleProtectedRoute allowedRoles={[USER_ROLES.OWNER]}>
-                  <ProtectedRoute element={<QuizSessionPage />} />
-                </RoleProtectedRoute>
-              }
-            />
+            <Route path="/concours/session/:sessionId" element={<ProtectedRoute element={<><UserSync /><QuizSessionPage /></>} />} />
+            <Route path="/concours/:contestSlug/exam/:attemptId" element={<ProtectedRoute element={<><UserSync /><QuizSessionPage /></>} />} />
             <Route path="/concours/results/:sessionId" element={concoursRoute(<QuizResultsPage />)} />
+            <Route path="/concours/:contestSlug/results/:attemptId" element={concoursRoute(<QuizResultsPage />)} />
             <Route path="/concours/progress" element={concoursRoute(<ProgressPage />)} />
             <Route path="/concours/ranking" element={concoursRoute(<RankingPage />)} />
             <Route path="/concours/favorites" element={concoursRoute(<FavoritesPage />)} />
@@ -112,12 +106,11 @@ export default function App() {
             <Route path="/concours/profile" element={concoursRoute(<ConcoursProfilePage />)} />
             <Route path="/concours/activation" element={concoursRoute(<ActivationPage />)} />
             <Route path="/concours/settings" element={concoursRoute(<SettingsPage />)} />
+            <Route path="/concours/:contestSlug" element={concoursRoute(<ContestsPage />)} />
             <Route
               path="/admin/concours/*"
               element={
-                <RoleProtectedRoute
-                  allowedRoles={[USER_ROLES.OWNER]}
-                >
+                <RoleProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.OWNER]}>
                   <ConcoursAdminPage />
                 </RoleProtectedRoute>
               }
@@ -132,43 +125,25 @@ export default function App() {
 
 function UserSync() {
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (!user?.id) return;
 
-    const userData = {
-      id: user.id,
-      fullName: user.fullName || user.firstName || user.emailAddresses?.[0]?.emailAddress || 'Student',
-      email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '',
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    };
-
-    if (user.profileImageUrl) {
-      userData.profileImageUrl = user.profileImageUrl;
-    }
-
     const cacheKey = JSON.stringify({
-      fullName: userData.fullName,
-      email: userData.email,
-      profileImageUrl: userData.profileImageUrl || '',
+      fullName: user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || '',
+      email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '',
+      profileImageUrl: user.profileImageUrl || '',
     });
 
     if (syncedUsers.get(user.id) === cacheKey) return;
     syncedUsers.set(user.id, cacheKey);
 
-    setDoc(doc(db, 'users', user.id), userData, { merge: true }).catch((error) => {
+    syncCurrentUser(user, getToken).catch((error) => {
       syncedUsers.delete(user.id);
-      console.error('Unable to sync Clerk user to Firestore', getFirestoreErrorMessage(error));
+      console.error('Unable to sync Clerk user to Firestore', error?.message || error);
     });
-  }, [
-    user?.id,
-    user?.fullName,
-    user?.firstName,
-    user?.primaryEmailAddress?.emailAddress,
-    user?.emailAddresses,
-    user?.profileImageUrl,
-  ]);
+  }, [getToken, user]);
 
   return null;
 }

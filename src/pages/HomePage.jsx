@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AnimatePresence,
@@ -8,6 +8,8 @@ import {
   useScroll,
   useTransform,
 } from 'framer-motion';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
   ArrowRight,
   Book,
@@ -26,6 +28,8 @@ import {
 import { createPortal } from 'react-dom';
 import BrandLogo from '../components/BrandLogo';
 import { addEmail } from '../waitlist';
+
+gsap.registerPlugin(ScrollTrigger);
 
 
 function WaitlistModal({ isOpen, onClose }) {
@@ -349,6 +353,302 @@ function InteractiveDemo() {
   );
 }
 
+const focusFeatures = [
+  {
+    icon: Play,
+    title: 'Courses',
+    desc: 'Short visual lessons that turn dense concepts into clear study moves.',
+    backLabel: 'LEARN',
+    backText: 'From first idea to confident understanding.',
+    backItems: ['Visual courses', 'Fast explanations', 'Module roadmap'],
+  },
+  {
+    icon: BrainCircuit,
+    title: 'TD & Solutions',
+    desc: 'Step-by-step practice that shows the logic behind every exercise.',
+    backLabel: 'PRACTICE',
+    backText: 'Solve, compare, and understand the method.',
+    backItems: ['Guided TDs', 'Clear solutions', 'Reasoning steps'],
+  },
+  {
+    icon: Book,
+    title: 'Exams',
+    desc: 'Real challenges that help you test speed, accuracy, and mastery.',
+    backLabel: 'MASTER',
+    backText: 'Train with exam-style pressure and feedback.',
+    backItems: ['Exam problems', 'Timed practice', 'Instant feedback'],
+  },
+];
+
+const focusCurvePaths = [
+  {
+    from: 'M 126 330 C 330 330 470 330 654 330',
+    to: 'M 126 330 C 330 145 470 185 654 286',
+  },
+  {
+    from: 'M 374 110 C 610 110 840 110 1066 110',
+    to: 'M 374 110 C 620 250 842 250 1066 126',
+  },
+  {
+    from: 'M 760 386 C 965 386 1130 386 1318 386',
+    to: 'M 760 386 C 940 220 1116 218 1318 320',
+  },
+];
+
+function FocusSection() {
+  const sectionRef = useRef(null);
+  const titleRef = useRef(null);
+  const stageRef = useRef(null);
+  const cardRefs = useRef([]);
+  const innerRefs = useRef([]);
+  const iconRefs = useRef([]);
+  const curveRefs = useRef([]);
+
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      const cards = cardRefs.current.filter(Boolean);
+      const inners = innerRefs.current.filter(Boolean);
+      const curves = curveRefs.current.filter(Boolean);
+      curves.forEach((curve, index) => {
+        curve.setAttribute('d', focusCurvePaths[index].to);
+        const length = curve.getTotalLength();
+        gsap.set(curve, { autoAlpha: 0.36, strokeDasharray: length, strokeDashoffset: 0 });
+      });
+      gsap.set([titleRef.current, ...cards], { clearProps: 'all' });
+      gsap.set(inners, { rotateY: 180 });
+      return undefined;
+    }
+
+    const mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      const cards = cardRefs.current.filter(Boolean);
+      const inners = innerRefs.current.filter(Boolean);
+      const icons = iconRefs.current.filter(Boolean);
+      const curves = curveRefs.current.filter(Boolean);
+
+      curves.forEach((curve, index) => {
+        curve.setAttribute('d', focusCurvePaths[index].from);
+        const length = curve.getTotalLength();
+        gsap.set(curve, { autoAlpha: 0, strokeDasharray: length, strokeDashoffset: length });
+      });
+      gsap.set(titleRef.current, { autoAlpha: 0, y: 34 });
+      gsap.set(inners, { transformStyle: 'preserve-3d', transformOrigin: '50% 50%', rotateY: 0 });
+      gsap.set(cards, { transformOrigin: '50% 50%', transformStyle: 'preserve-3d' });
+
+      mm.add('(min-width: 1024px)', () => {
+        gsap.set(stageRef.current, { perspective: 1400 });
+        gsap.set(cards[0], { x: '120%', y: 18, z: 15, rotateX: 0, rotateY: -5, rotateZ: -11, scale: 0.98 });
+        gsap.set(cards[1], { x: 0, y: 0, z: 90, rotateX: 0, rotateY: 0, rotateZ: 1, scale: 1 });
+        gsap.set(cards[2], { x: '-120%', y: 14, z: 45, rotateX: 0, rotateY: 5, rotateZ: 10, scale: 0.98 });
+
+        gsap.to(inners, {
+          y: (index) => [-6, 4, -5][index],
+          duration: (index) => [2.8, 3.2, 2.95][index],
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          stagger: 0.12,
+        });
+
+        const tl = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: '+=2800',
+            scrub: 1.2,
+            pin: true,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        tl.addLabel('intro')
+          .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.42, ease: 'power3.out' }, 0)
+          .addLabel('shuffle', 0.28)
+          .to(cards[0], { x: '92%', y: 6, z: 55, rotateX: 0, rotateY: -8, rotateZ: -16, duration: 0.62, ease: 'power2.inOut' }, 'shuffle')
+          .to(cards[1], { x: 0, y: -8, z: 140, rotateX: 0, rotateY: 0, rotateZ: 1, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.04')
+          .to(cards[2], { x: '-92%', y: 8, z: 70, rotateX: 0, rotateY: 8, rotateZ: 15, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.08')
+          .to(curves[0], { attr: { d: focusCurvePaths[0].to }, strokeDashoffset: 0, autoAlpha: 0.44, duration: 0.72, ease: 'power2.inOut' }, 'shuffle+=0.06')
+          .to(icons, { scale: 1.1, rotateZ: 8, boxShadow: '0 0 0 10px rgba(255,255,255,0.08)', duration: 0.42, stagger: 0.06, ease: 'power2.out' }, 'shuffle+=0.08')
+          .addLabel('deal', 0.92)
+          .to(cards[0], { x: 0, y: 6, z: 85, rotateX: 0, rotateY: 0, rotateZ: -7, duration: 0.82, ease: 'power2.inOut' }, 'deal')
+          .to(cards[1], { x: 0, y: -16, z: 165, rotateX: 0, rotateY: 0, rotateZ: 0, duration: 0.82, ease: 'power2.inOut' }, 'deal+=0.06')
+          .to(cards[2], { x: 0, y: 6, z: 85, rotateX: 0, rotateY: 0, rotateZ: 7, duration: 0.82, ease: 'power2.inOut' }, 'deal+=0.12')
+          .to(curves[1], { attr: { d: focusCurvePaths[1].to }, strokeDashoffset: 0, autoAlpha: 0.38, duration: 0.78, ease: 'power2.inOut' }, 'deal+=0.02')
+          .addLabel('turn', 1.72)
+          .to(cards[0], { x: 0, y: 2, z: 105, rotateX: 0, rotateY: 0, rotateZ: -5, duration: 0.82, ease: 'power2.inOut' }, 'turn')
+          .to(cards[1], { x: 0, y: -18, z: 190, rotateX: 0, rotateY: 0, rotateZ: 0, duration: 0.82, ease: 'power2.inOut' }, 'turn+=0.1')
+          .to(cards[2], { x: 0, y: 2, z: 105, rotateX: 0, rotateY: 0, rotateZ: 5, duration: 0.82, ease: 'power2.inOut' }, 'turn+=0.2')
+          .to(curves[2], { attr: { d: focusCurvePaths[2].to }, strokeDashoffset: 0, autoAlpha: 0.34, duration: 0.78, ease: 'power2.inOut' }, 'turn+=0.1')
+          .addLabel('flip', 2.18)
+          .to(inners, { rotateY: 180, duration: 0.82, stagger: 0.08, ease: 'power2.inOut' }, 'flip')
+          .addLabel('frontFan', 2.86)
+          .to(cards[0], { x: 0, y: 4, z: 90, rotateX: 0, rotateY: 0, rotateZ: -6, scale: 1, duration: 0.86, ease: 'power2.inOut' }, 'frontFan')
+          .to(cards[1], { x: 0, y: -18, z: 185, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1.035, duration: 0.86, ease: 'power2.inOut' }, 'frontFan+=0.04')
+          .to(cards[2], { x: 0, y: 4, z: 90, rotateX: 0, rotateY: 0, rotateZ: 6, scale: 1, duration: 0.86, ease: 'power2.inOut' }, 'frontFan+=0.08')
+          .addLabel('settle', 3.72)
+          .to(cards[0], { x: 0, y: 2, z: 70, rotateX: 0, rotateY: 0, rotateZ: -4, scale: 1, duration: 0.78, ease: 'power2.inOut' }, 'settle')
+          .to(cards[1], { x: 0, y: -10, z: 155, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1.03, duration: 0.78, ease: 'power2.inOut' }, 'settle+=0.04')
+          .to(cards[2], { x: 0, y: 2, z: 70, rotateX: 0, rotateY: 0, rotateZ: 4, scale: 1, duration: 0.78, ease: 'power2.inOut' }, 'settle+=0.08')
+          .addLabel('exit', 4.72)
+          .to(curves, { autoAlpha: 0.18, duration: 0.5, stagger: 0.04, ease: 'power2.inOut' }, 'exit')
+          .to(cards, { y: (index) => [4, -8, 4][index], z: (index) => [55, 140, 55][index], scale: (index) => (index === 1 ? 1.02 : 0.99), duration: 0.58, stagger: 0.03, ease: 'power2.inOut' }, 'exit')
+          .to(icons, { scale: 1, rotateZ: 0, boxShadow: '0 0 0 0 rgba(255,255,255,0)', duration: 0.45, stagger: 0.04, ease: 'power2.inOut' }, 'exit+=0.05');
+      });
+
+      mm.add('(max-width: 1023px)', () => {
+        gsap.set(cards, { clearProps: 'all' });
+        gsap.set(inners, { rotateY: 0 });
+
+        gsap.to(inners, {
+          y: (index) => [-5, 3, -4][index],
+          duration: (index) => [2.8, 3.15, 2.95][index],
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          stagger: 0.12,
+        });
+
+        const mobileTl = gsap.timeline({
+          defaults: { ease: 'power2.out' },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 78%',
+            end: 'bottom 20%',
+            scrub: 0.85,
+          },
+        });
+
+        mobileTl
+          .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.35 }, 0)
+          .to(curves[0], { attr: { d: focusCurvePaths[0].to }, strokeDashoffset: 0, autoAlpha: 0.26, duration: 0.7 }, 0.08)
+          .to(curves[1], { attr: { d: focusCurvePaths[1].to }, strokeDashoffset: 0, autoAlpha: 0.22, duration: 0.7 }, 0.2)
+          .to(curves[2], { attr: { d: focusCurvePaths[2].to }, strokeDashoffset: 0, autoAlpha: 0.2, duration: 0.7 }, 0.32)
+          .fromTo(cards, { autoAlpha: 0, y: 46, rotateZ: -4, scale: 0.96 }, { autoAlpha: 1, y: 0, rotateZ: (index) => [-4, 0, 4][index], scale: 1, duration: 0.9, stagger: 0.14 }, 0.16)
+          .to(inners, { rotateY: 180, duration: 0.9, stagger: 0.12, ease: 'power2.inOut' }, 0.78)
+          .to(cards, { y: -12, rotateZ: (index) => [-3, 1, 3][index], scale: (index) => (index === 1 ? 1.02 : 1), duration: 0.85, stagger: 0.08 }, 1.14);
+      });
+    }, section);
+
+    return () => {
+      mm.revert();
+      ctx.revert();
+    };
+  }, []);
+
+  return (
+    <section id="how-it-works" ref={sectionRef} className="relative z-10 overflow-hidden bg-primary px-6 py-20 text-primary-foreground shadow-[0_-42px_90px_rgba(18,12,40,0.18)] lg:px-0 lg:py-0">
+      <svg
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 hidden h-[34rem] w-[min(94rem,120vw)] -translate-x-1/2 -translate-y-1/2 overflow-visible lg:block"
+        viewBox="0 0 1440 520"
+        fill="none"
+        aria-hidden="true"
+      >
+        {focusCurvePaths.map((curve, index) => (
+          <path
+            key={curve.to}
+            ref={(node) => {
+              curveRefs.current[index] = node;
+            }}
+            d={curve.from}
+            stroke="rgba(255,255,255,0.46)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-center py-8 lg:py-10">
+        <div className="mx-auto mb-10 max-w-3xl text-center lg:mb-10">
+          <h2 ref={titleRef} className="font-heading text-4xl font-black tracking-tight text-white md:text-5xl xl:text-6xl">
+            Designed for Focus
+          </h2>
+        </div>
+
+        <div ref={stageRef} className="relative mx-auto grid w-full max-w-[54rem] gap-6 md:grid-cols-3 lg:[perspective:1400px] lg:[transform-style:preserve-3d]">
+          {focusFeatures.map((feature, index) => (
+            <div
+              key={feature.title}
+              ref={(node) => {
+                cardRefs.current[index] = node;
+              }}
+              className="relative mx-auto aspect-[5/7] w-[min(74vw,14rem)] sm:w-[15rem] md:w-[14rem] lg:w-[15.25rem] lg:[transform-style:preserve-3d] lg:[will-change:transform] xl:w-[15.75rem]"
+            >
+              <div
+                ref={(node) => {
+                  innerRefs.current[index] = node;
+                }}
+                className="relative h-full rounded-[26px] lg:[transform-style:preserve-3d] lg:[will-change:transform]"
+              >
+                <div className="absolute inset-0 overflow-hidden rounded-[26px] border-[3px] border-white bg-primary text-white shadow-[0_34px_80px_rgba(15,10,60,0.28)] [backface-visibility:hidden]">
+                  <div className="absolute inset-3 rounded-[20px] border-2 border-white/95" />
+                  <div className="absolute inset-7 rounded-[15px] border border-white/62" />
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.18)_0_1px,transparent_1px_13px)] opacity-70" />
+                  <div className="absolute left-1/2 top-1/2 h-[54%] w-[54%] -translate-x-1/2 -translate-y-1/2 rotate-45 border-2 border-white/90" />
+                  <div className="absolute left-1/2 top-1/2 h-[35%] w-[35%] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/80" />
+                  <div className="absolute left-5 top-5 grid h-8 w-8 grid-cols-2 gap-1.5">
+                    {[...Array(4)].map((_, dot) => (
+                      <span key={dot} className="rounded-full bg-white/90" />
+                    ))}
+                  </div>
+                  <div className="absolute bottom-5 right-5 grid h-8 w-8 rotate-180 grid-cols-2 gap-1.5">
+                    {[...Array(4)].map((_, dot) => (
+                      <span key={dot} className="rounded-full bg-white/90" />
+                    ))}
+                  </div>
+                  <div
+                    ref={(node) => {
+                      iconRefs.current[index] = node;
+                    }}
+                    className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-[0_0_0_8px_rgba(255,255,255,0.08)] lg:[will-change:transform]"
+                  >
+                    <feature.icon size={42} strokeWidth={1.7} />
+                  </div>
+                </div>
+
+                <div className="absolute inset-0 flex flex-col rounded-[26px] border border-slate-950/10 bg-white p-5 text-slate-950 shadow-[0_34px_90px_rgba(15,10,60,0.22)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary/70">{feature.backLabel}</div>
+                      <h3 className="mt-2 font-heading text-2xl font-black leading-none tracking-tight text-slate-950 lg:text-[1.65rem]">{feature.title}</h3>
+                    </div>
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_10px_26px_rgba(97,74,190,0.24)]">
+                      <feature.icon size={22} strokeWidth={2.1} />
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-[0.82rem] font-semibold leading-5 text-slate-600">{feature.desc}</p>
+                  <p className="mt-3 rounded-2xl bg-primary/[0.07] px-4 py-3 text-[0.78rem] font-bold leading-5 text-primary">{feature.backText}</p>
+
+                  <div className="mt-auto grid gap-1.5 pt-4">
+                    {feature.backItems.map((item) => (
+                      <div key={item} className="border-b border-dotted border-primary/25 pb-1.5 text-[0.78rem] font-bold text-slate-800 last:border-b-0">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  {feature.title === 'TD & Solutions' && (
+                    <div className="mt-4 text-center text-[0.58rem] font-black uppercase tracking-[0.2em] text-slate-400">
+                      Shazaxx learning card
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function TestimonialCard({ name, handle, quote, delay }) {
   return (
     <motion.div
@@ -384,13 +684,36 @@ export default function HomePage() {
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  const statsPinRef = useRef(null);
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setHeaderScrolled(latest > 24);
   });
 
+  useLayoutEffect(() => {
+    const stats = statsPinRef.current;
+    if (!stats) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: stats,
+        start: 'center center',
+        end: '+=100%',
+        pin: true,
+        pinSpacing: false,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+      });
+    }, stats);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background selection:bg-primary selection:text-white">
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-background selection:bg-primary selection:text-white">
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-30">
@@ -620,17 +943,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-secondary/30 py-12">
-          <div className="container mx-auto px-6">
+        <section ref={statsPinRef} className="relative z-0 flex min-h-screen items-center overflow-hidden border-y border-border bg-background px-6 py-16">
+          <div className="container mx-auto px-0">
             <div className="flex justify-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col items-center gap-2 text-center"
+                className="flex flex-col items-center gap-4 text-center"
               >
-                <div className="font-heading text-5xl font-black text-foreground md:text-6xl">99%</div>
-                <div className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+                <div className="font-heading text-7xl font-black text-foreground md:text-8xl lg:text-9xl">99%</div>
+                <div className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest text-primary md:text-base">
                   <Heart size={18} fill="currentColor" /> Positive Feedback from Students
                 </div>
               </motion.div>
@@ -638,56 +961,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="how-it-works" className="px-6 py-24">
-          <div className="container mx-auto max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mb-20 text-center"
-            >
-              <h2 className="mb-6 font-heading text-4xl font-black md:text-6xl">Designed for Focus</h2>
-              <p className="mx-auto max-w-2xl text-xl font-medium text-muted-foreground">
-                We engineered the ultimate learning loop. Visual, fast, and intensely interactive.
-              </p>
-            </motion.div>
-
-            <div className="grid gap-8 md:grid-cols-3">
-              {[
-                {
-                  icon: Play,
-                  title: 'Courses',
-                  desc: 'Concept breakdowns immediately . Complex science simplified into quick, high-impact study sessions.',
-                },
-                {
-                  icon: BrainCircuit,
-                  title: 'TD & Solutions',
-                  desc: 'See the physics and math come alive. Master exercises through step-by-step logic and clear, fluid animations.',
-                },
-                {
-                  icon: Book,
-                  title: 'Exams',
-                  desc: 'Challenges for total mastery. Apply your knowledge immediately with real exam problems and instant feedback.',
-                },
-              ].map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="rounded-3xl border border-border bg-card p-8"
-                >
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                    <feature.icon size={28} />
-                  </div>
-                  <h3 className="mb-3 font-heading text-2xl font-bold">{feature.title}</h3>
-                  <p className="font-medium text-muted-foreground">{feature.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <FocusSection />
 
         <InteractiveDemo />
 
@@ -794,21 +1068,24 @@ export default function HomePage() {
               <div className="mt-5 grid gap-3 text-sm font-bold text-white/62">
                 <Link to="/privacy" className="transition hover:text-white">Privacy</Link>
                 <Link to="/terms" className="transition hover:text-white">Terms</Link>
-                <a
-                  href="https://www.instagram.com/med_shazaxx/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition hover:text-white"
-                >
-                  med_shazaxx
-                </a>
               </div>
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs font-semibold text-white/38 md:flex-row">
-            <span>© 2025 Shazaxx Inc. All rights reserved.</span>
-            <span>Made for focused students, one module at a time.</span>
+          <div className="mt-8 grid items-center gap-3 border-t border-white/10 pt-6 text-center text-xs font-semibold text-white/38 md:grid-cols-3">
+            <span className="md:justify-self-start">&copy; 2025 Shazaxx Inc. All rights reserved.</span>
+            <span className="md:justify-self-center">
+              Made with <span className="text-white/70">{'\u2764\uFE0F'}</span> by{' '}
+              <a
+                href="https://www.instagram.com/med_shazaxx/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/62 transition hover:text-white"
+              >
+                med_shazaxx
+              </a>
+            </span>
+            <span className="md:justify-self-end">Made for focused students, one module at a time.</span>
           </div>
         </div>
       </footer>

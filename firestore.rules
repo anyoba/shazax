@@ -17,8 +17,27 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // TODO(security): migrate users reads/writes to secured server APIs, then close this rule.
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    match /concours/{concoursId} {
+      allow read, write: if false;
+    }
+
+    match /concours_questions/{questionId} {
+      allow read, write: if false;
+    }
+
+    match /concours_attempts/{attemptId} {
+      allow read, write: if false;
+    }
+
+    match /concours_attempt_answers/{answerId} {
+      allow read, write: if false;
+    }
+
+    match /concours_user_progress/{progressId} {
+      allow read, write: if false;
     }
 
     match /waitlist/{entryId} {

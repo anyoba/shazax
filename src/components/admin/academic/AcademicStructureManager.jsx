@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import {
+  Atom,
   BookOpen,
+  Calculator,
+  Code2,
+  Cpu,
   Edit3,
+  FlaskConical,
+  GraduationCap,
   Layers,
   Plus,
   RefreshCw,
@@ -30,6 +36,31 @@ import {
   updateAcademicItem,
 } from '../../../services/academicAdminApi.js';
 import { normalizeSlug } from '../../../utils/academicValidation.js';
+
+const MODULE_ICON_OPTIONS = [
+  { id: 'calculator', label: 'Calcul', icon: Calculator },
+  { id: 'book', label: 'Livre', icon: BookOpen },
+  { id: 'layers', label: 'Couches', icon: Layers },
+  { id: 'flask', label: 'Chimie', icon: FlaskConical },
+  { id: 'atom', label: 'Atome', icon: Atom },
+  { id: 'cpu', label: 'IA', icon: Cpu },
+  { id: 'code', label: 'Code', icon: Code2 },
+  { id: 'graduation', label: 'Etudes', icon: GraduationCap },
+];
+
+const MODULE_THEME_OPTIONS = [
+  { id: 'cyan', label: 'Cyan', preview: 'bg-cyan-500', panel: 'bg-cyan-500/10 border-cyan-300/30 text-cyan-200' },
+  { id: 'violet', label: 'Violet', preview: 'bg-violet-500', panel: 'bg-violet-500/10 border-violet-300/30 text-violet-200' },
+  { id: 'sky', label: 'Bleu', preview: 'bg-sky-500', panel: 'bg-sky-500/10 border-sky-300/30 text-sky-200' },
+  { id: 'orange', label: 'Orange', preview: 'bg-orange-500', panel: 'bg-orange-500/10 border-orange-300/30 text-orange-200' },
+  { id: 'emerald', label: 'Vert', preview: 'bg-emerald-500', panel: 'bg-emerald-500/10 border-emerald-300/30 text-emerald-200' },
+  { id: 'white', label: 'Blanc', preview: 'bg-white', panel: 'bg-white/10 border-white/20 text-white' },
+  { id: 'rose', label: 'Rose', preview: 'bg-rose-500', panel: 'bg-rose-500/10 border-rose-300/30 text-rose-200' },
+  { id: 'slate', label: 'Slate', preview: 'bg-slate-500', panel: 'bg-slate-500/10 border-slate-300/30 text-slate-200' },
+];
+
+const MODULE_ICON_MAP = Object.fromEntries(MODULE_ICON_OPTIONS.map((option) => [option.id, option.icon]));
+const MODULE_THEME_MAP = Object.fromEntries(MODULE_THEME_OPTIONS.map((option) => [option.id, option]));
 
 const STATUS_LABELS = {
   [ACADEMIC_STATUSES.DRAFT]: 'Brouillon',
@@ -99,23 +130,36 @@ const ENTITY_CONFIGS = {
       { name: 'shortName', label: 'Nom court', placeholder: 'Analyse 2' },
       { name: 'slug', label: 'Slug', placeholder: 'analyse-2', required: true },
       { name: 'description', label: 'Description', placeholder: 'Description courte', textarea: true },
+      { name: 'iconKey', label: 'Logo', type: 'moduleIcon' },
+      { name: 'themeKey', label: 'Couleur', type: 'moduleTheme' },
       { name: 'order', label: 'Ordre', type: 'number', required: true },
       { name: 'status', label: 'Statut', type: 'status' },
     ],
-    initial: { name: '', shortName: '', slug: '', description: '', order: 1, status: ACADEMIC_STATUSES.DRAFT },
+    initial: {
+      name: '',
+      shortName: '',
+      slug: '',
+      description: '',
+      iconKey: 'layers',
+      themeKey: 'white',
+      order: 1,
+      status: ACADEMIC_STATUSES.DRAFT,
+    },
   },
 };
 
 const FST_S2_MODULES = [
-  { name: 'Analyse 2', shortName: 'Analyse 2', slug: 'analyse-2', order: 1 },
-  { name: 'Algebre 2', shortName: 'Algebre 2', slug: 'algebre-2', order: 2 },
-  { name: 'Mecanique', shortName: 'Mecanique', slug: 'mecanique', order: 3 },
-  { name: 'Thermodynamique', shortName: 'Thermodynamique', slug: 'thermodynamique', order: 4 },
+  { name: 'Analyse 2', shortName: 'Analyse 2', slug: 'analyse-2', order: 1, iconKey: 'calculator', themeKey: 'cyan' },
+  { name: 'Algebre 2', shortName: 'Algebre 2', slug: 'algebre-2', order: 2, iconKey: 'book', themeKey: 'violet' },
+  { name: 'Mecanique', shortName: 'Mecanique', slug: 'mecanique', order: 3, iconKey: 'layers', themeKey: 'sky' },
+  { name: 'Thermodynamique', shortName: 'Thermodynamique', slug: 'thermodynamique', order: 4, iconKey: 'flask', themeKey: 'orange' },
   {
     name: 'Structure de la matiere',
     shortName: 'Structure matiere',
     slug: 'structure-de-la-matiere',
     order: 5,
+    iconKey: 'atom',
+    themeKey: 'emerald',
   },
 ];
 
@@ -196,6 +240,21 @@ function SelectBox({ label, value, items, placeholder, disabled, onChange }) {
         ))}
       </select>
     </label>
+  );
+}
+
+function ModuleStylePreview({ form }) {
+  const Icon = MODULE_ICON_MAP[form.iconKey] || Layers;
+  const theme = MODULE_THEME_MAP[form.themeKey] || MODULE_THEME_MAP.white;
+
+  return (
+    <div className={`md:col-span-2 rounded-2xl border p-4 ${theme.panel}`}>
+      <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 shadow-sm">
+        <Icon size={24} strokeWidth={2.4} />
+      </div>
+      <div className="text-lg font-black text-white">{form.name || 'Nom du module'}</div>
+      <div className="mt-2 text-sm font-bold opacity-85">Apercu carte module</div>
+    </div>
   );
 }
 
@@ -354,6 +413,65 @@ function EntityForm({
             );
           }
 
+          if (field.type === 'moduleIcon') {
+            return (
+              <div key={field.name} className="space-y-2 md:col-span-2">
+                <span className="text-sm text-white/60">{field.label}</span>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {MODULE_ICON_OPTIONS.map((option) => {
+                    const Icon = option.icon;
+                    const selected = form.iconKey === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => updateField('iconKey', option.id)}
+                        className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-sm font-bold transition ${
+                          selected
+                            ? 'border-primary bg-primary/15 text-primary'
+                            : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === 'moduleTheme') {
+            return (
+              <div key={field.name} className="space-y-2 md:col-span-2">
+                <span className="text-sm text-white/60">{field.label}</span>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {MODULE_THEME_OPTIONS.map((option) => {
+                    const selected = form.themeKey === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => updateField('themeKey', option.id)}
+                        className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-sm font-bold transition ${
+                          selected
+                            ? 'border-primary bg-primary/15 text-primary'
+                            : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <span className={`h-4 w-4 rounded-full border border-white/20 ${option.preview}`} />
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
           if (field.textarea) {
             return (
               <label key={field.name} className="space-y-2 md:col-span-2">
@@ -389,6 +507,7 @@ function EntityForm({
             </label>
           );
         })}
+        {entityType === 'modules' ? <ModuleStylePreview form={form} /> : null}
       </div>
 
       <button
@@ -432,6 +551,8 @@ function EntityList({
         {items.map((item) => {
           const loading = actionLoadingId === `${entityType}:${item.id}`;
           const selected = selectedId === item.id;
+          const ModuleIcon = entityType === 'modules' ? MODULE_ICON_MAP[item.iconKey] || Layers : null;
+          const moduleTheme = entityType === 'modules' ? MODULE_THEME_MAP[item.themeKey] || MODULE_THEME_MAP.white : null;
 
           return (
             <div
@@ -443,14 +564,21 @@ function EntityList({
               <button
                 type="button"
                 onClick={() => onSelect(item.id)}
-                className="min-w-0 text-left"
+                className="flex min-w-0 items-center gap-3 text-left"
               >
-                <div className="truncate font-medium text-white">{item.name}</div>
-                <div className="mt-1 flex flex-wrap gap-2 text-xs text-white/40">
-                  <span>{item.slug}</span>
-                  {item.shortName ? <span>{item.shortName}</span> : null}
-                  {item.yearNumber ? <span>Annee {item.yearNumber}</span> : null}
-                  {item.semesterNumber ? <span>Semestre {item.semesterNumber}</span> : null}
+                {ModuleIcon ? (
+                  <span className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border ${moduleTheme.panel}`}>
+                    <ModuleIcon size={18} />
+                  </span>
+                ) : null}
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-white">{item.name}</div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-xs text-white/40">
+                    <span>{item.slug}</span>
+                    {item.shortName ? <span>{item.shortName}</span> : null}
+                    {item.yearNumber ? <span>Annee {item.yearNumber}</span> : null}
+                    {item.semesterNumber ? <span>Semestre {item.semesterNumber}</span> : null}
+                  </div>
                 </div>
               </button>
 

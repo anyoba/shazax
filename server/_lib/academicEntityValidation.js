@@ -94,6 +94,8 @@ const ENTITY_CONFIGS = {
       'status',
       'order',
       'description',
+      'iconKey',
+      'themeKey',
     ],
     requiredFields: ['institutionId', 'programId', 'programYearId', 'semesterId', 'name', 'slug', 'status', 'order'],
     parentFields: ['institutionId', 'programId', 'programYearId', 'semesterId'],
@@ -101,6 +103,10 @@ const ENTITY_CONFIGS = {
       name: { min: 2, max: 140 },
       shortName: { min: 0, max: 50 },
       description: { min: 0, max: 1000 },
+    },
+    enumRules: {
+      iconKey: ['calculator', 'book', 'layers', 'flask', 'atom', 'cpu', 'code', 'graduation'],
+      themeKey: ['cyan', 'violet', 'sky', 'orange', 'emerald', 'white', 'rose', 'slate'],
     },
   },
 };
@@ -227,6 +233,21 @@ function cleanParentId(payload, field, { partial }) {
   return value.trim();
 }
 
+function cleanEnum(payload, field, allowedValues, { partial }) {
+  const value = payload[field];
+
+  if (value === undefined || value === null || value === '') {
+    if (partial) return undefined;
+    return '';
+  }
+
+  if (typeof value !== 'string' || !allowedValues.includes(value)) {
+    throw new HttpError(400, `${field} is invalid.`, 'ACADEMIC_FIELD_INVALID');
+  }
+
+  return value;
+}
+
 export function validateAcademicEntityPayload(entityType, payload, { partial = false } = {}) {
   const config = getAcademicEntityConfig(entityType);
 
@@ -263,6 +284,11 @@ export function validateAcademicEntityPayload(entityType, payload, { partial = f
       partial,
       required: config.requiredFields.includes(field),
     });
+    if (value !== undefined) cleaned[field] = value;
+  }
+
+  for (const [field, allowedValues] of Object.entries(config.enumRules || {})) {
+    const value = cleanEnum(payload, field, allowedValues, { partial });
     if (value !== undefined) cleaned[field] = value;
   }
 

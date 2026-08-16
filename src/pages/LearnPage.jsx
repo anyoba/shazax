@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   ChevronRight,
   Circle,
+  Code2,
+  Cpu,
   Download,
   FileText,
   FlaskConical,
@@ -239,42 +241,67 @@ function SemesterCard({ institution, program, semester, modulesCount }) {
   );
 }
 
-const MODULE_CARD_THEMES = [
-  {
-    match: ['thermodynamics', 'thermodynamique'],
-    icon: FlaskConical,
-    card: 'border-orange-100 bg-[linear-gradient(135deg,#fff4df_0%,#fff7ec_55%,#fff2f2_100%)]',
-    iconColor: 'text-orange-500',
-    linkColor: 'text-orange-400',
-  },
-  {
-    match: ['mechanics', 'mecanique', 'mécanique'],
-    icon: Layers,
-    card: 'border-sky-100 bg-[linear-gradient(135deg,#eaf5ff_0%,#f2fbff_55%,#eef9ff_100%)]',
-    iconColor: 'text-sky-500',
-    linkColor: 'text-sky-400',
-  },
-  {
-    match: ['analysis', 'analyse'],
-    icon: Calculator,
+const MODULE_ICON_COMPONENTS = {
+  calculator: Calculator,
+  book: BookOpen,
+  layers: Layers,
+  flask: FlaskConical,
+  atom: Atom,
+  cpu: Cpu,
+  code: Code2,
+  graduation: GraduationCap,
+};
+
+const MODULE_THEME_STYLES = {
+  cyan: {
     card: 'border-cyan-100 bg-[linear-gradient(135deg,#dffbfb_0%,#ecfffd_55%,#f1fff8_100%)]',
     iconColor: 'text-cyan-600',
     linkColor: 'text-cyan-600',
   },
-  {
-    match: ['algebra', 'algebre', 'algèbre'],
-    icon: BookOpen,
+  violet: {
     card: 'border-violet-100 bg-[linear-gradient(135deg,#f3eaff_0%,#faf3ff_55%,#f8f3ff_100%)]',
     iconColor: 'text-violet-500',
     linkColor: 'text-violet-400',
   },
-  {
-    match: ['structure of matter', 'structure de la matiere', 'structure de la matière'],
-    icon: Atom,
+  sky: {
+    card: 'border-sky-100 bg-[linear-gradient(135deg,#eaf5ff_0%,#f2fbff_55%,#eef9ff_100%)]',
+    iconColor: 'text-sky-500',
+    linkColor: 'text-sky-400',
+  },
+  orange: {
+    card: 'border-orange-100 bg-[linear-gradient(135deg,#fff4df_0%,#fff7ec_55%,#fff2f2_100%)]',
+    iconColor: 'text-orange-500',
+    linkColor: 'text-orange-400',
+  },
+  emerald: {
     card: 'border-emerald-100 bg-[linear-gradient(135deg,#dcfce7_0%,#ecfff5_55%,#effef6_100%)]',
     iconColor: 'text-emerald-500',
     linkColor: 'text-emerald-500',
   },
+  white: {
+    card: 'border-slate-100 bg-white',
+    iconColor: 'text-primary',
+    linkColor: 'text-primary',
+  },
+  rose: {
+    card: 'border-rose-100 bg-[linear-gradient(135deg,#fff1f2_0%,#fff7fb_55%,#fff1f6_100%)]',
+    iconColor: 'text-rose-500',
+    linkColor: 'text-rose-500',
+  },
+  slate: {
+    card: 'border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#ffffff_55%,#f1f5f9_100%)]',
+    iconColor: 'text-slate-500',
+    linkColor: 'text-slate-500',
+  },
+};
+
+const MODULE_CARD_THEMES = [
+  { match: ['thermodynamics', 'thermodynamique'], iconKey: 'flask', themeKey: 'orange' },
+  { match: ['mechanics', 'mecanique', 'mécanique'], iconKey: 'layers', themeKey: 'sky' },
+  { match: ['analysis', 'analyse'], iconKey: 'calculator', themeKey: 'cyan' },
+  { match: ['algebra', 'algebre', 'algèbre'], iconKey: 'book', themeKey: 'violet' },
+  { match: ['structure of matter', 'structure de la matiere', 'structure de la matière'], iconKey: 'atom', themeKey: 'emerald' },
+  { match: ['ia', 'ai', 'intelligence artificielle'], iconKey: 'cpu', themeKey: 'violet' },
 ];
 
 function normalizeModuleName(value) {
@@ -284,23 +311,31 @@ function normalizeModuleName(value) {
     .toLowerCase();
 }
 
-function getModuleCardTheme(moduleName) {
+function getModuleCardTheme(moduleItem) {
+  if (moduleItem.iconKey || moduleItem.themeKey) {
+    const theme = MODULE_THEME_STYLES[moduleItem.themeKey] || MODULE_THEME_STYLES.white;
+    return {
+      ...theme,
+      icon: MODULE_ICON_COMPONENTS[moduleItem.iconKey] || Layers,
+    };
+  }
+
+  const moduleName = moduleItem.name;
   const normalizedName = normalizeModuleName(moduleName);
-  return (
-    MODULE_CARD_THEMES.find((theme) =>
-      theme.match.some((keyword) => normalizedName.includes(normalizeModuleName(keyword))),
-    ) || {
-      icon: Layers,
-      card: 'border-slate-100 bg-white',
-      iconColor: 'text-primary',
-      linkColor: 'text-primary',
-    }
+  const detectedTheme = MODULE_CARD_THEMES.find((theme) =>
+    theme.match.some((keyword) => normalizedName.includes(normalizeModuleName(keyword))),
   );
+  const theme = MODULE_THEME_STYLES[detectedTheme?.themeKey] || MODULE_THEME_STYLES.white;
+
+  return {
+    ...theme,
+    icon: MODULE_ICON_COMPONENTS[detectedTheme?.iconKey] || Layers,
+  };
 }
 
 function ModuleCard({ institution, program, semester, moduleItem, resources }) {
   const linkedResources = resources.filter((resource) => isResourceLinkedToModule(resource, moduleItem));
-  const theme = getModuleCardTheme(moduleItem.name);
+  const theme = getModuleCardTheme(moduleItem);
   const Icon = theme.icon;
 
   return (

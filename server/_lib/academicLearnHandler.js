@@ -49,6 +49,8 @@ function cleanEntity(doc) {
     semesterId: data.semesterId || '',
     yearNumber: Number.isFinite(data.yearNumber) ? data.yearNumber : null,
     semesterNumber: Number.isFinite(data.semesterNumber) ? data.semesterNumber : null,
+    iconKey: data.iconKey || '',
+    themeKey: data.themeKey || '',
     createdAt: serializeTimestamp(data.createdAt),
     updatedAt: serializeTimestamp(data.updatedAt),
   };

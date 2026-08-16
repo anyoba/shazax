@@ -106,6 +106,8 @@ export const fallbackAcademicTree = {
       slug: 'analyse-2',
       status: 'published',
       order: 1,
+      iconKey: 'calculator',
+      themeKey: 'cyan',
     },
     {
       id: 'fallback_fst_settat_msd_s2_algebre_2',
@@ -118,6 +120,8 @@ export const fallbackAcademicTree = {
       slug: 'algebre-2',
       status: 'published',
       order: 2,
+      iconKey: 'book',
+      themeKey: 'violet',
     },
     {
       id: 'fallback_fst_settat_msd_s2_mecanique',
@@ -130,6 +134,8 @@ export const fallbackAcademicTree = {
       slug: 'mecanique',
       status: 'published',
       order: 3,
+      iconKey: 'layers',
+      themeKey: 'sky',
     },
     {
       id: 'fallback_fst_settat_msd_s2_thermodynamique',
@@ -142,6 +148,8 @@ export const fallbackAcademicTree = {
       slug: 'thermodynamique',
       status: 'published',
       order: 4,
+      iconKey: 'flask',
+      themeKey: 'orange',
     },
     {
       id: 'fallback_fst_settat_msd_s2_structure_matiere',
@@ -154,6 +162,8 @@ export const fallbackAcademicTree = {
       slug: 'structure-de-la-matiere',
       status: 'published',
       order: 5,
+      iconKey: 'atom',
+      themeKey: 'emerald',
     },
   ],
 };

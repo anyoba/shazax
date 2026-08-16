@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { trackPageVisit } from './analytics';
 import { useResources } from './hooks/useResources';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { createResource, deleteResource } from './services/resourcesApi';
+import { createResource, deleteResource, updateResource } from './services/resourcesApi';
 import { syncCurrentUser } from './services/userApi.js';
 import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
@@ -170,6 +170,14 @@ function AdminRoute() {
     return deleteResource(resourceId, getToken);
   }
 
+  async function restoreAdminResource(resource) {
+    const previousStatus =
+      resource?.previousStatus && resource.previousStatus !== 'archived'
+        ? resource.previousStatus
+        : 'published';
+    return updateResource(resource.id, { status: previousStatus }, getToken);
+  }
+
   return (
     <>
       <UserSync />
@@ -184,6 +192,7 @@ function AdminRoute() {
         <AdminPage
           onAddResource={addAdminResource}
           onDeleteResource={deleteAdminResource}
+          onRestoreResource={restoreAdminResource}
         />
       </RoleProtectedRoute>
     </>

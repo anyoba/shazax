@@ -1,5 +1,6 @@
 import { cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 const FIREBASE_ENV_NAMES = [
   'FIREBASE_PROJECT_ID',
@@ -57,10 +58,13 @@ export function getAdminApp() {
   if (getApps().length > 0) return getApp();
 
   const firebaseConfig = validateFirebaseEnvironment();
+  const storageBucket =
+    process.env.FIREBASE_STORAGE_BUCKET || `${firebaseConfig.projectId}.firebasestorage.app`;
 
   try {
     return initializeApp({
       credential: cert(firebaseConfig),
+      storageBucket,
     });
   } catch (error) {
     console.error('[FIREBASE_INIT_FAILED]', {
@@ -73,6 +77,10 @@ export function getAdminApp() {
 
 export function getAdminDb() {
   return getFirestore(getAdminApp());
+}
+
+export function getAdminStorageBucket() {
+  return getStorage(getAdminApp()).bucket();
 }
 
 export { FieldValue };

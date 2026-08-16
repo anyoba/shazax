@@ -12,7 +12,7 @@ import { readJsonBody, setMethodHeader } from '../server/_lib/request.js';
 import { isPublicResource, validateResourcePayload } from '../server/_lib/resourcesValidation.js';
 
 const WRITE_ROLES = [USER_ROLES.EDITOR, USER_ROLES.ADMIN, USER_ROLES.OWNER];
-const DELETE_ROLES = [USER_ROLES.OWNER];
+const DELETE_ROLES = WRITE_ROLES;
 const DEFAULT_RESOURCE_LIMIT = 200;
 const MAX_RESOURCE_LIMIT = 300;
 
@@ -152,7 +152,7 @@ async function updateResource(req, res) {
 }
 
 async function deleteResource(req, res) {
-  await requireRole(req, DELETE_ROLES);
+  const user = await requireRole(req, DELETE_ROLES);
   const resourceId = getResourceId(req);
   const resourceRef = getAdminDb().collection('resources').doc(resourceId);
   let snapshot;
@@ -166,8 +166,22 @@ async function deleteResource(req, res) {
     throw new HttpError(404, 'Resource not found.', 'RESOURCE_NOT_FOUND');
   }
 
+  const current = snapshot.data() || {};
+  const previousStatus =
+    current.status && current.status !== 'archived'
+      ? current.status
+      : current.previousStatus || 'published';
+  const updates = {
+    status: 'archived',
+    previousStatus,
+    deletedAt: FieldValue.serverTimestamp(),
+    deletedBy: user.userId,
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: user.userId,
+  };
+
   try {
-    await resourceRef.delete();
+    await resourceRef.set(updates, { merge: true });
   } catch (error) {
     throw createFirestoreHttpError(error, 'Unable to delete resource.');
   }
@@ -175,6 +189,13 @@ async function deleteResource(req, res) {
   return sendJson(res, 200, {
     success: true,
     id: resourceId,
+    resource: {
+      id: resourceId,
+      ...current,
+      ...updates,
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
   });
 }
 

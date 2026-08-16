@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   collection,
-  deleteDoc,
   doc,
   getDocs,
   limit,
@@ -20,6 +19,20 @@ const RESOURCE_CACHE_TTL_MS = 2 * 60 * 1000;
 let resourcesCache = null;
 let resourcesCacheExpiresAt = 0;
 let resourcesRequest = null;
+
+function isVisibleResource(resource) {
+  return (
+    resource?.status !== 'draft' &&
+    resource?.status !== 'archived' &&
+    resource?.visibility !== 'private' &&
+    resource?.isDeleted !== true
+  );
+}
+
+function filterResources(resources, includeArchived) {
+  if (includeArchived) return resources;
+  return resources.filter(isVisibleResource);
+}
 
 function readLocalResources() {
   try {
@@ -70,41 +83,71 @@ async function fetchResources(maxResults) {
   return resourcesRequest;
 }
 
-export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIMIT } = {}) {
-  const [resources, setResources] = useState(() => readLocalResources() || sampleResources);
+export function useResources({
+  enabled = true,
+  includeArchived = false,
+  maxResults = DEFAULT_RESOURCE_LIMIT,
+} = {}) {
+  const [resources, setResources] = useState(() =>
+    filterResources(readLocalResources() || sampleResources, includeArchived),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  async function loadResources({ ignoreCache = false } = {}) {
+    if (ignoreCache) {
+      resourcesCache = null;
+      resourcesCacheExpiresAt = 0;
+      resourcesRequest = null;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const nextResources = await fetchResources(maxResults);
+      setResources(filterResources(nextResources, includeArchived));
+    } catch (loadError) {
+      const message = getFirestoreErrorMessage(loadError);
+      console.error('Failed to load resources', message);
+      setError(message);
+      const cached = readLocalResources();
+      setResources(filterResources(cached || sampleResources, includeArchived));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!enabled) return undefined;
     let cancelled = false;
 
-    async function loadResources() {
+    async function guardedLoadResources() {
       setLoading(true);
       setError('');
 
       try {
         const nextResources = await fetchResources(maxResults);
         if (cancelled) return;
-        setResources(nextResources);
+        setResources(filterResources(nextResources, includeArchived));
       } catch (loadError) {
         if (cancelled) return;
         const message = getFirestoreErrorMessage(loadError);
         console.error('Failed to load resources', message);
         setError(message);
         const cached = readLocalResources();
-        setResources(cached || sampleResources);
+        setResources(filterResources(cached || sampleResources, includeArchived));
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    loadResources();
+    guardedLoadResources();
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, maxResults]);
+  }, [enabled, includeArchived, maxResults]);
 
   const addResource = async (resource) => {
     const id = resource.id || `resource-${Date.now()}`;
@@ -121,16 +164,27 @@ export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIM
     resourcesCache = nextResources;
     resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
     saveLocalResources(nextResources);
+    setResources(filterResources(nextResources, includeArchived));
   };
 
   const removeResource = async (resourceId) => {
-    await deleteDoc(doc(db, 'resources', resourceId));
+    await setDoc(
+      doc(db, 'resources', resourceId),
+      {
+        status: 'archived',
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     const cached = readLocalResources() || resources;
-    const nextResources = cached.filter((resource) => resource.id !== resourceId);
+    const nextResources = cached.map((resource) =>
+      resource.id === resourceId ? { ...resource, status: 'archived' } : resource,
+    );
     resourcesCache = nextResources;
     resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
     saveLocalResources(nextResources);
+    setResources(filterResources(nextResources, includeArchived));
   };
 
   return {
@@ -139,5 +193,6 @@ export function useResources({ enabled = true, maxResults = DEFAULT_RESOURCE_LIM
     error,
     addResource,
     removeResource,
+    refetch: () => loadResources({ ignoreCache: true }),
   };
 }

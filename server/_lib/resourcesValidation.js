@@ -176,5 +176,10 @@ export function validateResourcePayload(payload, { partial = false } = {}) {
 }
 
 export function isPublicResource(resource) {
-  return resource.status !== 'draft' && resource.status !== 'archived' && resource.visibility !== 'private';
+  return (
+    resource.status !== 'draft' &&
+    resource.status !== 'archived' &&
+    resource.visibility !== 'private' &&
+    resource.isDeleted !== true
+  );
 }

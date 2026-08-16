@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { ACADEMIC_ADMIN_READ_ROLES, ACADEMIC_CONTENT_WRITE_ROLES, ACADEMIC_PUBLISH_ROLES, USER_ROLES } from '../server/_lib/serverConstants.js';
 import { HttpError, requireAuthenticatedUser, requireRole, sendError, sendJson } from '../server/_lib/auth.js';
-import { FieldValue, getAdminDb } from '../server/_lib/firebaseAdmin.js';
+import { FieldValue, getAdminDb, getAdminStorageBucket } from '../server/_lib/firebaseAdmin.js';
 import { readJsonBody, setMethodHeader } from '../server/_lib/request.js';
 
 const ADMIN_READ_ROLES = ACADEMIC_ADMIN_READ_ROLES;
@@ -12,6 +12,8 @@ const IN_PROGRESS = 'IN_PROGRESS';
 const COMPLETED = 'COMPLETED';
 const EXPIRED = 'EXPIRED';
 const DEFAULT_DURATION_MINUTES = 60;
+const MAX_QUESTION_IMAGE_BYTES = 2 * 1024 * 1024;
+const IMAGE_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 function getRequestId(req) {
   const header = req.headers['x-request-id'] || req.headers['x-vercel-id'];
@@ -52,6 +54,36 @@ function slugify(value) {
     .slice(0, 80);
 }
 
+function safeFileName(value) {
+  const cleaned = String(value || 'question-image')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+  return cleaned || 'question-image';
+}
+
+function parseImageDataUrl(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    throw new HttpError(400, 'Image upload payload is invalid.', 'QUESTION_IMAGE_INVALID');
+  }
+
+  const contentType = match[1].toLowerCase();
+  if (!IMAGE_CONTENT_TYPES.has(contentType)) {
+    throw new HttpError(400, 'Only jpeg, png, webp, and gif images are allowed.', 'QUESTION_IMAGE_TYPE_INVALID');
+  }
+
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.length > MAX_QUESTION_IMAGE_BYTES) {
+    throw new HttpError(400, 'Image must be smaller than 2 MB.', 'QUESTION_IMAGE_TOO_LARGE');
+  }
+
+  return { buffer, contentType };
+}
+
 function int(value, fallback, min = 0, max = 10000) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -61,11 +93,6 @@ function int(value, fallback, min = 0, max = 10000) {
 function status(value, fallback = 'draft') {
   const normalized = String(value || fallback).toLowerCase();
   return ['draft', 'published', 'archived'].includes(normalized) ? normalized : fallback;
-}
-
-function difficulty(value) {
-  const normalized = String(value || 'medium').toLowerCase();
-  return ['easy', 'medium', 'hard', 'mixed'].includes(normalized) ? normalized : 'medium';
 }
 
 function options(value) {
@@ -95,7 +122,6 @@ function validateConcours(input = {}, partial = false) {
   if (!partial || input.description !== undefined) out.description = String(input.description || '').trim().slice(0, 2000);
   if (!partial || input.year !== undefined) out.year = String(input.year || new Date().getFullYear()).trim().slice(0, 12);
   if (!partial || input.category !== undefined) out.category = String(input.category || '').trim().slice(0, 120);
-  if (!partial || input.difficulty !== undefined) out.difficulty = difficulty(input.difficulty);
   if (!partial || input.durationMinutes !== undefined) out.durationMinutes = int(input.durationMinutes, DEFAULT_DURATION_MINUTES, 1, 600);
   if (!partial || input.totalPoints !== undefined) out.totalPoints = int(input.totalPoints, 0, 0, 100000);
   if (!partial || input.coverImageUrl !== undefined) out.coverImageUrl = String(input.coverImageUrl || '').trim().slice(0, 2000);
@@ -119,7 +145,6 @@ function validateQuestion(input = {}, partial = false) {
     out.subject = String(input.subject || input.module || '').trim().slice(0, 120);
     out.module = out.subject;
   }
-  if (!partial || input.difficulty !== undefined) out.difficulty = difficulty(input.difficulty);
   if (!partial || input.points !== undefined) out.points = int(input.points, 1, 1, 1000);
   if (!partial || input.order !== undefined) out.order = int(input.order, 1, 1, 10000);
   if (!partial || input.explanation !== undefined) out.explanation = String(input.explanation || '').trim().slice(0, 5000);
@@ -148,7 +173,6 @@ function publicConcours(item) {
     description: item.description || '',
     year: item.year || '',
     category: item.category || '',
-    difficulty: item.difficulty || 'medium',
     durationMinutes: Number(item.durationMinutes || DEFAULT_DURATION_MINUTES),
     questionCount: Number(item.questionCount || 0),
     totalPoints: Number(item.totalPoints || 0),
@@ -172,7 +196,6 @@ function examQuestion(question) {
     options: cleanOptions,
     subject: question.subject || question.module || '',
     module: question.module || question.subject || '',
-    difficulty: question.difficulty || 'medium',
     points: Number(question.points || 1),
     order: Number(question.order || 0),
     type: question.type || 'single_choice',
@@ -512,14 +535,32 @@ async function progress(req, res) {
 async function adminDashboard(req, res) {
   await requireRole(req, ADMIN_READ_ROLES);
   const db = getAdminDb();
-  const [users, concours, questions, attempts] = await Promise.all([
+  const [
+    users,
+    concours,
+    questions,
+    attempts,
+    institutions,
+    programs,
+    programYears,
+    semesters,
+    modules,
+    resources,
+  ] = await Promise.all([
     db.collection('users').get(),
     db.collection('concours').get(),
     db.collection('concours_questions').get(),
     db.collection('concours_attempts').get(),
+    db.collection('institutions').get(),
+    db.collection('programs').get(),
+    db.collection('program_years').get(),
+    db.collection('semesters').get(),
+    db.collection('modules').get(),
+    db.collection('resources').get(),
   ]);
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const attemptRows = attempts.docs.map(docData);
+  const resourceRows = resources.docs.map(docData);
   const completed = attemptRows.filter((attempt) => [COMPLETED, EXPIRED].includes(attempt.status));
   const activeUsers = new Set(attemptRows.filter((attempt) => Number(attempt.startedAtMs || 0) >= weekAgo).map((attempt) => attempt.userId));
   const newUsersThisWeek = users.docs.map(docData).filter((user) => user.createdAt && new Date(user.createdAt).getTime() >= weekAgo).length;
@@ -528,10 +569,21 @@ async function adminDashboard(req, res) {
       totalUsers: users.size,
       activeUsers: activeUsers.size,
       totalConcours: concours.size,
+      publishedConcours: concours.docs.map(docData).filter((item) => item.status === 'published').length,
       totalQuestions: questions.size,
+      publishedQuestions: questions.docs.map(docData).filter((item) => item.status === 'published').length,
       totalAttempts: attempts.size,
       averageScore: completed.length ? Math.round(completed.reduce((sum, attempt) => sum + Number(attempt.percentage || 0), 0) / completed.length) : 0,
       newUsersThisWeek,
+      totalInstitutions: institutions.size,
+      publishedInstitutions: institutions.docs.map(docData).filter((item) => item.status === 'published').length,
+      totalPrograms: programs.size,
+      totalProgramYears: programYears.size,
+      totalSemesters: semesters.size,
+      totalModules: modules.size,
+      totalResources: resources.size,
+      publishedResources: resourceRows.filter((item) => item.status !== 'draft' && item.status !== 'archived' && item.visibility !== 'private').length,
+      trashedResources: resourceRows.filter((item) => item.status === 'archived' || item.isDeleted === true).length,
     },
   });
 }
@@ -585,6 +637,37 @@ async function adminUserRole(req, res) {
   return sendJson(res, 200, { userRole: { userId, role, status: roleStatus } });
 }
 
+async function adminQuestionImageUpload(req, res) {
+  const user = await requireRole(req, WRITE_ROLES);
+  const body = await readJsonBody(req);
+  const { buffer, contentType } = parseImageDataUrl(body.dataUrl);
+  const downloadToken = randomUUID();
+  const fileName = safeFileName(body.fileName);
+  const filePath = `concours/questions/${Date.now()}-${randomUUID()}-${fileName}`;
+  const bucket = getAdminStorageBucket();
+  const file = bucket.file(filePath);
+
+  await file.save(buffer, {
+    resumable: false,
+    metadata: {
+      contentType,
+      metadata: {
+        firebaseStorageDownloadTokens: downloadToken,
+        uploadedBy: user.userId,
+      },
+    },
+  });
+
+  const imageUrl =
+    `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}` +
+    `?alt=media&token=${downloadToken}`;
+
+  return sendJson(res, 201, {
+    imageUrl,
+    path: filePath,
+  });
+}
+
 async function adminConcoursList(req, res) {
   await requireRole(req, ADMIN_READ_ROLES);
   const snapshot = await getAdminDb().collection('concours').get();
@@ -621,10 +704,21 @@ async function adminConcoursPatch(req, res) {
 }
 
 async function adminConcoursDelete(req, res) {
-  await requireRole(req, PUBLISH_ROLES);
+  const user = await requireRole(req, PUBLISH_ROLES);
   const id = String(q(req.query?.id) || '').trim();
   if (!id) throw new HttpError(400, 'id is required.', 'CONCOURS_ID_REQUIRED');
-  await getAdminDb().collection('concours').doc(id).set({ status: 'archived', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  const ref = getAdminDb().collection('concours').doc(id);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) throw new HttpError(404, 'Concours not found.', 'CONCOURS_NOT_FOUND');
+  const current = snapshot.data() || {};
+  await ref.set({
+    status: 'archived',
+    previousStatus: current.status && current.status !== 'archived' ? current.status : current.previousStatus || 'draft',
+    deletedAt: FieldValue.serverTimestamp(),
+    deletedBy: user.userId,
+    updatedBy: user.userId,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
   return sendJson(res, 200, { success: true, id });
 }
 
@@ -662,13 +756,21 @@ async function adminQuestionPatch(req, res) {
 }
 
 async function adminQuestionDelete(req, res) {
-  await requireRole(req, WRITE_ROLES);
+  const user = await requireRole(req, WRITE_ROLES);
   const id = String(q(req.query?.id) || '').trim();
   if (!id) throw new HttpError(400, 'id is required.', 'QUESTION_ID_REQUIRED');
   const ref = getAdminDb().collection('concours_questions').doc(id);
   const snapshot = await ref.get();
   if (!snapshot.exists) throw new HttpError(404, 'Question not found.', 'QUESTION_NOT_FOUND');
-  await ref.delete();
+  const current = snapshot.data() || {};
+  await ref.set({
+    status: 'archived',
+    previousStatus: current.status && current.status !== 'archived' ? current.status : current.previousStatus || 'draft',
+    deletedAt: FieldValue.serverTimestamp(),
+    deletedBy: user.userId,
+    updatedBy: user.userId,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
   await updateConcoursCounters(snapshot.data()?.concoursId);
   return sendJson(res, 200, { success: true, id });
 }
@@ -689,6 +791,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET' && action === 'admin-dashboard') return await adminDashboard(req, res);
     if (req.method === 'GET' && action === 'admin-users') return await adminUsers(req, res);
     if (req.method === 'PATCH' && action === 'admin-user-role') return await adminUserRole(req, res);
+    if (req.method === 'POST' && action === 'admin-question-image') return await adminQuestionImageUpload(req, res);
     if (req.method === 'GET' && action === 'admin-concours') return await adminConcoursList(req, res);
     if (req.method === 'POST' && action === 'admin-concours') return await adminConcoursCreate(req, res);
     if (req.method === 'PATCH' && action === 'admin-concours') return await adminConcoursPatch(req, res);

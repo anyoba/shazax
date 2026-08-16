@@ -6,18 +6,6 @@ import NumericAnswerInput from './NumericAnswerInput.jsx';
 import QuestionMedia from './QuestionMedia.jsx';
 import ReportQuestionButton from './ReportQuestionButton.jsx';
 
-const DIFFICULTY_TONES = {
-  easy: 'green',
-  medium: 'amber',
-  hard: 'red',
-};
-
-const DIFFICULTY_LABELS = {
-  easy: 'Facile',
-  medium: 'Moyen',
-  hard: 'Difficile',
-};
-
 export default function QuestionRenderer({
   answer,
   favorite,
@@ -36,9 +24,6 @@ export default function QuestionRenderer({
     <article className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-soft sm:p-7">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          <Badge tone={DIFFICULTY_TONES[question.difficulty] || 'slate'}>
-            {DIFFICULTY_LABELS[question.difficulty] || question.difficulty}
-          </Badge>
           <Badge tone="blue">{meta.contestName}</Badge>
           <Badge tone="slate">{meta.chapterName}</Badge>
         </div>

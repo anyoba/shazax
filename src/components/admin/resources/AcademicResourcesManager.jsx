@@ -1,5 +1,5 @@
 import { useAuth } from '@clerk/clerk-react';
-import { BookOpen, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, ChevronDown, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RESOURCE_CATEGORIES } from '../../../constants/academic.js';
 import { USER_ROLES } from '../../../constants/roles.js';
@@ -75,11 +75,22 @@ function getApiErrorMessage(error, fallback) {
   return details.length > 0 ? `${message} (${details.join(' | ')})` : message;
 }
 
-export default function AcademicResourcesManager({ resources, onAddResource, onDeleteResource }) {
+export default function AcademicResourcesManager({
+  resources,
+  onAddResource,
+  onDeleteResource,
+  onRestoreResource,
+}) {
   const { getToken } = useAuth();
   const { role } = useUserRole();
-  const canDeleteResources = role === USER_ROLES.OWNER;
+  const canManageResourceStatus = [
+    USER_ROLES.EDITOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.OWNER,
+  ].includes(role);
   const [form, setForm] = useState(initialForm);
+  const [resourceView, setResourceView] = useState('active');
+  const [statusOverrides, setStatusOverrides] = useState({});
   const [institutions, setInstitutions] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [programYears, setProgramYears] = useState([]);
@@ -102,10 +113,31 @@ export default function AcademicResourcesManager({ resources, onAddResource, onD
   const selectedSemester = semesters.find((item) => item.id === form.semesterId);
   const selectedModule = modules.find((item) => item.id === form.moduleId);
 
-  const visibleResources = useMemo(() => {
-    if (!form.moduleId) return resources;
-    return resources.filter((resource) => Array.isArray(resource.moduleIds) && resource.moduleIds.includes(form.moduleId));
-  }, [form.moduleId, resources]);
+  const resourcesWithStatus = useMemo(
+    () =>
+      resources.map((resource) => ({
+        ...resource,
+        status: statusOverrides[resource.id] || resource.status || 'published',
+      })),
+    [resources, statusOverrides],
+  );
+
+  const filteredResources = useMemo(() => {
+    if (!form.moduleId) return resourcesWithStatus;
+    return resourcesWithStatus.filter((resource) => Array.isArray(resource.moduleIds) && resource.moduleIds.includes(form.moduleId));
+  }, [form.moduleId, resourcesWithStatus]);
+
+  const activeResources = useMemo(
+    () => filteredResources.filter((resource) => resource.status !== 'archived' && resource.isDeleted !== true),
+    [filteredResources],
+  );
+
+  const trashedResources = useMemo(
+    () => filteredResources.filter((resource) => resource.status === 'archived' || resource.isDeleted === true),
+    [filteredResources],
+  );
+
+  const visibleResources = resourceView === 'trash' ? trashedResources : activeResources;
 
   function updateForm(updates) {
     setForm((current) => ({ ...current, ...updates }));
@@ -281,13 +313,35 @@ export default function AcademicResourcesManager({ resources, onAddResource, onD
   }
 
   async function handleDelete(resourceId) {
-    if (!window.confirm('Supprimer cette ressource ?')) return;
+    if (!window.confirm('Supprimer cette ressource ? Elle sera envoyee dans la corbeille.')) return;
 
     try {
       await onDeleteResource(resourceId);
-      setMessage('Ressource supprimee.');
+      setStatusOverrides((current) => ({ ...current, [resourceId]: 'archived' }));
+      setResourceView('trash');
+      setMessage('Ressource envoyee dans la corbeille.');
     } catch (deleteError) {
       setError(getApiErrorMessage(deleteError, 'Impossible de supprimer la ressource.'));
+    }
+  }
+
+  async function handleRestore(resource) {
+    if (!onRestoreResource) {
+      setError('La restauration de ressource n est pas disponible.');
+      return;
+    }
+
+    try {
+      await onRestoreResource(resource);
+      const restoredStatus =
+        resource.previousStatus && resource.previousStatus !== 'archived'
+          ? resource.previousStatus
+          : 'published';
+      setStatusOverrides((current) => ({ ...current, [resource.id]: restoredStatus }));
+      setResourceView('active');
+      setMessage('Ressource restauree.');
+    } catch (restoreError) {
+      setError(getApiErrorMessage(restoreError, 'Impossible de restaurer la ressource.'));
     }
   }
 
@@ -424,8 +478,40 @@ export default function AcademicResourcesManager({ resources, onAddResource, onD
       </form>
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
+          <div>
+            <h3 className="font-semibold text-white">Ressources</h3>
+            <p className="mt-1 text-sm text-white/40">
+              Les suppressions vont dans la corbeille et peuvent etre restaurees.
+            </p>
+          </div>
+          <div className="flex rounded-xl border border-white/10 bg-gray-950 p-1">
+            <button
+              type="button"
+              onClick={() => setResourceView('active')}
+              className={`rounded-lg px-3 py-2 text-sm font-bold ${
+                resourceView === 'active' ? 'bg-white text-gray-950' : 'text-white/55 hover:text-white'
+              }`}
+            >
+              Actives ({activeResources.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setResourceView('trash')}
+              className={`rounded-lg px-3 py-2 text-sm font-bold ${
+                resourceView === 'trash' ? 'bg-white text-gray-950' : 'text-white/55 hover:text-white'
+              }`}
+            >
+              Corbeille ({trashedResources.length})
+            </button>
+          </div>
+        </div>
         {visibleResources.length === 0 ? (
-          <div className="p-6 text-white/40">Aucune ressource trouvee pour cette selection.</div>
+          <div className="p-6 text-white/40">
+            {resourceView === 'trash'
+              ? 'Aucune ressource dans la corbeille pour cette selection.'
+              : 'Aucune ressource trouvee pour cette selection.'}
+          </div>
         ) : (
           <div className="divide-y divide-white/5">
             {visibleResources.map((resource) => (
@@ -437,15 +523,26 @@ export default function AcademicResourcesManager({ resources, onAddResource, onD
                     {Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0 ? ' - moduleIds' : ' - legacy'}
                   </div>
                 </div>
-                {canDeleteResources ? (
+                {canManageResourceStatus && resourceView === 'active' ? (
                   <button
                     type="button"
                     onClick={() => handleDelete(resource.id)}
                     className="text-white/40 hover:text-red-400"
                     aria-label="Supprimer la ressource"
-                    title="Suppression reservee au owner"
+                    title="Envoyer dans la corbeille"
                   >
                     <Trash2 size={16} />
+                  </button>
+                ) : null}
+                {canManageResourceStatus && resourceView === 'trash' ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRestore(resource)}
+                    className="text-white/40 hover:text-green-300"
+                    aria-label="Restaurer la ressource"
+                    title="Restaurer la ressource"
+                  >
+                    <RotateCcw size={16} />
                   </button>
                 ) : null}
               </div>

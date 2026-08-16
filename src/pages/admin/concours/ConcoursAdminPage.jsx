@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { Archive, Copy, FileQuestion, Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
+import { Copy, FileQuestion, ImagePlus, RotateCcw, Save, Search, Trash2, X } from 'lucide-react';
 import Badge from '../../../components/concours/common/Badge.jsx';
 import EmptyState from '../../../components/concours/common/EmptyState.jsx';
 import LoadingState from '../../../components/concours/common/LoadingState.jsx';
@@ -13,12 +13,15 @@ import {
   getAdminConcours,
   getAdminDashboard,
   getAdminQuestions,
+  restoreAdminConcours,
+  restoreAdminQuestion,
   updateAdminConcours,
   updateAdminQuestion,
+  uploadAdminQuestionImage,
 } from '../../../services/concoursApi.js';
 
-const EMPTY_CONCOURS = { name: '', slug: '', school: '', description: '', year: String(new Date().getFullYear()), category: '', difficulty: 'medium', durationMinutes: 60, status: 'draft', coverImageUrl: '' };
-const EMPTY_QUESTION = { questionText: '', imageUrl: '', subject: '', difficulty: 'medium', points: 1, order: 1, status: 'draft', explanation: '', options: [{ id: 'A', text: '' }, { id: 'B', text: '' }, { id: 'C', text: '' }, { id: 'D', text: '' }], correctOptionId: 'A' };
+const EMPTY_CONCOURS = { name: '', slug: '', school: '', description: '', year: String(new Date().getFullYear()), category: '', durationMinutes: 60, status: 'draft', coverImageUrl: '' };
+const EMPTY_QUESTION = { questionText: '', imageUrl: '', subject: '', points: 1, order: 1, status: 'draft', explanation: '', options: [{ id: 'A', text: '' }, { id: 'B', text: '' }, { id: 'C', text: '' }, { id: 'D', text: '' }], correctOptionId: 'A' };
 const TABS = [{ id: 'dashboard', label: 'Dashboard' }, { id: 'contests', label: 'Concours' }, { id: 'questions', label: 'Questions' }];
 
 function Field({ label, children }) {
@@ -36,7 +39,11 @@ function ConcoursForm({ initialValue, saving, onSubmit, onCancel }) {
   const [form, setForm] = useState(initialValue || EMPTY_CONCOURS);
   useEffect(() => setForm(initialValue || EMPTY_CONCOURS), [initialValue]);
   function update(field, value) { setForm((current) => ({ ...current, [field]: value })); }
-  function submit(event) { event.preventDefault(); onSubmit(form); }
+  function submit(event) {
+    event.preventDefault();
+    const { difficulty, ...payload } = form;
+    onSubmit(payload);
+  }
   return (
     <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <div className="grid gap-4 md:grid-cols-3">
@@ -46,7 +53,6 @@ function ConcoursForm({ initialValue, saving, onSubmit, onCancel }) {
         <Field label="Year"><input value={form.year} onChange={(e) => update('year', e.target.value)} className={inputClass} /></Field>
         <Field label="Category"><input value={form.category} onChange={(e) => update('category', e.target.value)} className={inputClass} placeholder="Engineering" /></Field>
         <Field label="Duration"><input type="number" min="1" value={form.durationMinutes} onChange={(e) => update('durationMinutes', e.target.value)} className={inputClass} /></Field>
-        <Field label="Difficulty"><select value={form.difficulty} onChange={(e) => update('difficulty', e.target.value)} className={selectClass}>{['easy', 'medium', 'hard', 'mixed'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
         <Field label="Status"><select value={form.status} onChange={(e) => update('status', e.target.value)} className={selectClass}>{['draft', 'published', 'archived'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
         <Field label="Cover"><input value={form.coverImageUrl} onChange={(e) => update('coverImageUrl', e.target.value)} className={inputClass} placeholder="https://..." /></Field>
       </div>
@@ -56,26 +62,97 @@ function ConcoursForm({ initialValue, saving, onSubmit, onCancel }) {
   );
 }
 
-function QuestionForm({ concoursId, initialValue, saving, onSubmit, onCancel }) {
-  const [form, setForm] = useState(initialValue || EMPTY_QUESTION);
-  useEffect(() => setForm(initialValue || EMPTY_QUESTION), [initialValue]);
+function normalizeQuestionForm(value) {
+  const source = value || EMPTY_QUESTION;
+  const sourceOptions = Array.isArray(source.options) && source.options.length
+    ? source.options
+    : Array.isArray(source.choices) && source.choices.length
+      ? source.choices
+      : EMPTY_QUESTION.options;
+
+  return {
+    ...EMPTY_QUESTION,
+    ...source,
+    questionText: source.questionText || source.statement || '',
+    options: sourceOptions.map((item, index) => ({
+      id: String(item.id || String.fromCharCode(65 + index)),
+      text: item.text || '',
+    })),
+    correctOptionId: source.correctOptionId || source.correctChoiceId || 'A',
+  };
+}
+
+function QuestionForm({ concoursId, initialValue, saving, onSubmit, onCancel, onUploadImage }) {
+  const [form, setForm] = useState(() => normalizeQuestionForm(initialValue));
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  useEffect(() => {
+    setForm(normalizeQuestionForm(initialValue));
+    setUploadError('');
+  }, [initialValue]);
   function update(field, value) { setForm((current) => ({ ...current, [field]: value })); }
   function choice(id, text) { setForm((current) => ({ ...current, options: current.options.map((item) => item.id === id ? { ...item, text } : item) })); }
-  function submit(event) { event.preventDefault(); onSubmit({ ...form, concoursId }); }
+  function submit(event) {
+    event.preventDefault();
+    const { difficulty, ...payload } = form;
+    onSubmit({ ...payload, concoursId });
+  }
+  async function uploadImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('Image trop grande. Maximum 2 MB.');
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingImage(true);
+    setUploadError('');
+    try {
+      const imageUrl = await onUploadImage(file);
+      update('imageUrl', imageUrl);
+    } catch (error) {
+      setUploadError(error?.message || 'Impossible d uploader cette image.');
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
+    }
+  }
   return (
     <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Field label="Subject"><input value={form.subject} onChange={(e) => update('subject', e.target.value)} className={inputClass} /></Field>
-        <Field label="Difficulty"><select value={form.difficulty} onChange={(e) => update('difficulty', e.target.value)} className={selectClass}>{['easy', 'medium', 'hard'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
         <Field label="Points"><input type="number" min="1" value={form.points} onChange={(e) => update('points', e.target.value)} className={inputClass} /></Field>
         <Field label="Order"><input type="number" min="1" value={form.order} onChange={(e) => update('order', e.target.value)} className={inputClass} /></Field>
       </div>
       <Field label="Question"><textarea required value={form.questionText || form.statement || ''} onChange={(e) => update('questionText', e.target.value)} rows={3} className={`${inputClass} mt-4`} /></Field>
-      <input value={form.imageUrl || ''} onChange={(e) => update('imageUrl', e.target.value)} className={`${inputClass} mt-3`} placeholder="Image URL optional" />
+      <div className="mt-4 rounded-2xl border border-white/10 bg-gray-950/35 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-white/40">Image</div>
+            <p className="mt-1 text-sm text-white/45">Uploader une image de support pour cette question.</p>
+          </div>
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10">
+            <ImagePlus size={16} />
+            {uploadingImage ? 'Upload...' : 'Upload image'}
+            <input type="file" accept="image/*" onChange={uploadImage} disabled={uploadingImage} className="sr-only" />
+          </label>
+        </div>
+        {uploadError ? <div className="mt-3 text-sm font-bold text-red-300">{uploadError}</div> : null}
+        {form.imageUrl ? (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+            <img src={form.imageUrl} alt="Question preview" className="max-h-72 w-full object-contain" />
+            <button type="button" onClick={() => update('imageUrl', '')} className="flex w-full items-center justify-center gap-2 border-t border-white/10 px-4 py-2 text-sm font-bold text-white/60 hover:bg-white/10">
+              <X size={15} />
+              Remove image
+            </button>
+          </div>
+        ) : null}
+      </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">{(form.options || EMPTY_QUESTION.options).map((item) => <input key={item.id} value={item.text} onChange={(e) => choice(item.id, e.target.value)} className={inputClass} placeholder={`Choice ${item.id}`} />)}</div>
       <div className="mt-4 grid gap-3 md:grid-cols-2"><Field label="Correct"><select value={form.correctOptionId || form.correctChoiceId || 'A'} onChange={(e) => update('correctOptionId', e.target.value)} className={selectClass}>{(form.options || EMPTY_QUESTION.options).map((item) => <option key={item.id} value={item.id}>{item.id}</option>)}</select></Field><Field label="Status"><select value={form.status} onChange={(e) => update('status', e.target.value)} className={selectClass}>{['draft', 'published', 'archived'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field></div>
       <Field label="Explanation"><textarea value={form.explanation || ''} onChange={(e) => update('explanation', e.target.value)} rows={3} className={`${inputClass} mt-4`} /></Field>
-      <div className="mt-4 flex flex-wrap gap-3"><button disabled={saving || !concoursId} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Save size={16} />{saving ? 'Saving...' : 'Save question'}</button>{onCancel ? <button type="button" onClick={onCancel} className="rounded-xl border border-white/10 px-5 py-3 text-sm font-bold text-white/60">Cancel</button> : null}</div>
+      <div className="mt-4 flex flex-wrap gap-3"><button disabled={saving || uploadingImage || !concoursId} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Save size={16} />{saving ? 'Saving...' : 'Save question'}</button>{onCancel ? <button type="button" onClick={onCancel} className="rounded-xl border border-white/10 px-5 py-3 text-sm font-bold text-white/60">Cancel</button> : null}</div>
     </form>
   );
 }
@@ -142,10 +219,15 @@ export default function ConcoursAdminPage() {
     }
   }
 
-  async function archiveConcours(id) {
-    if (!window.confirm('Archive this concours?')) return;
+  async function archiveConcours(item) {
+    if (!window.confirm('Supprimer ce concours ? Il sera envoye dans la corbeille.')) return;
     setSaving(true);
-    try { await archiveAdminConcours(id, getToken); await loadAll(); setMessage('Concours archived.'); } catch (err) { setMessage(err?.message || 'Unable to archive.'); } finally { setSaving(false); }
+    try { await archiveAdminConcours(item.id, getToken); await loadAll(); setMessage('Concours envoye dans la corbeille.'); } catch (err) { setMessage(err?.message || 'Unable to delete concours.'); } finally { setSaving(false); }
+  }
+
+  async function restoreConcours(item) {
+    setSaving(true);
+    try { await restoreAdminConcours(item, getToken); await loadAll(); setMessage('Concours restaure.'); } catch (err) { setMessage(err?.message || 'Unable to restore concours.'); } finally { setSaving(false); }
   }
 
   async function saveQuestion(payload) {
@@ -168,13 +250,25 @@ export default function ConcoursAdminPage() {
   async function duplicateQuestion(question) {
     const copy = { ...question, questionText: `${question.questionText || question.statement} (Copie)`, status: 'draft', order: Number(question.order || 0) + 1 };
     delete copy.id;
+    delete copy.deletedAt;
+    delete copy.deletedBy;
+    delete copy.previousStatus;
     await saveQuestion(copy);
   }
 
   async function removeQuestion(question) {
-    if (!window.confirm('Delete this question?')) return;
+    if (!window.confirm('Supprimer cette question ? Elle sera envoyee dans la corbeille.')) return;
     setSaving(true);
-    try { await deleteAdminQuestion(question.id, getToken); await loadQuestions(question.concoursId); await loadAll(); setMessage('Question deleted.'); } catch (err) { setMessage(err?.message || 'Unable to delete question.'); } finally { setSaving(false); }
+    try { await deleteAdminQuestion(question.id, getToken); await loadQuestions(question.concoursId); await loadAll(); setMessage('Question envoyee dans la corbeille.'); } catch (err) { setMessage(err?.message || 'Unable to delete question.'); } finally { setSaving(false); }
+  }
+
+  async function restoreQuestion(question) {
+    setSaving(true);
+    try { await restoreAdminQuestion(question, getToken); await loadQuestions(question.concoursId); await loadAll(); setMessage('Question restauree.'); } catch (err) { setMessage(err?.message || 'Unable to restore question.'); } finally { setSaving(false); }
+  }
+
+  async function uploadQuestionImage(file) {
+    return uploadAdminQuestionImage(file, getToken);
   }
 
   const filteredQuestions = questions.filter((question) => String(question.questionText || question.statement || '').toLowerCase().includes(query.trim().toLowerCase()));
@@ -190,9 +284,9 @@ export default function ConcoursAdminPage() {
 
         {tab === 'dashboard' ? <div className="grid gap-4 md:grid-cols-4"><Stat label="Users" value={stats?.totalUsers || 0} /><Stat label="Concours" value={stats?.totalConcours || 0} /><Stat label="Questions" value={stats?.totalQuestions || 0} /><Stat label="Attempts" value={stats?.totalAttempts || 0} /><Stat label="Active users" value={stats?.activeUsers || 0} /><Stat label="Average score" value={`${stats?.averageScore || 0}%`} /><Stat label="New users/week" value={stats?.newUsersThisWeek || 0} /><Stat label="Published" value={concours.filter((item) => item.status === 'published').length} /></div> : null}
 
-        {tab === 'contests' ? <div className="space-y-6"><ConcoursForm initialValue={editingConcours} saving={saving} onSubmit={saveConcours} onCancel={editingConcours ? () => setEditingConcours(null) : null} /><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{concours.map((item) => <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="flex items-start justify-between gap-3"><div><Badge tone={item.status === 'published' ? 'green' : item.status === 'archived' ? 'slate' : 'amber'}>{item.status}</Badge><h3 className="mt-3 text-xl font-black">{item.name}</h3><p className="mt-1 text-sm text-white/45">{item.school} - {item.year}</p></div><div className="text-right text-sm font-black text-white/45">{item.questionCount || 0} Q</div></div><p className="mt-3 line-clamp-2 text-sm text-white/55">{item.description}</p><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => { setEditingConcours(item); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-gray-950">Edit</button><button onClick={() => { setSelectedConcoursId(item.id); setTab('questions'); }} className="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/70">Questions</button><button onClick={() => archiveConcours(item.id)} className="rounded-xl border border-amber-400/20 px-3 py-2 text-sm font-bold text-amber-200"><Archive size={15} /></button></div></article>)}</div></div> : null}
+        {tab === 'contests' ? <div className="space-y-6"><ConcoursForm initialValue={editingConcours} saving={saving} onSubmit={saveConcours} onCancel={editingConcours ? () => setEditingConcours(null) : null} /><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{concours.map((item) => <article key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="flex items-start justify-between gap-3"><div><Badge tone={item.status === 'published' ? 'green' : item.status === 'archived' ? 'slate' : 'amber'}>{item.status}</Badge><h3 className="mt-3 text-xl font-black">{item.name}</h3><p className="mt-1 text-sm text-white/45">{item.school} - {item.year}</p></div><div className="text-right text-sm font-black text-white/45">{item.questionCount || 0} Q</div></div><p className="mt-3 line-clamp-2 text-sm text-white/55">{item.description}</p><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => { setEditingConcours(item); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="rounded-xl bg-white px-3 py-2 text-sm font-black text-gray-950">Edit</button><button onClick={() => { setSelectedConcoursId(item.id); setTab('questions'); }} className="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/70">Questions</button>{item.status === 'archived' ? <button onClick={() => restoreConcours(item)} className="rounded-xl border border-green-400/20 p-2 text-green-300" title="Restaurer"><RotateCcw size={16} /></button> : <button onClick={() => archiveConcours(item)} className="rounded-xl border border-red-400/20 p-2 text-red-300" title="Supprimer"><Trash2 size={16} /></button>}</div></article>)}</div></div> : null}
 
-        {tab === 'questions' ? <div className="space-y-6"><div className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="grid gap-4 md:grid-cols-[1fr_2fr]"><Field label="Concours"><select value={selectedConcoursId} onChange={(e) => setSelectedConcoursId(e.target.value)} className={selectClass}>{concours.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field><Field label="Search"><div className="relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" /><input value={query} onChange={(e) => setQuery(e.target.value)} className={`${inputClass} pl-10`} placeholder="Search questions" /></div></Field></div></div>{selectedConcours ? <QuestionForm concoursId={selectedConcours.id} initialValue={editingQuestion} saving={saving} onSubmit={saveQuestion} onCancel={editingQuestion ? () => setEditingQuestion(null) : null} /> : <EmptyState title="No concours" description="Create a concours first." />}{questionsLoading ? <LoadingState label="Loading questions..." /> : <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-white/5">{filteredQuestions.length === 0 ? <div className="p-6 text-white/40"><FileQuestion className="mb-3 text-primary" />No questions yet.</div> : filteredQuestions.map((question) => <div key={question.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex flex-wrap gap-2"><Badge tone={question.status === 'published' ? 'green' : 'amber'}>{question.status}</Badge><span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">Order {question.order}</span><span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">{question.subject || 'General'}</span></div><p className="mt-2 font-medium text-white">{question.questionText || question.statement}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setEditingQuestion(question)} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/70">Edit</button><button onClick={() => duplicateQuestion(question)} className="rounded-xl border border-white/10 p-2 text-white/60"><Copy size={16} /></button><button onClick={() => removeQuestion(question)} className="rounded-xl border border-red-400/20 p-2 text-red-300"><Trash2 size={16} /></button></div></div>)}</div>}</div> : null}
+        {tab === 'questions' ? <div className="space-y-6"><div className="rounded-2xl border border-white/10 bg-white/5 p-5"><div className="grid gap-4 md:grid-cols-[1fr_2fr]"><Field label="Concours"><select value={selectedConcoursId} onChange={(e) => setSelectedConcoursId(e.target.value)} className={selectClass}>{concours.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field><Field label="Search"><div className="relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" /><input value={query} onChange={(e) => setQuery(e.target.value)} className={`${inputClass} pl-10`} placeholder="Search questions" /></div></Field></div></div>{selectedConcours ? <QuestionForm concoursId={selectedConcours.id} initialValue={editingQuestion} saving={saving} onSubmit={saveQuestion} onCancel={editingQuestion ? () => setEditingQuestion(null) : null} onUploadImage={uploadQuestionImage} /> : <EmptyState title="No concours" description="Create a concours first." />}{questionsLoading ? <LoadingState label="Loading questions..." /> : <div className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-white/5">{filteredQuestions.length === 0 ? <div className="p-6 text-white/40"><FileQuestion className="mb-3 text-primary" />No questions yet.</div> : filteredQuestions.map((question) => <div key={question.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex flex-wrap gap-2"><Badge tone={question.status === 'published' ? 'green' : question.status === 'archived' ? 'slate' : 'amber'}>{question.status}</Badge><span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">Order {question.order}</span><span className="rounded-full bg-white/10 px-2 py-1 text-xs text-white/60">{question.subject || 'General'}</span></div><p className="mt-2 font-medium text-white">{question.questionText || question.statement}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => setEditingQuestion(question)} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/70">Edit</button><button onClick={() => duplicateQuestion(question)} className="rounded-xl border border-white/10 p-2 text-white/60"><Copy size={16} /></button>{question.status === 'archived' ? <button onClick={() => restoreQuestion(question)} className="rounded-xl border border-green-400/20 p-2 text-green-300" title="Restaurer"><RotateCcw size={16} /></button> : <button onClick={() => removeQuestion(question)} className="rounded-xl border border-red-400/20 p-2 text-red-300" title="Supprimer"><Trash2 size={16} /></button>}</div></div>)}</div>}</div> : null}
       </div>
     </div>
   );

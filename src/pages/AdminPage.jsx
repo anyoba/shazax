@@ -108,7 +108,7 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-export default function AdminPage({ onAddResource, onDeleteResource }) {
+export default function AdminPage({ onAddResource, onDeleteResource, onRestoreResource }) {
   const { signOut } = useClerk();
   const { getToken } = useAuth();
   const { role } = useUserRole();
@@ -172,8 +172,9 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
 
     return nextTabs;
   }, [canAccessInstitutions, canManageResources, canViewAdminData]);
-  const { resources } = useResources({
+  const { resources, refetch: refetchResources } = useResources({
     enabled: canManageResources && activeTab === 'resources',
+    includeArchived: true,
   });
 
   useEffect(() => {
@@ -328,6 +329,9 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
           const usersBody = await getAdminUsers(getToken);
           setUsers(usersBody.users || []);
         }
+        if (activeTab === 'resources') {
+          await refetchResources();
+        }
       }
     } catch (error) {
       setFirestoreError(error?.message || 'Unable to refresh dashboard.');
@@ -444,15 +448,42 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
         {canViewAdminData && activeTab === 'analytics' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Dashboard</h2>
-            <div className="grid gap-4 md:grid-cols-4">
-              <StatCard icon={<Users size={18} />} label="Total users" value={adminStats?.totalUsers ?? 0} />
-              <StatCard icon={<Activity size={18} />} label="Active users" value={adminStats?.activeUsers ?? 0} />
-              <StatCard icon={<BookOpen size={18} />} label="Total concours" value={adminStats?.totalConcours ?? 0} />
-              <StatCard icon={<Layers size={18} />} label="Total questions" value={adminStats?.totalQuestions ?? 0} />
-              <StatCard icon={<Eye size={18} />} label="Total attempts" value={adminStats?.totalAttempts ?? 0} />
-              <StatCard icon={<CheckCircle size={18} />} label="Average score" value={(adminStats?.averageScore ?? 0) + '%'} />
-              <StatCard icon={<Users size={18} />} label="New users this week" value={adminStats?.newUsersThisWeek ?? 0} />
-              <StatCard icon={<Mail size={18} />} label="Waitlist Emails" value={stats.emailCount} />
+            <div className="grid gap-6 xl:grid-cols-2">
+              <section className="space-y-4">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-black text-white">
+                    <Building2 size={19} />
+                    Universities
+                  </h3>
+                  <p className="mt-1 text-sm text-white/40">Etablissements, structure Learn et ressources.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StatCard icon={<Building2 size={18} />} label="Etablissements" value={adminStats?.totalInstitutions ?? 0} />
+                  <StatCard icon={<CheckCircle size={18} />} label="Etablissements publies" value={adminStats?.publishedInstitutions ?? 0} />
+                  <StatCard icon={<Layers size={18} />} label="Filieres" value={adminStats?.totalPrograms ?? 0} />
+                  <StatCard icon={<BookOpen size={18} />} label="Modules" value={adminStats?.totalModules ?? 0} />
+                  <StatCard icon={<BookOpen size={18} />} label="Ressources actives" value={adminStats?.publishedResources ?? 0} />
+                  <StatCard icon={<Trash2 size={18} />} label="Corbeille ressources" value={adminStats?.trashedResources ?? 0} />
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-black text-white">
+                    <Activity size={19} />
+                    Concours
+                  </h3>
+                  <p className="mt-1 text-sm text-white/40">Concours, questions, tentatives et utilisateurs.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StatCard icon={<BookOpen size={18} />} label="Total concours" value={adminStats?.totalConcours ?? 0} />
+                  <StatCard icon={<Layers size={18} />} label="Total questions" value={adminStats?.totalQuestions ?? 0} />
+                  <StatCard icon={<Eye size={18} />} label="Total attempts" value={adminStats?.totalAttempts ?? 0} />
+                  <StatCard icon={<CheckCircle size={18} />} label="Average score" value={(adminStats?.averageScore ?? 0) + '%'} />
+                  <StatCard icon={<Users size={18} />} label="Total users" value={adminStats?.totalUsers ?? 0} />
+                  <StatCard icon={<Mail size={18} />} label="Waitlist Emails" value={stats.emailCount} />
+                </div>
+              </section>
             </div>
           </div>
         ) : null}
@@ -673,6 +704,7 @@ export default function AdminPage({ onAddResource, onDeleteResource }) {
             resources={resources}
             onAddResource={onAddResource}
             onDeleteResource={onDeleteResource}
+            onRestoreResource={onRestoreResource}
           />
         ) : null}
 

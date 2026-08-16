@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import {
-  Archive,
   BookOpen,
   Edit3,
   Layers,
@@ -10,6 +9,7 @@ import {
   RotateCcw,
   Save,
   Send,
+  Trash2,
   X,
 } from 'lucide-react';
 import {
@@ -158,14 +158,20 @@ function StatusBadge({ status }) {
   );
 }
 
-function ActionButton({ children, disabled, onClick, title }) {
+function ActionButton({ children, disabled, onClick, title, variant = 'default' }) {
+  const variantClass =
+    variant === 'danger'
+      ? 'border-red-400/20 text-red-300 hover:bg-red-500/10 hover:text-red-200'
+      : 'border-white/10 text-white/50 hover:bg-white/10 hover:text-white';
+
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
       title={title}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/50 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+      aria-label={title}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-40 ${variantClass}`}
     >
       {children}
     </button>
@@ -455,14 +461,14 @@ function EntityList({
                     <Edit3 size={15} />
                   </ActionButton>
                 ) : null}
-                {canChangeStatus && item.status !== ACADEMIC_STATUSES.PUBLISHED ? (
+                {canChangeStatus && ![ACADEMIC_STATUSES.PUBLISHED, ACADEMIC_STATUSES.ARCHIVED].includes(item.status) ? (
                   <ActionButton disabled={loading} onClick={() => onPublish(item)} title="Publier">
                     <Send size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && item.status !== ACADEMIC_STATUSES.ARCHIVED ? (
-                  <ActionButton disabled={loading} onClick={() => onArchive(item)} title="Archiver">
-                    <Archive size={15} />
+                  <ActionButton disabled={loading} onClick={() => onArchive(item)} title="Supprimer" variant="danger">
+                    <Trash2 size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && item.status === ACADEMIC_STATUSES.ARCHIVED ? (
@@ -851,13 +857,13 @@ export default function AcademicStructureManager({ initialInstitutionId = '' }) 
   }
 
   function archiveItem(entityType, item) {
-    if (!window.confirm(`Archiver ${item.name} ?`)) return;
+    if (!window.confirm(`Supprimer ${item.name} ? Il sera envoye dans la corbeille.`)) return;
 
     statusAction(
       entityType,
       item,
       () => archiveAcademicItem(entityType, item.id, getToken),
-      `${ENTITY_CONFIGS[entityType].singular} archive.`,
+      `${ENTITY_CONFIGS[entityType].singular} envoye dans la corbeille.`,
     );
   }
 

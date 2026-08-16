@@ -175,12 +175,12 @@ export default function InstitutionsManager({ onManageStructure }) {
   }
 
   function handleArchive(institution) {
-    if (!window.confirm(`Archiver ${institution.name} ?`)) return;
+    if (!window.confirm(`Supprimer ${institution.name} ? Il sera envoye dans la corbeille.`)) return;
 
     runInstitutionAction(
       institution,
       () => archiveInstitution(institution.id, getToken),
-      'Etablissement archive.',
+      'Etablissement envoye dans la corbeille.',
     );
   }
 

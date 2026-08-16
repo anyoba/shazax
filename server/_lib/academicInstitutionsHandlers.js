@@ -287,6 +287,12 @@ export async function updateInstitution(req, res, id) {
   try {
     await docRef.update({
       ...payload,
+      ...(payload.status === ACADEMIC_STATUSES.DRAFT && currentData.status === ACADEMIC_STATUSES.ARCHIVED
+        ? {
+            deletedAt: FieldValue.delete(),
+            deletedBy: FieldValue.delete(),
+          }
+        : {}),
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: user.userId,
     });
@@ -304,12 +310,19 @@ export async function archiveInstitution(req, res, id) {
   const user = await requireRole(req, ACADEMIC_PUBLISH_ROLES);
   const db = getAdminDb();
   const docRef = db.collection(COLLECTION).doc(id);
-  await getInstitutionSnapshot(db, id);
+  const currentSnapshot = await getInstitutionSnapshot(db, id);
+  const currentData = currentSnapshot.data() || {};
 
   try {
     await docRef.update({
       status: ACADEMIC_STATUSES.ARCHIVED,
+      previousStatus:
+        currentData.status && currentData.status !== ACADEMIC_STATUSES.ARCHIVED
+          ? currentData.status
+          : currentData.previousStatus || ACADEMIC_STATUSES.DRAFT,
       isDeleted: false,
+      deletedAt: FieldValue.serverTimestamp(),
+      deletedBy: user.userId,
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: user.userId,
     });

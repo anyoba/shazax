@@ -312,8 +312,17 @@ export async function handleAcademicEntityPatch(req, res, entityType, id) {
     await assertSlugAvailable(db, config, payload.slug, scopeFilters, id);
   }
 
+  const restoreFields =
+    payload.status === ACADEMIC_STATUSES.DRAFT && existing.status === ACADEMIC_STATUSES.ARCHIVED
+      ? {
+          deletedAt: FieldValue.delete(),
+          deletedBy: FieldValue.delete(),
+        }
+      : {};
+
   const updateData = removeUndefinedFields({
     ...payload,
+    ...restoreFields,
     updatedAt: FieldValue.serverTimestamp(),
     updatedBy: user.userId,
   });
@@ -335,11 +344,19 @@ export async function handleAcademicEntityArchive(req, res, entityType, id) {
   const config = getAcademicEntityConfig(entityType);
   const user = await requireRole(req, ACADEMIC_PUBLISH_ROLES);
   const db = getAdminDb();
-  await getExistingDoc(db, config, id);
+  const docSnapshot = await getExistingDoc(db, config, id);
+  const current = docSnapshot.data() || {};
 
   try {
     await db.collection(config.collection).doc(id).update({
       status: ACADEMIC_STATUSES.ARCHIVED,
+      previousStatus:
+        current.status && current.status !== ACADEMIC_STATUSES.ARCHIVED
+          ? current.status
+          : current.previousStatus || ACADEMIC_STATUSES.DRAFT,
+      isDeleted: false,
+      deletedAt: FieldValue.serverTimestamp(),
+      deletedBy: user.userId,
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: user.userId,
     });

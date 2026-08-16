@@ -1,4 +1,4 @@
-import { Archive, Edit3, ExternalLink, Layers, RotateCcw, Send } from 'lucide-react';
+import { Edit3, ExternalLink, Layers, RotateCcw, Send, Trash2 } from 'lucide-react';
 import { ACADEMIC_STATUSES } from '../../../constants/academic.js';
 
 const STATUS_LABELS = {
@@ -27,14 +27,20 @@ function StatusBadge({ status }) {
   );
 }
 
-function ActionButton({ children, disabled, onClick, title }) {
+function ActionButton({ children, disabled, onClick, title, variant = 'default' }) {
+  const variantClass =
+    variant === 'danger'
+      ? 'border-red-400/20 text-red-300 hover:bg-red-500/10 hover:text-red-200'
+      : 'border-white/10 text-white/50 hover:bg-white/10 hover:text-white';
+
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
       title={title}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/50 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+      aria-label={title}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-40 ${variantClass}`}
     >
       {children}
     </button>
@@ -127,14 +133,14 @@ export default function InstitutionsTable({
                     <span>Manage Resources</span>
                   </TextActionButton>
                 ) : null}
-                {canChangeStatus && institution.status !== ACADEMIC_STATUSES.PUBLISHED ? (
+                {canChangeStatus && ![ACADEMIC_STATUSES.PUBLISHED, ACADEMIC_STATUSES.ARCHIVED].includes(institution.status) ? (
                   <ActionButton disabled={loading} onClick={() => onPublish(institution)} title="Publier">
                     <Send size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && institution.status !== ACADEMIC_STATUSES.ARCHIVED ? (
-                  <ActionButton disabled={loading} onClick={() => onArchive(institution)} title="Archiver">
-                    <Archive size={15} />
+                  <ActionButton disabled={loading} onClick={() => onArchive(institution)} title="Supprimer" variant="danger">
+                    <Trash2 size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && institution.status === ACADEMIC_STATUSES.ARCHIVED ? (
@@ -193,14 +199,14 @@ export default function InstitutionsTable({
                     <span>Manage Resources</span>
                   </TextActionButton>
                 ) : null}
-                {canChangeStatus && institution.status !== ACADEMIC_STATUSES.PUBLISHED ? (
+                {canChangeStatus && ![ACADEMIC_STATUSES.PUBLISHED, ACADEMIC_STATUSES.ARCHIVED].includes(institution.status) ? (
                   <ActionButton disabled={loading} onClick={() => onPublish(institution)} title="Publier">
                     <Send size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && institution.status !== ACADEMIC_STATUSES.ARCHIVED ? (
-                  <ActionButton disabled={loading} onClick={() => onArchive(institution)} title="Archiver">
-                    <Archive size={15} />
+                  <ActionButton disabled={loading} onClick={() => onArchive(institution)} title="Supprimer" variant="danger">
+                    <Trash2 size={15} />
                   </ActionButton>
                 ) : null}
                 {canChangeStatus && institution.status === ACADEMIC_STATUSES.ARCHIVED ? (

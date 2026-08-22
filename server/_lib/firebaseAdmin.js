@@ -8,6 +8,13 @@ const FIREBASE_ENV_NAMES = [
   'FIREBASE_PRIVATE_KEY',
 ];
 
+function createFirebaseConfigError(message, code) {
+  return Object.assign(new Error(message), {
+    statusCode: 500,
+    code,
+  });
+}
+
 export function normalizePrivateKey(value) {
   return value
     ?.trim()
@@ -38,13 +45,13 @@ export function validateFirebaseEnvironment() {
 
   if (missing.length > 0) {
     console.error('[FIREBASE_ENV_MISSING]', { missing });
-    throw new Error('Firebase server configuration is missing.');
+    throw createFirebaseConfigError('Firebase server configuration is missing.', 'FIREBASE_CONFIG_MISSING');
   }
 
   const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
   if (!isPrivateKeyFormatValid(privateKey)) {
     console.error('[FIREBASE_ENV_MISSING]', { missing: ['FIREBASE_PRIVATE_KEY_FORMAT'] });
-    throw new Error('Firebase private key format is invalid.');
+    throw createFirebaseConfigError('Firebase private key format is invalid.', 'FIREBASE_PRIVATE_KEY_INVALID');
   }
 
   return {

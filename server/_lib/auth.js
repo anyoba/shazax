@@ -91,10 +91,11 @@ export function sendJson(res, statusCode, body) {
 }
 
 export function sendError(res, error, { requestId, stage } = {}) {
-  const statusCode = error instanceof HttpError ? error.statusCode : 500;
-  const message = error instanceof HttpError ? error.message : 'Internal server error.';
+  const isKnownHttpError = error instanceof HttpError || Number.isInteger(error?.statusCode);
+  const statusCode = isKnownHttpError ? error.statusCode : 500;
+  const message = isKnownHttpError ? error.message : 'Internal server error.';
   const code =
-    error instanceof HttpError && error.code
+    isKnownHttpError && error.code
       ? error.code
       : statusCode === 500
         ? 'INTERNAL_SERVER_ERROR'

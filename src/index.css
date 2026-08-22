@@ -68,3 +68,118 @@ body {
     @apply font-heading tracking-tight;
   }
 }
+
+.shazax-page-grid {
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(circle, hsl(var(--primary) / 0.26) 1px, transparent 1.45px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+  background-position:
+    0 0,
+    0 0,
+    0 0;
+  background-size:
+    34px 34px,
+    92px 92px,
+    92px 92px;
+}
+
+.shazax-water-trail-layer {
+  --water-active: 0;
+  opacity: var(--water-active);
+  transition: opacity 160ms ease;
+  contain: strict;
+}
+
+.shazax-water-trail-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+
+.shazax-motif-cross {
+  opacity: 0.74;
+  filter: drop-shadow(0 10px 22px rgba(15, 23, 42, 0.16));
+  animation: shazax-motif-drift 7s ease-in-out infinite;
+}
+
+.shazax-title-letter {
+  display: inline-block;
+  height: 0.98em;
+  overflow: hidden;
+  vertical-align: -0.05em;
+}
+
+.shazax-title-letter-track {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.98;
+  will-change: transform;
+}
+
+.shazax-title-letter-up .shazax-title-letter-track {
+  animation: shazax-title-letter-up 5.6s cubic-bezier(0.76, 0, 0.24, 1) var(--letter-delay) infinite;
+}
+
+.shazax-title-letter-down .shazax-title-letter-track {
+  transform: translateY(-0.98em);
+  animation: shazax-title-letter-down 5.6s cubic-bezier(0.76, 0, 0.24, 1) var(--letter-delay) infinite;
+}
+
+@keyframes shazax-title-letter-up {
+  0%,
+  58%,
+  100% {
+    transform: translateY(0);
+  }
+
+  68%,
+  78% {
+    transform: translateY(-0.98em);
+  }
+}
+
+@keyframes shazax-title-letter-down {
+  0%,
+  58%,
+  100% {
+    transform: translateY(-0.98em);
+  }
+
+  68%,
+  78% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes shazax-motif-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(var(--motif-x, 6px), var(--motif-y, -8px), 0) rotate(45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shazax-motif-cross {
+    animation: none;
+  }
+
+  .shazax-title-letter-track {
+    animation: none;
+  }
+
+  .shazax-water-trail-layer {
+    display: none;
+  }
+}

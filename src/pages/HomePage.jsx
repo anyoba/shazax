@@ -31,6 +31,409 @@ import { addEmail } from '../waitlist';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const pageMotifs = [
+  { left: '6%', top: '18%', size: 18, color: 'hsl(var(--primary) / 0.45)', x: '8px', y: '-10px', delay: 0 },
+  { left: '87%', top: '20%', size: 14, color: 'rgba(255, 200, 18, 0.55)', x: '-9px', y: '7px', delay: 0.5 },
+  { left: '12%', top: '58%', size: 11, color: 'rgba(8, 145, 178, 0.38)', x: '7px', y: '9px', delay: 0.25 },
+  { left: '78%', top: '68%', size: 20, color: 'hsl(var(--primary) / 0.34)', x: '-7px', y: '-12px', delay: 0.7 },
+  { left: '45%', top: '12%', size: 10, color: 'rgba(255, 200, 18, 0.45)', x: '10px', y: '6px', delay: 0.95 },
+];
+
+const ctaTopMarks = [
+  { left: '16%', top: '23%', size: 28, x: '5px', y: '-8px' },
+  { left: '84%', top: '23%', size: 28, x: '-6px', y: '9px' },
+];
+
+const finalTitleMotion = {
+  'Ready to Upgrade': {
+    up: [9, 14],
+    down: [0, 6],
+  },
+  'Your Brain?': {
+    up: [1, 8],
+    down: [0, 5],
+  },
+};
+
+function MotifCross({ left, top, bottom, size, color = 'rgba(255,255,255,0.6)', x = '6px', y = '-8px', delay = 0 }) {
+  return (
+    <span
+      className="shazax-motif-cross absolute block"
+      style={{
+        left,
+        top,
+        bottom,
+        width: size,
+        height: size,
+        color,
+        animationDelay: `${delay}s`,
+        '--motif-x': x,
+        '--motif-y': y,
+      }}
+    >
+      <span className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 rounded-full bg-current" />
+      <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 rounded-full bg-current" />
+    </span>
+  );
+}
+
+function AnimatedTitleLetter({ char, direction, delay }) {
+  if (char === ' ') {
+    return <span className="inline-block w-[0.28em]" aria-hidden="true" />;
+  }
+
+  if (!direction) {
+    return <span className="inline-block">{char}</span>;
+  }
+
+  return (
+    <span
+      className={`shazax-title-letter shazax-title-letter-${direction}`}
+      style={{ '--letter-delay': `${delay}s` }}
+    >
+      <span className="shazax-title-letter-track">
+        <span>{char}</span>
+        <span>{char}</span>
+      </span>
+    </span>
+  );
+}
+
+function WaterCursorLayer() {
+  const layerRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    const canvas = canvasRef.current;
+    if (!layer || !canvas) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) return undefined;
+
+    const trail = [];
+    let dpr = 1;
+    let frameId = 0;
+    let previousFrameAt = performance.now();
+    let lastMoveAt = 0;
+    let lastPointer = null;
+
+    function resizeCanvas() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      canvas.width = Math.ceil(window.innerWidth * dpr);
+      canvas.height = Math.ceil(window.innerHeight * dpr);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function addTrailPoint(x, y, speed, now) {
+      trail.push({
+        x,
+        y,
+        age: 0,
+        life: 560 + Math.min(speed * 1.45, 260),
+        width: Math.max(7, Math.min(30, 10 + speed * 0.07)),
+        wobble: Math.random() * Math.PI * 2,
+      });
+
+      if (trail.length > 48) {
+        trail.splice(0, trail.length - 48);
+      }
+    }
+
+    function scheduleRender() {
+      if (!frameId) {
+        frameId = window.requestAnimationFrame(render);
+      }
+    }
+
+    function handlePointerMove(event) {
+      if (event.pointerType === 'touch') return;
+
+      const now = performance.now();
+      const nextPointer = { x: event.clientX, y: event.clientY, time: now };
+
+      if (lastPointer && now - lastPointer.time > 180) {
+        lastPointer = null;
+      }
+
+      if (!lastPointer) {
+        addTrailPoint(nextPointer.x, nextPointer.y, 0, now);
+        lastPointer = nextPointer;
+        lastMoveAt = now;
+        scheduleRender();
+        return;
+      }
+
+      const deltaX = nextPointer.x - lastPointer.x;
+      const deltaY = nextPointer.y - lastPointer.y;
+      const distance = Math.hypot(deltaX, deltaY);
+      if (distance < 2) return;
+
+      const elapsed = Math.max(16, now - lastPointer.time);
+      const speed = distance / elapsed * 16.67;
+      const steps = Math.max(1, Math.min(4, Math.ceil(distance / 24)));
+
+      for (let step = 1; step <= steps; step += 1) {
+        const progress = step / steps;
+        addTrailPoint(
+          lastPointer.x + deltaX * progress,
+          lastPointer.y + deltaY * progress,
+          speed,
+          now,
+        );
+      }
+
+      lastPointer = nextPointer;
+      lastMoveAt = now;
+      scheduleRender();
+    }
+
+    function drawStroke(points, {
+      color,
+      widthScale = 1,
+      alphaScale = 1,
+      blur = 0,
+      offset = 0,
+      wave = 0,
+      composite = 'source-over',
+    }) {
+      if (points.length < 2) return;
+
+      context.save();
+      context.globalCompositeOperation = composite;
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      if (blur) {
+        context.shadowBlur = blur;
+        context.shadowColor = color;
+      }
+
+      for (let index = 1; index < points.length; index += 1) {
+        const previous = points[index - 1];
+        const point = points[index];
+        const fade = Math.max(0, 1 - point.age / point.life);
+        if (fade <= 0.01) continue;
+
+        const angle = Math.atan2(point.y - previous.y, point.x - previous.x);
+        const normalX = Math.cos(angle + Math.PI / 2);
+        const normalY = Math.sin(angle + Math.PI / 2);
+        const shimmer = Math.sin(point.wobble + point.age * 0.028 + index * 0.62) * wave;
+        const lineWidth = Math.max(1, point.width * widthScale * fade);
+        const alpha = Math.min(1, Math.pow(fade, 1.45) * alphaScale);
+
+        context.globalAlpha = alpha;
+        context.strokeStyle = color;
+        context.lineWidth = lineWidth;
+        context.beginPath();
+        context.moveTo(previous.x + normalX * (offset + shimmer), previous.y + normalY * (offset + shimmer));
+        context.quadraticCurveTo(
+          previous.x * 0.45 + point.x * 0.55 + normalX * (offset - shimmer * 0.35),
+          previous.y * 0.45 + point.y * 0.55 + normalY * (offset - shimmer * 0.35),
+          point.x + normalX * (offset + shimmer),
+          point.y + normalY * (offset + shimmer),
+        );
+        context.stroke();
+      }
+
+      context.restore();
+    }
+
+    function render(now) {
+      frameId = 0;
+      const delta = Math.min(48, now - previousFrameAt);
+      previousFrameAt = now;
+      const idleFor = now - lastMoveAt;
+      const activeAmount = trail.length
+        ? Math.max(0, Math.min(1, 1 - Math.max(idleFor - 520, 0) / 900))
+        : 0;
+
+      layer.style.setProperty('--water-active', activeAmount.toFixed(3));
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let index = trail.length - 1; index >= 0; index -= 1) {
+        trail[index].age += delta;
+        if (trail[index].age >= trail[index].life) {
+          trail.splice(index, 1);
+        }
+      }
+
+      if (!trail.length) {
+        layer.style.setProperty('--water-active', '0');
+        return;
+      }
+
+      if (trail.length > 1) {
+        const visibleTrail = trail.slice(-42);
+        drawStroke(visibleTrail, {
+          color: 'rgba(71, 54, 142, 0.12)',
+          widthScale: 1.72,
+          alphaScale: 0.54,
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(217, 226, 255, 0.48)',
+          widthScale: 0.86,
+          alphaScale: 0.86,
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(93, 92, 255, 0.34)',
+          widthScale: 0.16,
+          alphaScale: 0.62,
+          offset: 7,
+          wave: 3.6,
+          composite: 'lighter',
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(255, 166, 94, 0.26)',
+          widthScale: 0.1,
+          alphaScale: 0.42,
+          offset: -8,
+          wave: 3.2,
+          composite: 'lighter',
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(255, 255, 255, 0.88)',
+          widthScale: 0.055,
+          alphaScale: 0.58,
+          offset: -1.5,
+          wave: 2.6,
+          composite: 'lighter',
+        });
+      }
+
+      if (trail.length) {
+        scheduleRender();
+      }
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, []);
+
+  return (
+    <div ref={layerRef} className="shazax-water-trail-layer absolute inset-0">
+      <canvas ref={canvasRef} className="shazax-water-trail-canvas" aria-hidden="true" />
+    </div>
+  );
+}
+
+function PageMotifLayer() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[12] overflow-hidden" aria-hidden="true">
+      <div className="shazax-page-grid absolute inset-0" />
+      <WaterCursorLayer />
+      {pageMotifs.map((motif) => (
+        <MotifCross key={`${motif.left}-${motif.top}`} {...motif} />
+      ))}
+    </div>
+  );
+}
+
+function FinalCtaSection({ onOpenWaitlist }) {
+  const titleLines = [
+    'Ready to Upgrade',
+    'Your Brain?',
+  ];
+
+  return (
+    <section className="relative isolate min-h-screen overflow-hidden bg-[#3a00d4] px-4 pb-0 text-white sm:px-8">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#4b12ef_0%,#3700c9_47%,#2f00bd_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:96px_96px] opacity-25" />
+
+      <div className="relative z-20 mx-auto max-w-[92rem] pt-[18vh] text-center md:pt-[19vh]">
+        <p className="mb-10 text-sm font-medium uppercase tracking-[0.08em] text-white/86 md:text-lg">
+          IS YOUR SUCCESS READY TO GO WILD ?
+        </p>
+        <h2
+          className="relative inline-block font-heading text-[clamp(3.45rem,10vw,10.6rem)] font-black leading-[0.96] tracking-normal text-white"
+          aria-label={titleLines.join(' ')}
+        >
+          {titleLines.map((line, index) => (
+            <motion.span
+              key={line}
+              initial={{ opacity: 0, y: 80, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.55 }}
+              transition={{ delay: index * 0.12, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+              className="block"
+              aria-hidden="true"
+            >
+              <span className="inline-block [text-shadow:0_22px_64px_rgba(18,0,82,0.24)]">
+                {Array.from(line).map((char, charIndex) => {
+                  const motionConfig = finalTitleMotion[line];
+                  const direction = motionConfig?.up.includes(charIndex)
+                    ? 'up'
+                    : motionConfig?.down.includes(charIndex)
+                      ? 'down'
+                      : null;
+
+                  return (
+                    <AnimatedTitleLetter
+                      key={`${line}-${char}-${charIndex}`}
+                      char={char}
+                      direction={direction}
+                      delay={2.05 + index * 0.35 + charIndex * 0.045}
+                    />
+                  );
+                })}
+              </span>
+              <motion.span
+                initial={{ scaleX: 0, opacity: 0 }}
+                whileInView={{ scaleX: 1, opacity: 1 }}
+                viewport={{ once: true, amount: 0.55 }}
+                transition={{ delay: 1.04 + index * 0.16, duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
+                className={`mx-auto mt-3 block h-[0.065em] origin-left bg-white/90 shadow-[0_0_26px_rgba(255,255,255,0.46)] md:mt-4 ${
+                  index === 0 ? 'w-full' : 'w-[62%]'
+                }`}
+              />
+            </motion.span>
+          ))}
+        </h2>
+      </div>
+
+      {ctaTopMarks.map((mark, index) => (
+        <MotifCross
+          key={`${mark.left}-${mark.top}`}
+          left={mark.left}
+          top={mark.top}
+          size={mark.size}
+          color="rgba(255,255,255,0.88)"
+          x={mark.x}
+          y={mark.y}
+          delay={index * 0.18}
+        />
+      ))}
+
+      <div className="absolute bottom-[9vh] left-1/2 z-30 -translate-x-1/2">
+        <motion.button
+          onClick={onOpenWaitlist}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          data-testid="button-final-cta"
+          className="inline-flex w-[min(26rem,calc(100vw-2rem))] items-center justify-between gap-5 rounded-full bg-white px-7 py-4 text-sm font-black uppercase tracking-[0.04em] text-slate-950 shadow-[0_12px_34px_rgba(10,0,70,0.34),inset_0_0_16px_rgba(75,0,180,0.12)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:px-9 sm:py-5 sm:text-base"
+        >
+          <BrainCircuit size={23} strokeWidth={2.5} />
+          <span>Get Early Access Now</span>
+          <Zap size={23} strokeWidth={2.5} fill="currentColor" />
+        </motion.button>
+      </div>
+    </section>
+  );
+}
+
 
 function WaitlistModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -441,9 +844,9 @@ function FocusSection() {
 
       mm.add('(min-width: 1024px)', () => {
         gsap.set(stageRef.current, { perspective: 1400 });
-        gsap.set(cards[0], { x: '120%', y: 18, z: 15, rotateX: 0, rotateY: -5, rotateZ: -11, scale: 0.98 });
+        gsap.set(cards[0], { x: '124%', y: 18, z: 15, rotateX: 0, rotateY: -5, rotateZ: -11, scale: 0.98 });
         gsap.set(cards[1], { x: 0, y: 0, z: 90, rotateX: 0, rotateY: 0, rotateZ: 1, scale: 1 });
-        gsap.set(cards[2], { x: '-120%', y: 14, z: 45, rotateX: 0, rotateY: 5, rotateZ: 10, scale: 0.98 });
+        gsap.set(cards[2], { x: '-124%', y: 14, z: 45, rotateX: 0, rotateY: 5, rotateZ: 10, scale: 0.98 });
 
         gsap.to(inners, {
           y: (index) => [-6, 4, -5][index],
@@ -470,9 +873,9 @@ function FocusSection() {
         tl.addLabel('intro')
           .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.42, ease: 'power3.out' }, 0)
           .addLabel('shuffle', 0.28)
-          .to(cards[0], { x: '92%', y: 6, z: 55, rotateX: 0, rotateY: -8, rotateZ: -16, duration: 0.62, ease: 'power2.inOut' }, 'shuffle')
+          .to(cards[0], { x: '96%', y: 6, z: 55, rotateX: 0, rotateY: -8, rotateZ: -16, duration: 0.62, ease: 'power2.inOut' }, 'shuffle')
           .to(cards[1], { x: 0, y: -8, z: 140, rotateX: 0, rotateY: 0, rotateZ: 1, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.04')
-          .to(cards[2], { x: '-92%', y: 8, z: 70, rotateX: 0, rotateY: 8, rotateZ: 15, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.08')
+          .to(cards[2], { x: '-96%', y: 8, z: 70, rotateX: 0, rotateY: 8, rotateZ: 15, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.08')
           .to(curves[0], { attr: { d: focusCurvePaths[0].to }, strokeDashoffset: 0, autoAlpha: 0.44, duration: 0.72, ease: 'power2.inOut' }, 'shuffle+=0.06')
           .to(icons, { scale: 1.1, rotateZ: 8, boxShadow: '0 0 0 10px rgba(255,255,255,0.08)', duration: 0.42, stagger: 0.06, ease: 'power2.out' }, 'shuffle+=0.08')
           .addLabel('deal', 0.92)
@@ -502,7 +905,8 @@ function FocusSection() {
       });
 
       mm.add('(max-width: 1023px)', () => {
-        gsap.set(cards, { clearProps: 'all' });
+        const cardTilts = [-3, 0, 3];
+        gsap.set(cards, { autoAlpha: 0, y: 46, rotateZ: (index) => cardTilts[index], scale: 0.96 });
         gsap.set(inners, { rotateY: 0 });
 
         gsap.to(inners, {
@@ -514,24 +918,34 @@ function FocusSection() {
           stagger: 0.12,
         });
 
-        const mobileTl = gsap.timeline({
+        gsap.timeline({
           defaults: { ease: 'power2.out' },
           scrollTrigger: {
             trigger: section,
             start: 'top 78%',
-            end: 'bottom 20%',
-            scrub: 0.85,
+            end: 'top 38%',
+            scrub: 0.65,
           },
-        });
-
-        mobileTl
+        })
           .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.35 }, 0)
           .to(curves[0], { attr: { d: focusCurvePaths[0].to }, strokeDashoffset: 0, autoAlpha: 0.26, duration: 0.7 }, 0.08)
           .to(curves[1], { attr: { d: focusCurvePaths[1].to }, strokeDashoffset: 0, autoAlpha: 0.22, duration: 0.7 }, 0.2)
-          .to(curves[2], { attr: { d: focusCurvePaths[2].to }, strokeDashoffset: 0, autoAlpha: 0.2, duration: 0.7 }, 0.32)
-          .fromTo(cards, { autoAlpha: 0, y: 46, rotateZ: -4, scale: 0.96 }, { autoAlpha: 1, y: 0, rotateZ: (index) => [-4, 0, 4][index], scale: 1, duration: 0.9, stagger: 0.14 }, 0.16)
-          .to(inners, { rotateY: 180, duration: 0.9, stagger: 0.12, ease: 'power2.inOut' }, 0.78)
-          .to(cards, { y: -12, rotateZ: (index) => [-3, 1, 3][index], scale: (index) => (index === 1 ? 1.02 : 1), duration: 0.85, stagger: 0.08 }, 1.14);
+          .to(curves[2], { attr: { d: focusCurvePaths[2].to }, strokeDashoffset: 0, autoAlpha: 0.2, duration: 0.7 }, 0.32);
+
+        cards.forEach((card, index) => {
+          gsap.timeline({
+            defaults: { ease: 'power2.out' },
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 82%',
+              end: 'center 48%',
+              scrub: 0.72,
+            },
+          })
+            .to(card, { autoAlpha: 1, y: 0, rotateZ: cardTilts[index], scale: 1, duration: 0.42 }, 0)
+            .to(inners[index], { rotateY: 180, duration: 0.54, ease: 'power2.inOut' }, 0.36)
+            .to(card, { y: -8, rotateZ: cardTilts[index] * 0.72, scale: index === 1 ? 1.015 : 1, duration: 0.4 }, 0.72);
+        });
       });
     }, section);
 
@@ -565,20 +979,20 @@ function FocusSection() {
       </svg>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-center py-8 lg:py-10">
-        <div className="mx-auto mb-10 max-w-3xl text-center lg:mb-10">
+        <div className="mx-auto mb-14 max-w-3xl text-center lg:mb-16">
           <h2 ref={titleRef} className="font-heading text-4xl font-black tracking-tight text-white md:text-5xl xl:text-6xl">
             Designed for Focus
           </h2>
         </div>
 
-        <div ref={stageRef} className="relative mx-auto grid w-full max-w-[54rem] gap-6 md:grid-cols-3 lg:[perspective:1400px] lg:[transform-style:preserve-3d]">
+        <div ref={stageRef} className="relative mx-auto grid w-full max-w-[57rem] gap-8 md:grid-cols-3 md:gap-7 lg:[perspective:1400px] lg:[transform-style:preserve-3d]">
           {focusFeatures.map((feature, index) => (
             <div
               key={feature.title}
               ref={(node) => {
                 cardRefs.current[index] = node;
               }}
-              className="relative mx-auto aspect-[5/7] w-[min(74vw,14rem)] sm:w-[15rem] md:w-[14rem] lg:w-[15.25rem] lg:[transform-style:preserve-3d] lg:[will-change:transform] xl:w-[15.75rem]"
+              className="relative mx-auto aspect-[5/7.75] w-[min(78vw,14.5rem)] sm:w-[15.5rem] md:w-[14.35rem] lg:w-[15.65rem] lg:[transform-style:preserve-3d] lg:[will-change:transform] xl:w-[16.15rem]"
             >
               <div
                 ref={(node) => {
@@ -612,23 +1026,23 @@ function FocusSection() {
                   </div>
                 </div>
 
-                <div className="absolute inset-0 flex flex-col rounded-[26px] border border-slate-950/10 bg-white p-5 text-slate-950 shadow-[0_34px_90px_rgba(15,10,60,0.22)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                  <div className="flex items-start justify-between gap-4">
+                <div className="absolute inset-0 flex flex-col rounded-[26px] border border-slate-950/10 bg-white p-6 text-slate-950 shadow-[0_34px_90px_rgba(15,10,60,0.22)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-7 md:p-6 xl:p-7">
+                  <div className="flex items-start justify-between gap-5">
                     <div>
                       <div className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary/70">{feature.backLabel}</div>
-                      <h3 className="mt-2 font-heading text-2xl font-black leading-none tracking-tight text-slate-950 lg:text-[1.65rem]">{feature.title}</h3>
+                      <h3 className="mt-2 font-heading text-[1.42rem] font-black leading-none tracking-tight text-slate-950 lg:text-[1.56rem]">{feature.title}</h3>
                     </div>
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_10px_26px_rgba(97,74,190,0.24)]">
                       <feature.icon size={22} strokeWidth={2.1} />
                     </div>
                   </div>
 
-                  <p className="mt-4 text-[0.82rem] font-semibold leading-5 text-slate-600">{feature.desc}</p>
-                  <p className="mt-3 rounded-2xl bg-primary/[0.07] px-4 py-3 text-[0.78rem] font-bold leading-5 text-primary">{feature.backText}</p>
+                  <p className="mt-5 text-[0.78rem] font-semibold leading-[1.18rem] text-slate-600">{feature.desc}</p>
+                  <p className="mt-4 rounded-2xl bg-primary/[0.07] px-4 py-3 text-[0.74rem] font-bold leading-[1.14rem] text-primary">{feature.backText}</p>
 
-                  <div className="mt-auto grid gap-1.5 pt-4">
+                  <div className="mt-auto grid gap-2 pt-5">
                     {feature.backItems.map((item) => (
-                      <div key={item} className="border-b border-dotted border-primary/25 pb-1.5 text-[0.78rem] font-bold text-slate-800 last:border-b-0">
+                      <div key={item} className="border-b border-dotted border-primary/25 pb-1.5 text-[0.74rem] font-bold leading-4 text-slate-800 last:border-b-0">
                         {item}
                       </div>
                     ))}
@@ -753,6 +1167,7 @@ export default function HomePage() {
         <div className="absolute left-1/2 top-[20%] h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
         <div className="absolute bottom-[10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-accent/10 blur-[100px]" />
       </div>
+      <PageMotifLayer />
 
       <motion.header
         className={`fixed left-0 right-0 top-0 z-50 w-full transition-all duration-500 ${
@@ -1001,26 +1416,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden px-6 py-24">
-          <div className="absolute inset-0 bg-primary" />
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-          <div className="relative z-10 container mx-auto max-w-4xl text-center">
-            <h2 className="mb-8 font-heading text-5xl font-black text-primary-foreground md:text-7xl">
-              Ready to Upgrade
-              <br />
-              Your Brain?
-            </h2>
-            <motion.button
-              onClick={() => setWaitlistOpen(true)}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              data-testid="button-final-cta"
-              className="inline-flex items-center gap-3 rounded-full bg-accent px-10 py-5 text-xl font-black text-accent-foreground shadow-2xl transition-all hover:scale-105 hover:bg-white hover:text-foreground active:scale-95"
-            >
-              Get Early Access Now !! <Zap size={24} fill="currentColor" />
-            </motion.button>
-          </div>
-        </section>
+        <FinalCtaSection onOpenWaitlist={() => setWaitlistOpen(true)} />
       </main>
 
       <footer className="relative overflow-hidden bg-[#080a13] px-6 py-16 text-white">

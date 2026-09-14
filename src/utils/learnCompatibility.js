@@ -56,12 +56,47 @@ function hasMatchingAcademicScope(resource, moduleItem) {
   });
 }
 
-export function isResourceLinkedToModule(resource, moduleItem) {
+function hasAnyAcademicScope(resource) {
+  return ['institutionId', 'programId', 'programYearId', 'semesterId'].some((field) =>
+    Boolean(getResourceScopeValue(resource, field)),
+  );
+}
+
+function isFstSettatScope(scope) {
+  const institutionValues = [
+    scope?.institution?.slug,
+    scope?.institution?.shortName,
+    scope?.institution?.name,
+  ].map(normalizeLegacyValue);
+
+  return institutionValues.some((value) => value === 'fst settat' || value === 'fst');
+}
+
+function canUseFstLegacyFallback(resource, moduleItem, scope) {
+  if (hasAnyAcademicScope(resource)) return false;
+  if (!isFstSettatScope(scope)) return false;
+  if (moduleItem?.institutionId && scope?.institution?.id && moduleItem.institutionId !== scope.institution.id) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isResourceLinkedToModule(resource, moduleItem, scope = {}) {
   if (!resource || !moduleItem) return false;
   if (Array.isArray(resource.moduleIds) && resource.moduleIds.includes(moduleItem.id)) return true;
   if (resource.moduleId && resource.moduleId === moduleItem.id) return true;
-  if (Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0) return false;
-  if (!hasMatchingAcademicScope(resource, moduleItem)) return false;
+  if (
+    Array.isArray(resource.moduleIds) &&
+    resource.moduleIds.length > 0 &&
+    !hasMatchingAcademicScope(resource, moduleItem) &&
+    !canUseFstLegacyFallback(resource, moduleItem, scope)
+  ) {
+    return false;
+  }
+  if (!hasMatchingAcademicScope(resource, moduleItem) && !canUseFstLegacyFallback(resource, moduleItem, scope)) {
+    return false;
+  }
 
   const legacyModule = resource.legacy?.module || resource.module || '';
   const normalizedLegacyModule = normalizeLegacyValue(legacyModule);
@@ -71,7 +106,7 @@ export function isResourceLinkedToModule(resource, moduleItem) {
   );
 }
 
-export function getResourceLinkMode(resource, moduleItem) {
+export function getResourceLinkMode(resource, moduleItem, scope = {}) {
   if (Array.isArray(resource?.moduleIds) && resource.moduleIds.includes(moduleItem?.id)) {
     return 'academic';
   }
@@ -79,7 +114,7 @@ export function getResourceLinkMode(resource, moduleItem) {
     return 'academic';
   }
 
-  if (isResourceLinkedToModule(resource, moduleItem)) {
+  if (isResourceLinkedToModule(resource, moduleItem, scope)) {
     return 'legacy';
   }
 

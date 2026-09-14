@@ -334,7 +334,8 @@ function getModuleCardTheme(moduleItem) {
 }
 
 function ModuleCard({ institution, program, semester, moduleItem, resources }) {
-  const linkedResources = resources.filter((resource) => isResourceLinkedToModule(resource, moduleItem));
+  const scope = { institution, program, semester };
+  const linkedResources = resources.filter((resource) => isResourceLinkedToModule(resource, moduleItem, scope));
   const theme = getModuleCardTheme(moduleItem);
   const Icon = theme.icon;
 
@@ -356,8 +357,8 @@ function ModuleCard({ institution, program, semester, moduleItem, resources }) {
   );
 }
 
-function ResourceRow({ resource, moduleItem, completed, onToggle }) {
-  const linkMode = getResourceLinkMode(resource, moduleItem);
+function ResourceRow({ resource, moduleItem, scope, completed, onToggle }) {
+  const linkMode = getResourceLinkMode(resource, moduleItem, scope);
   const normalizedCategory = getNormalizedResourceCategory(resource.category);
 
   return (
@@ -596,13 +597,14 @@ function ModuleView({ institution, program, semester, moduleItem, resources }) {
   const [completedIds, setCompletedIds] = useState(() => readCompleted());
 
   const moduleResources = useMemo(() => {
-    const linkedResources = resources.filter((resource) => isResourceLinkedToModule(resource, moduleItem));
+    const scope = { institution, program, semester };
+    const linkedResources = resources.filter((resource) => isResourceLinkedToModule(resource, moduleItem, scope));
     if (!selectedCategory) return linkedResources;
 
     return linkedResources.filter(
       (resource) => getNormalizedResourceCategory(resource.category) === selectedCategory,
     );
-  }, [moduleItem, resources, selectedCategory]);
+  }, [institution, moduleItem, program, resources, selectedCategory, semester]);
 
   const completedCount = moduleResources.filter((resource) => completedIds.has(resource.id)).length;
   const progressWidth = moduleResources.length > 0 ? (completedCount / moduleResources.length) * 100 : 0;
@@ -708,6 +710,7 @@ function ModuleView({ institution, program, semester, moduleItem, resources }) {
               key={resource.id}
               resource={resource}
               moduleItem={moduleItem}
+              scope={{ institution, program, semester }}
               completed={completedIds.has(resource.id)}
               onToggle={toggleDone}
             />

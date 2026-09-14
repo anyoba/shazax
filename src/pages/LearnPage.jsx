@@ -393,16 +393,6 @@ function ResourceRow({ resource, moduleItem, completed, onToggle }) {
         </div>
       </div>
       <div className="flex flex-wrap gap-2 sm:flex-shrink-0">
-        {resource.correctionUrl ? (
-          <a
-            href={resource.correctionUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-emerald-200 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
-          >
-            Correction
-          </a>
-        ) : null}
         <a
           href={resource.fileUrl}
           target="_blank"
@@ -649,7 +639,7 @@ function ModuleView({ institution, program, semester, moduleItem, resources }) {
             </div>
             <h1 className="font-heading text-4xl font-black text-slate-950">{moduleItem.name}</h1>
             <p className="mt-2 text-sm text-slate-500">
-              Ressources liées par moduleIds, avec compatibilité temporaire pour les anciennes ressources.
+              Ressources rattachees a ce module academique.
             </p>
           </div>
           <div className="min-w-[180px]">

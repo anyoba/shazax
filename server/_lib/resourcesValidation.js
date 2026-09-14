@@ -12,6 +12,10 @@ const ALLOWED_FIELDS = [
   'correctionUrl',
   'status',
   'moduleIds',
+  'institutionId',
+  'programId',
+  'programYearId',
+  'semesterId',
 ];
 
 const MAX_LENGTHS = {
@@ -23,6 +27,10 @@ const MAX_LENGTHS = {
   correctionTitle: 180,
   correctionUrl: 1000,
   status: 40,
+  institutionId: 160,
+  programId: 160,
+  programYearId: 160,
+  semesterId: 160,
 };
 
 const PUBLIC_STATUSES = ['published', 'draft', 'archived'];
@@ -170,6 +178,22 @@ export function validateResourcePayload(payload, { partial = false } = {}) {
 
   if (payload.moduleIds !== undefined) {
     cleaned.moduleIds = cleanModuleIds(payload.moduleIds);
+  }
+
+  if (payload.institutionId !== undefined) {
+    cleaned.institutionId = cleanString(payload.institutionId, 'institutionId');
+  }
+
+  if (payload.programId !== undefined) {
+    cleaned.programId = cleanString(payload.programId, 'programId');
+  }
+
+  if (payload.programYearId !== undefined) {
+    cleaned.programYearId = cleanString(payload.programYearId, 'programYearId');
+  }
+
+  if (payload.semesterId !== undefined) {
+    cleaned.semesterId = cleanString(payload.semesterId, 'semesterId');
   }
 
   return cleaned;

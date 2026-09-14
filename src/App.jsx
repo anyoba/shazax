@@ -170,6 +170,10 @@ function AdminRoute() {
     return deleteResource(resourceId, getToken);
   }
 
+  async function updateAdminResource(resourceId, updates) {
+    return updateResource(resourceId, updates, getToken);
+  }
+
   async function restoreAdminResource(resource) {
     const previousStatus =
       resource?.previousStatus && resource.previousStatus !== 'archived'
@@ -193,6 +197,7 @@ function AdminRoute() {
           onAddResource={addAdminResource}
           onDeleteResource={deleteAdminResource}
           onRestoreResource={restoreAdminResource}
+          onUpdateResource={updateAdminResource}
         />
       </RoleProtectedRoute>
     </>

@@ -1,5 +1,5 @@
 import { useAuth } from '@clerk/clerk-react';
-import { BookOpen, ChevronDown, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { BookOpen, ChevronDown, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RESOURCE_CATEGORIES } from '../../../constants/academic.js';
 import { USER_ROLES } from '../../../constants/roles.js';
@@ -80,6 +80,7 @@ export default function AcademicResourcesManager({
   onAddResource,
   onDeleteResource,
   onRestoreResource,
+  onUpdateResource,
 }) {
   const { getToken } = useAuth();
   const { role } = useUserRole();
@@ -91,6 +92,10 @@ export default function AcademicResourcesManager({
   const [form, setForm] = useState(initialForm);
   const [resourceView, setResourceView] = useState('active');
   const [statusOverrides, setStatusOverrides] = useState({});
+  const [localResources, setLocalResources] = useState([]);
+  const [editingResourceId, setEditingResourceId] = useState('');
+  const [editForm, setEditForm] = useState({ title: '', fileName: '', fileUrl: '' });
+  const [savingEditId, setSavingEditId] = useState('');
   const [institutions, setInstitutions] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [programYears, setProgramYears] = useState([]);
@@ -113,13 +118,27 @@ export default function AcademicResourcesManager({
   const selectedSemester = semesters.find((item) => item.id === form.semesterId);
   const selectedModule = modules.find((item) => item.id === form.moduleId);
 
+  const mergedResources = useMemo(() => {
+    const byId = new Map();
+    resources.forEach((resource) => {
+      byId.set(resource.id, resource);
+    });
+    localResources.forEach((resource) => {
+      byId.set(resource.id, {
+        ...(byId.get(resource.id) || {}),
+        ...resource,
+      });
+    });
+    return [...byId.values()];
+  }, [localResources, resources]);
+
   const resourcesWithStatus = useMemo(
     () =>
-      resources.map((resource) => ({
+      mergedResources.map((resource) => ({
         ...resource,
         status: statusOverrides[resource.id] || resource.status || 'published',
       })),
-    [resources, statusOverrides],
+    [mergedResources, statusOverrides],
   );
 
   const filteredResources = useMemo(() => {
@@ -143,6 +162,18 @@ export default function AcademicResourcesManager({
     setForm((current) => ({ ...current, ...updates }));
     setMessage('');
     setError('');
+  }
+
+  function updateLocalResource(resourceId, updates) {
+    setLocalResources((current) => {
+      const nextResource = {
+        ...(current.find((resource) => resource.id === resourceId) || {}),
+        id: resourceId,
+        ...updates,
+      };
+      const remainingResources = current.filter((resource) => resource.id !== resourceId);
+      return [nextResource, ...remainingResources];
+    });
   }
 
   const loadInstitutions = useCallback(async () => {
@@ -283,9 +314,13 @@ export default function AcademicResourcesManager({
     setMessage('');
 
     try {
-      await onAddResource({
+      const createdResource = await onAddResource({
         module: selectedModule.name,
         moduleIds: [selectedModule.id],
+        institutionId: form.institutionId,
+        programId: form.programId,
+        programYearId: form.programYearId,
+        semesterId: form.semesterId,
         category: form.category,
         title: form.title,
         fileName: form.fileName,
@@ -294,6 +329,10 @@ export default function AcademicResourcesManager({
         correctionUrl: form.correctionUrl,
         status: 'published',
       });
+
+      if (createdResource?.id) {
+        updateLocalResource(createdResource.id, createdResource);
+      }
 
       setForm((current) => ({
         ...current,
@@ -318,10 +357,57 @@ export default function AcademicResourcesManager({
     try {
       await onDeleteResource(resourceId);
       setStatusOverrides((current) => ({ ...current, [resourceId]: 'archived' }));
+      updateLocalResource(resourceId, { status: 'archived' });
       setResourceView('trash');
       setMessage('Ressource envoyee dans la corbeille.');
     } catch (deleteError) {
       setError(getApiErrorMessage(deleteError, 'Impossible de supprimer la ressource.'));
+    }
+  }
+
+  function startEdit(resource) {
+    setEditingResourceId(resource.id);
+    setEditForm({
+      title: resource.title || '',
+      fileName: resource.fileName || '',
+      fileUrl: resource.fileUrl || '',
+    });
+    setMessage('');
+    setError('');
+  }
+
+  function cancelEdit() {
+    setEditingResourceId('');
+    setEditForm({ title: '', fileName: '', fileUrl: '' });
+    setSavingEditId('');
+  }
+
+  async function handleUpdateResource(event) {
+    event.preventDefault();
+
+    if (!editingResourceId || savingEditId) return;
+    if (!onUpdateResource) {
+      setError('La modification de ressource n est pas disponible.');
+      return;
+    }
+
+    setSavingEditId(editingResourceId);
+    setError('');
+    setMessage('');
+
+    try {
+      const updatedResource = await onUpdateResource(editingResourceId, {
+        title: editForm.title,
+        fileName: editForm.fileName,
+        fileUrl: editForm.fileUrl,
+      });
+      updateLocalResource(editingResourceId, updatedResource || editForm);
+      cancelEdit();
+      setMessage('Ressource modifiee.');
+    } catch (updateError) {
+      setError(getApiErrorMessage(updateError, 'Impossible de modifier la ressource.'));
+    } finally {
+      setSavingEditId('');
     }
   }
 
@@ -338,6 +424,7 @@ export default function AcademicResourcesManager({
           ? resource.previousStatus
           : 'published';
       setStatusOverrides((current) => ({ ...current, [resource.id]: restoredStatus }));
+      updateLocalResource(resource.id, { status: restoredStatus });
       setResourceView('active');
       setMessage('Ressource restauree.');
     } catch (restoreError) {
@@ -515,24 +602,83 @@ export default function AcademicResourcesManager({
         ) : (
           <div className="divide-y divide-white/5">
             {visibleResources.map((resource) => (
-              <div key={resource.id} className="flex items-center justify-between gap-4 p-4">
-                <div>
-                  <div className="font-medium">{resource.title}</div>
-                  <div className="text-sm text-white/40">
-                    {resource.module || 'Module non renseigne'} - {resource.category}
-                    {Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0 ? ' - moduleIds' : ' - legacy'}
+              <div key={resource.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+                {editingResourceId === resource.id ? (
+                  <form onSubmit={handleUpdateResource} className="grid flex-1 gap-3 lg:grid-cols-[1fr_1fr_1.4fr_auto] lg:items-end">
+                    <TextInput
+                      label="Titre"
+                      value={editForm.title}
+                      placeholder="Titre de la ressource"
+                      required
+                      onChange={(title) => setEditForm((current) => ({ ...current, title }))}
+                    />
+                    <TextInput
+                      label="Nom du fichier"
+                      value={editForm.fileName}
+                      placeholder="ex: analyse-1-cours.pdf"
+                      required
+                      onChange={(fileName) => setEditForm((current) => ({ ...current, fileName }))}
+                    />
+                    <TextInput
+                      label="URL du fichier"
+                      value={editForm.fileUrl}
+                      placeholder="https://..."
+                      required
+                      onChange={(fileUrl) => setEditForm((current) => ({ ...current, fileUrl }))}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={savingEditId === resource.id}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Sauvegarder les modifications"
+                        title="Sauvegarder"
+                      >
+                        <Save size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/50 hover:text-white"
+                        aria-label="Annuler la modification"
+                        title="Annuler"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{resource.title}</div>
+                    <div className="text-sm text-white/40">
+                      {resource.module || 'Module non renseigne'} - {resource.category}
+                      {Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0 ? ' - moduleIds' : ' - legacy'}
+                    </div>
                   </div>
-                </div>
+                )}
                 {canManageResourceStatus && resourceView === 'active' ? (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(resource.id)}
-                    className="text-white/40 hover:text-red-400"
-                    aria-label="Supprimer la ressource"
-                    title="Envoyer dans la corbeille"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {editingResourceId !== resource.id ? (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(resource)}
+                        className="text-white/40 hover:text-blue-300"
+                        aria-label="Modifier la ressource"
+                        title="Modifier la ressource"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(resource.id)}
+                      className="text-white/40 hover:text-red-400"
+                      aria-label="Supprimer la ressource"
+                      title="Envoyer dans la corbeille"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 ) : null}
                 {canManageResourceStatus && resourceView === 'trash' ? (
                   <button

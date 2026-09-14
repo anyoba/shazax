@@ -108,7 +108,7 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-export default function AdminPage({ onAddResource, onDeleteResource, onRestoreResource }) {
+export default function AdminPage({ onAddResource, onDeleteResource, onRestoreResource, onUpdateResource }) {
   const { signOut } = useClerk();
   const { getToken } = useAuth();
   const { role } = useUserRole();
@@ -705,6 +705,7 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
             onAddResource={onAddResource}
             onDeleteResource={onDeleteResource}
             onRestoreResource={onRestoreResource}
+            onUpdateResource={onUpdateResource}
           />
         ) : null}
 

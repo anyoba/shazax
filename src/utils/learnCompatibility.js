@@ -44,9 +44,24 @@ export function getModuleLegacyAliases(moduleItem) {
   return [...new Set([moduleItem?.name, moduleItem?.shortName, ...configuredAliases].filter(Boolean))];
 }
 
+function getResourceScopeValue(resource, field) {
+  return resource?.[field] || resource?.academic?.[field] || resource?.legacy?.[field] || '';
+}
+
+function hasMatchingAcademicScope(resource, moduleItem) {
+  const scopedFields = ['institutionId', 'programId', 'programYearId', 'semesterId'];
+  return scopedFields.every((field) => {
+    const value = getResourceScopeValue(resource, field);
+    return value && value === moduleItem?.[field];
+  });
+}
+
 export function isResourceLinkedToModule(resource, moduleItem) {
   if (!resource || !moduleItem) return false;
   if (Array.isArray(resource.moduleIds) && resource.moduleIds.includes(moduleItem.id)) return true;
+  if (resource.moduleId && resource.moduleId === moduleItem.id) return true;
+  if (Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0) return false;
+  if (!hasMatchingAcademicScope(resource, moduleItem)) return false;
 
   const legacyModule = resource.legacy?.module || resource.module || '';
   const normalizedLegacyModule = normalizeLegacyValue(legacyModule);
@@ -58,6 +73,9 @@ export function isResourceLinkedToModule(resource, moduleItem) {
 
 export function getResourceLinkMode(resource, moduleItem) {
   if (Array.isArray(resource?.moduleIds) && resource.moduleIds.includes(moduleItem?.id)) {
+    return 'academic';
+  }
+  if (resource?.moduleId && resource.moduleId === moduleItem?.id) {
     return 'academic';
   }
 

@@ -1,5 +1,5 @@
 import { useAuth } from '@clerk/clerk-react';
-import { BookOpen, ChevronDown, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
+import { BookOpen, ChevronDown, MapPin, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RESOURCE_CATEGORIES } from '../../../constants/academic.js';
 import { USER_ROLES } from '../../../constants/roles.js';
@@ -21,6 +21,14 @@ const initialForm = {
   fileUrl: '',
   correctionTitle: '',
   correctionUrl: '',
+};
+
+const initialTargetForm = {
+  institutionId: '',
+  programId: '',
+  programYearId: '',
+  semesterId: '',
+  moduleId: '',
 };
 
 function SelectField({ label, value, options, placeholder, disabled, onChange }) {
@@ -96,6 +104,21 @@ export default function AcademicResourcesManager({
   const [editingResourceId, setEditingResourceId] = useState('');
   const [editForm, setEditForm] = useState({ title: '', fileName: '', fileUrl: '' });
   const [savingEditId, setSavingEditId] = useState('');
+  const [targetingResourceId, setTargetingResourceId] = useState('');
+  const [targetForm, setTargetForm] = useState(initialTargetForm);
+  const [targetOptions, setTargetOptions] = useState({
+    programs: [],
+    programYears: [],
+    semesters: [],
+    modules: [],
+  });
+  const [targetLoading, setTargetLoading] = useState({
+    programs: false,
+    programYears: false,
+    semesters: false,
+    modules: false,
+  });
+  const [savingTargetId, setSavingTargetId] = useState('');
   const [institutions, setInstitutions] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [programYears, setProgramYears] = useState([]);
@@ -117,6 +140,7 @@ export default function AcademicResourcesManager({
   const selectedProgramYear = programYears.find((item) => item.id === form.programYearId);
   const selectedSemester = semesters.find((item) => item.id === form.semesterId);
   const selectedModule = modules.find((item) => item.id === form.moduleId);
+  const selectedTargetModule = targetOptions.modules.find((item) => item.id === targetForm.moduleId);
 
   const mergedResources = useMemo(() => {
     const byId = new Map();
@@ -160,6 +184,12 @@ export default function AcademicResourcesManager({
 
   function updateForm(updates) {
     setForm((current) => ({ ...current, ...updates }));
+    setMessage('');
+    setError('');
+  }
+
+  function updateTargetForm(updates) {
+    setTargetForm((current) => ({ ...current, ...updates }));
     setMessage('');
     setError('');
   }
@@ -210,6 +240,28 @@ export default function AcademicResourcesManager({
         setter([]);
       } finally {
         setLoading((current) => ({ ...current, [loadingKey]: false }));
+      }
+    },
+    [getToken],
+  );
+
+  const loadTargetAcademicItems = useCallback(
+    async (entityType, filters, loadingKey, optionKey) => {
+      setTargetLoading((current) => ({ ...current, [loadingKey]: true }));
+      setError('');
+
+      try {
+        const items = await listAcademicItems(entityType, {
+          getToken,
+          status: 'all',
+          filters,
+        });
+        setTargetOptions((current) => ({ ...current, [optionKey]: items }));
+      } catch (loadError) {
+        setError(getApiErrorMessage(loadError, `Impossible de charger ${entityType}.`));
+        setTargetOptions((current) => ({ ...current, [optionKey]: [] }));
+      } finally {
+        setTargetLoading((current) => ({ ...current, [loadingKey]: false }));
       }
     },
     [getToken],
@@ -300,6 +352,71 @@ export default function AcademicResourcesManager({
     }
   }, [form.institutionId, form.programId, form.programYearId, form.semesterId, loadAcademicItems]);
 
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.institutionId) {
+      setTargetOptions((current) => ({ ...current, programs: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'programs',
+      { institutionId: targetForm.institutionId },
+      'programs',
+      'programs',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetingResourceId]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.programId) {
+      setTargetOptions((current) => ({ ...current, programYears: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'program_years',
+      { institutionId: targetForm.institutionId, programId: targetForm.programId },
+      'programYears',
+      'programYears',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetForm.programId, targetingResourceId]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.programYearId) {
+      setTargetOptions((current) => ({ ...current, semesters: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'semesters',
+      {
+        institutionId: targetForm.institutionId,
+        programId: targetForm.programId,
+        programYearId: targetForm.programYearId,
+      },
+      'semesters',
+      'semesters',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetForm.programId, targetForm.programYearId, targetingResourceId]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.semesterId) {
+      setTargetOptions((current) => ({ ...current, modules: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'modules',
+      {
+        institutionId: targetForm.institutionId,
+        programId: targetForm.programId,
+        programYearId: targetForm.programYearId,
+        semesterId: targetForm.semesterId,
+      },
+      'modules',
+      'modules',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetForm.programId, targetForm.programYearId, targetForm.semesterId, targetingResourceId]);
+
   async function handleSubmit(event) {
     event.preventDefault();
     if (loading.submit) return;
@@ -382,6 +499,46 @@ export default function AcademicResourcesManager({
     setSavingEditId('');
   }
 
+  function getResourceModuleId(resource) {
+    if (Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0) {
+      return resource.moduleIds[0];
+    }
+
+    return resource.moduleId || '';
+  }
+
+  function startTarget(resource) {
+    cancelEdit();
+    setTargetingResourceId(resource.id);
+    setTargetForm({
+      institutionId: resource.institutionId || '',
+      programId: resource.programId || '',
+      programYearId: resource.programYearId || '',
+      semesterId: resource.semesterId || '',
+      moduleId: getResourceModuleId(resource),
+    });
+    setTargetOptions({
+      programs: [],
+      programYears: [],
+      semesters: [],
+      modules: [],
+    });
+    setMessage('');
+    setError('');
+  }
+
+  function cancelTarget() {
+    setTargetingResourceId('');
+    setTargetForm(initialTargetForm);
+    setTargetOptions({
+      programs: [],
+      programYears: [],
+      semesters: [],
+      modules: [],
+    });
+    setSavingTargetId('');
+  }
+
   async function handleUpdateResource(event) {
     event.preventDefault();
 
@@ -408,6 +565,45 @@ export default function AcademicResourcesManager({
       setError(getApiErrorMessage(updateError, 'Impossible de modifier la ressource.'));
     } finally {
       setSavingEditId('');
+    }
+  }
+
+  async function handleUpdateTarget(event) {
+    event.preventDefault();
+
+    if (!targetingResourceId || savingTargetId) return;
+    if (!onUpdateResource) {
+      setError('La modification de destination n est pas disponible.');
+      return;
+    }
+
+    if (!selectedTargetModule) {
+      setError('Choisis un module pour definir qui voit cette ressource.');
+      return;
+    }
+
+    const updates = {
+      module: selectedTargetModule.name,
+      moduleIds: [selectedTargetModule.id],
+      institutionId: targetForm.institutionId,
+      programId: targetForm.programId,
+      programYearId: targetForm.programYearId,
+      semesterId: targetForm.semesterId,
+    };
+
+    setSavingTargetId(targetingResourceId);
+    setError('');
+    setMessage('');
+
+    try {
+      const updatedResource = await onUpdateResource(targetingResourceId, updates);
+      updateLocalResource(targetingResourceId, updatedResource || updates);
+      cancelTarget();
+      setMessage('Destination de la ressource mise a jour.');
+    } catch (targetError) {
+      setError(getApiErrorMessage(targetError, 'Impossible de modifier la destination.'));
+    } finally {
+      setSavingTargetId('');
     }
   }
 
@@ -647,6 +843,95 @@ export default function AcademicResourcesManager({
                       </button>
                     </div>
                   </form>
+                ) : targetingResourceId === resource.id ? (
+                  <form onSubmit={handleUpdateTarget} className="grid flex-1 gap-3 lg:grid-cols-3 xl:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
+                    <SelectField
+                      label="Etablissement"
+                      value={targetForm.institutionId}
+                      options={institutions}
+                      placeholder={loading.institutions ? 'Chargement...' : 'Etablissement'}
+                      disabled={loading.institutions}
+                      onChange={(institutionId) =>
+                        updateTargetForm({
+                          institutionId,
+                          programId: '',
+                          programYearId: '',
+                          semesterId: '',
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Filiere"
+                      value={targetForm.programId}
+                      options={targetOptions.programs}
+                      placeholder={targetForm.institutionId ? 'Filiere' : 'Choisis un etablissement'}
+                      disabled={!targetForm.institutionId || targetLoading.programs}
+                      onChange={(programId) =>
+                        updateTargetForm({
+                          programId,
+                          programYearId: '',
+                          semesterId: '',
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Annee"
+                      value={targetForm.programYearId}
+                      options={targetOptions.programYears}
+                      placeholder={targetForm.programId ? 'Annee' : 'Choisis une filiere'}
+                      disabled={!targetForm.programId || targetLoading.programYears}
+                      onChange={(programYearId) =>
+                        updateTargetForm({
+                          programYearId,
+                          semesterId: '',
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Semestre"
+                      value={targetForm.semesterId}
+                      options={targetOptions.semesters}
+                      placeholder={targetForm.programYearId ? 'Semestre' : 'Choisis une annee'}
+                      disabled={!targetForm.programYearId || targetLoading.semesters}
+                      onChange={(semesterId) =>
+                        updateTargetForm({
+                          semesterId,
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Module"
+                      value={targetForm.moduleId}
+                      options={targetOptions.modules}
+                      placeholder={targetForm.semesterId ? 'Module' : 'Choisis un semestre'}
+                      disabled={!targetForm.semesterId || targetLoading.modules}
+                      onChange={(moduleId) => updateTargetForm({ moduleId })}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={savingTargetId === resource.id || !selectedTargetModule}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Sauvegarder la destination"
+                        title="Sauvegarder la destination"
+                      >
+                        <Save size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelTarget}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/50 hover:text-white"
+                        aria-label="Annuler la destination"
+                        title="Annuler"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </form>
                 ) : (
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{resource.title}</div>
@@ -654,11 +939,15 @@ export default function AcademicResourcesManager({
                       {resource.module || 'Module non renseigne'} - {resource.category}
                       {Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0 ? ' - moduleIds' : ' - legacy'}
                     </div>
+                    <div className="mt-1 text-xs text-white/30">
+                      {institutions.find((institution) => institution.id === resource.institutionId)?.name ||
+                        'Aucun etablissement cible'}
+                    </div>
                   </div>
                 )}
                 {canManageResourceStatus && resourceView === 'active' ? (
                   <div className="flex items-center gap-3">
-                    {editingResourceId !== resource.id ? (
+                    {editingResourceId !== resource.id && targetingResourceId !== resource.id ? (
                       <button
                         type="button"
                         onClick={() => startEdit(resource)}
@@ -667,6 +956,17 @@ export default function AcademicResourcesManager({
                         title="Modifier la ressource"
                       >
                         <Pencil size={16} />
+                      </button>
+                    ) : null}
+                    {editingResourceId !== resource.id && targetingResourceId !== resource.id ? (
+                      <button
+                        type="button"
+                        onClick={() => startTarget(resource)}
+                        className="text-white/40 hover:text-emerald-300"
+                        aria-label="Definir l etablissement qui voit cette ressource"
+                        title="Definir la destination"
+                      >
+                        <MapPin size={16} />
                       </button>
                     ) : null}
                     <button

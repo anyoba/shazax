@@ -7,7 +7,7 @@ export const concoursContests = [
     icon: 'Stethoscope',
     status: 'active',
     subjects: ['math', 'physics', 'chemistry', 'svt'],
-    color: '#7c3aed',
+    color: '#526ff5',
   },
   {
     id: 'ensa',
@@ -17,7 +17,7 @@ export const concoursContests = [
     icon: 'CircuitBoard',
     status: 'active',
     subjects: ['math', 'physics', 'french', 'logic'],
-    color: '#2563eb',
+    color: '#2430f5',
   },
   {
     id: 'encg',
@@ -27,7 +27,7 @@ export const concoursContests = [
     icon: 'BriefcaseBusiness',
     status: 'active',
     subjects: ['math', 'french', 'general_culture', 'logic'],
-    color: '#0891b2',
+    color: '#35b3d0',
   },
   {
     id: 'ena',
@@ -37,7 +37,7 @@ export const concoursContests = [
     icon: 'Landmark',
     status: 'coming_soon',
     subjects: ['french', 'general_culture', 'logic'],
-    color: '#9333ea',
+    color: '#3f48e3',
   },
   {
     id: 'ensam',
@@ -47,7 +47,7 @@ export const concoursContests = [
     icon: 'Cog',
     status: 'coming_soon',
     subjects: ['math', 'physics', 'logic'],
-    color: '#0f766e',
+    color: '#55d4dc',
   },
   {
     id: 'um6p',
@@ -57,6 +57,6 @@ export const concoursContests = [
     icon: 'Gem',
     status: 'coming_soon',
     subjects: ['math', 'physics', 'chemistry', 'logic'],
-    color: '#c026d3',
+    color: '#3029fb',
   },
 ];

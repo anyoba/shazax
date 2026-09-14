@@ -86,9 +86,9 @@ export default function AdminShell({
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#080a13] text-white">
-      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#080a13_0%,#111827_48%,#0b1020_100%)]" />
-      <div className="fixed inset-x-0 top-0 -z-10 h-64 bg-[linear-gradient(90deg,rgba(139,92,246,0.18),rgba(59,130,246,0.14),transparent)]" />
+    <div className="min-h-screen bg-black text-white">
+      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#000000_0%,#2430f5_58%,#35b3d0_100%)] opacity-95" />
+      <div className="fixed inset-x-0 top-0 -z-10 h-64 bg-[linear-gradient(90deg,rgba(82,111,245,0.24),rgba(85,212,220,0.18),transparent)]" />
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:48px_48px] opacity-30" />
 
       <aside className="fixed left-0 top-0 hidden h-screen w-80 border-r border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl xl:block">
@@ -123,7 +123,7 @@ export default function AdminShell({
             className="absolute inset-0 bg-black/70"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="relative h-full w-[min(86vw,340px)] border-r border-white/10 bg-[#0d111d] p-5 shadow-2xl">
+          <div className="relative h-full w-[min(86vw,340px)] border-r border-white/10 bg-black p-5 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <div className="font-heading text-xl font-black">Shazax Admin</div>
               <button
@@ -147,7 +147,7 @@ export default function AdminShell({
       ) : null}
 
       <div className="xl:pl-80">
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-[#080a13]/78 px-4 py-4 backdrop-blur-2xl sm:px-6">
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-black/78 px-4 py-4 backdrop-blur-2xl sm:px-6">
           <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button

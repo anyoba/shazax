@@ -5,25 +5,33 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 260 40% 10%;
-  --border: 260 20% 90%;
+  --background: 234 50% 96%;
+  --foreground: 0 0% 0%;
+  --border: 231 48% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 260 40% 10%;
+  --card-foreground: 0 0% 0%;
   --popover: 0 0% 100%;
-  --popover-foreground: 260 40% 10%;
-  --primary: 265 89% 58%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 229 88% 64%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 260 20% 96%;
-  --secondary-foreground: 260 40% 10%;
-  --muted: 260 20% 94%;
-  --muted-foreground: 260 10% 40%;
-  --accent: 45 100% 50%;
-  --accent-foreground: 260 40% 10%;
+  --secondary: 237 75% 57%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 234 48% 93%;
+  --muted-foreground: 231 18% 34%;
+  --accent: 184 66% 60%;
+  --accent-foreground: 0 0% 0%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 260 20% 90%;
-  --ring: 265 89% 58%;
+  --input: 231 48% 88%;
+  --ring: 229 88% 64%;
+  --palette-bg: #f0f1fa;
+  --palette-black: #000000;
+  --palette-blue: #526ff5;
+  --palette-indigo: #3f48e3;
+  --palette-electric: #3029fb;
+  --palette-cyan: #35b3d0;
+  --palette-aqua: #55d4dc;
+  --palette-royal: #2430f5;
 }
 
 html {
@@ -35,9 +43,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.85), transparent 18%),
-    radial-gradient(circle at 85% 10%, rgba(255, 220, 80, 0.18), transparent 24%),
-    linear-gradient(180deg, #ffffff 0%, #f7f4ff 45%, #f6f2ff 100%);
+    radial-gradient(circle at 12% 18%, rgba(85, 212, 220, 0.22), transparent 24%),
+    radial-gradient(circle at 88% 10%, rgba(82, 111, 245, 0.18), transparent 28%),
+    linear-gradient(180deg, #f0f1fa 0%, #ffffff 52%, #f0f1fa 100%);
   color: hsl(var(--foreground));
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
@@ -70,12 +78,12 @@ body {
 }
 
 .shazax-page-grid {
-  opacity: 0.16;
+  opacity: 0.13;
   mix-blend-mode: multiply;
   background-image:
-    radial-gradient(circle, hsl(var(--primary) / 0.26) 1px, transparent 1.45px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.1) 1px, transparent 1px),
-    linear-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+    radial-gradient(circle, rgba(82, 111, 245, 0.28) 1px, transparent 1.45px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
   background-position:
     0 0,
     0 0,

@@ -9,7 +9,7 @@ export default function ConcoursLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f7f8ff] text-slate-950">
+    <div className="min-h-screen bg-[#f0f1fa] text-black">
       <ConcoursMobileHeader onOpen={() => setMobileOpen(true)} />
       <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} title="Shazax Concours">
         <ConcoursSidebar collapsed={false} onNavigate={() => setMobileOpen(false)} />

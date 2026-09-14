@@ -4,6 +4,7 @@ import {
   AnimatePresence,
   animate,
   motion,
+  useInView,
   useMotionValueEvent,
   useScroll,
   useTransform,
@@ -15,13 +16,11 @@ import {
   Book,
   BrainCircuit,
   CheckCircle,
-  CheckCircle2,
   Heart,
   Loader2,
   Mail,
   Play,
   Star,
-  TrendingUp,
   X,
   Zap,
 } from 'lucide-react';
@@ -349,16 +348,16 @@ function FinalCtaSection({ onOpenWaitlist }) {
   ];
 
   return (
-    <section className="relative isolate min-h-screen overflow-hidden bg-[#3a00d4] px-4 pb-0 text-white sm:px-8">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#4b12ef_0%,#3700c9_47%,#2f00bd_100%)]" />
+    <section className="relative isolate min-h-[100svh] overflow-hidden bg-[#2430f5] px-4 py-14 text-white sm:px-8 sm:py-16">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#526ff5_0%,#3f48e3_48%,#2430f5_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:96px_96px] opacity-25" />
 
-      <div className="relative z-20 mx-auto max-w-[92rem] pt-[18vh] text-center md:pt-[19vh]">
-        <p className="mb-10 text-sm font-medium uppercase tracking-[0.08em] text-white/86 md:text-lg">
+      <div className="relative z-20 mx-auto flex min-h-[calc(100svh-7rem)] max-w-[92rem] flex-col items-center justify-center gap-10 text-center sm:gap-12 md:min-h-[calc(100vh-8rem)]">
+        <p className="text-xs font-medium uppercase tracking-[0.08em] text-white/86 sm:text-sm md:text-lg">
           IS YOUR SUCCESS READY TO GO WILD ?
         </p>
         <h2
-          className="relative inline-block font-heading text-[clamp(3.45rem,10vw,10.6rem)] font-black leading-[0.96] tracking-normal text-white"
+          className="relative inline-block max-w-[min(100%,68rem)] font-heading text-[clamp(2.65rem,14vw,4.8rem)] font-black leading-[1.02] tracking-normal text-white sm:text-[clamp(3.6rem,8.4vw,7.4rem)]"
           aria-label={titleLines.join(' ')}
         >
           {titleLines.map((line, index) => (
@@ -372,36 +371,49 @@ function FinalCtaSection({ onOpenWaitlist }) {
               aria-hidden="true"
             >
               <span className="inline-block [text-shadow:0_22px_64px_rgba(18,0,82,0.24)]">
-                {Array.from(line).map((char, charIndex) => {
-                  const motionConfig = finalTitleMotion[line];
-                  const direction = motionConfig?.up.includes(charIndex)
-                    ? 'up'
-                    : motionConfig?.down.includes(charIndex)
-                      ? 'down'
-                      : null;
+                {line.split(' ').map((word, wordIndex, words) => {
+                  const charOffset = words.slice(0, wordIndex).join(' ').length + (wordIndex > 0 ? 1 : 0);
 
                   return (
-                    <AnimatedTitleLetter
-                      key={`${line}-${char}-${charIndex}`}
-                      char={char}
-                      direction={direction}
-                      delay={2.05 + index * 0.35 + charIndex * 0.045}
-                    />
+                    <span key={`${line}-${word}-${wordIndex}`} className="inline-flex whitespace-nowrap">
+                      {Array.from(word).map((char, wordCharIndex) => {
+                        const charIndex = charOffset + wordCharIndex;
+                        const motionConfig = finalTitleMotion[line];
+                        const direction = motionConfig?.up.includes(charIndex)
+                          ? 'up'
+                          : motionConfig?.down.includes(charIndex)
+                            ? 'down'
+                            : null;
+
+                        return (
+                          <AnimatedTitleLetter
+                            key={`${line}-${char}-${charIndex}`}
+                            char={char}
+                            direction={direction}
+                            delay={2.05 + index * 0.35 + charIndex * 0.045}
+                          />
+                        );
+                      })}
+                      {wordIndex < words.length - 1 ? <span className="inline-block w-[0.28em]" aria-hidden="true" /> : null}
+                    </span>
                   );
                 })}
               </span>
-              <motion.span
-                initial={{ scaleX: 0, opacity: 0 }}
-                whileInView={{ scaleX: 1, opacity: 1 }}
-                viewport={{ once: true, amount: 0.55 }}
-                transition={{ delay: 1.04 + index * 0.16, duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
-                className={`mx-auto mt-3 block h-[0.065em] origin-left bg-white/90 shadow-[0_0_26px_rgba(255,255,255,0.46)] md:mt-4 ${
-                  index === 0 ? 'w-full' : 'w-[62%]'
-                }`}
-              />
             </motion.span>
           ))}
         </h2>
+
+        <motion.button
+          onClick={onOpenWaitlist}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          data-testid="button-final-cta"
+          className="inline-flex w-[min(24rem,calc(100vw-2rem))] items-center justify-between gap-4 rounded-full bg-white px-6 py-4 text-xs font-black uppercase tracking-[0.04em] text-black shadow-[0_12px_34px_rgba(0,0,0,0.28),inset_0_0_16px_rgba(82,111,245,0.14)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:w-[min(26rem,calc(100vw-2rem))] sm:px-9 sm:py-5 sm:text-base"
+        >
+          <BrainCircuit size={23} strokeWidth={2.5} />
+          <span>Get Early Access Now</span>
+          <Zap size={23} strokeWidth={2.5} fill="currentColor" />
+        </motion.button>
       </div>
 
       {ctaTopMarks.map((mark, index) => (
@@ -417,20 +429,31 @@ function FinalCtaSection({ onOpenWaitlist }) {
         />
       ))}
 
-      <div className="absolute bottom-[9vh] left-1/2 z-30 -translate-x-1/2">
-        <motion.button
-          onClick={onOpenWaitlist}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          data-testid="button-final-cta"
-          className="inline-flex w-[min(26rem,calc(100vw-2rem))] items-center justify-between gap-5 rounded-full bg-white px-7 py-4 text-sm font-black uppercase tracking-[0.04em] text-slate-950 shadow-[0_12px_34px_rgba(10,0,70,0.34),inset_0_0_16px_rgba(75,0,180,0.12)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:px-9 sm:py-5 sm:text-base"
-        >
-          <BrainCircuit size={23} strokeWidth={2.5} />
-          <span>Get Early Access Now</span>
-          <Zap size={23} strokeWidth={2.5} fill="currentColor" />
-        </motion.button>
-      </div>
     </section>
+  );
+}
+
+function FeedbackCounter() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.72 });
+  const [count, setCount] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!isInView) return undefined;
+
+    const controls = animate(0, 99, {
+      duration: 1.05,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (value) => setCount(Math.round(value)),
+    });
+
+    return () => controls.stop();
+  }, [isInView]);
+
+  return (
+    <div ref={ref} className="font-heading text-7xl font-black text-foreground md:text-8xl lg:text-9xl">
+      {String(count).padStart(2, '0')}%
+    </div>
   );
 }
 
@@ -1244,22 +1267,8 @@ export default function HomePage() {
                   <span>The new way to learn STEM</span>
                 </div>
                 <h1 className="font-heading text-6xl font-black leading-[1.05] tracking-tight md:text-7xl lg:text-8xl">
-                  <motion.span
-                    initial={{ clipPath: 'inset(0 100% 0 0)', y: 8 }}
-                    animate={{ clipPath: 'inset(0 0% 0 0)', y: 0 }}
-                    transition={{ delay: 1.05, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-                    className="block"
-                  >
-                    Stop Reading.
-                  </motion.span>
-                  <motion.span
-                    initial={{ clipPath: 'inset(0 100% 0 0)', y: 8 }}
-                    animate={{ clipPath: 'inset(0 0% 0 0)', y: 0 }}
-                    transition={{ delay: 1.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                    className="block text-primary"
-                  >
-                    Start Doing.
-                  </motion.span>
+                  <span className="block">Stop Reading.</span>
+                  <span className="block text-primary">Start Doing.</span>
                 </h1>
                 <p className="max-w-lg text-xl font-medium leading-relaxed text-muted-foreground">
                   Bridge the gap between lectures and exams. Master universities with organized TD, solutions, and interactive tools for total success.
@@ -1287,72 +1296,46 @@ export default function HomePage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ duration: 0.8, type: 'spring' }}
+                initial={{ opacity: 0, rotate: 1, scale: 0.94 }}
+                animate={{ opacity: 1, rotate: 2.5, scale: 1, y: [0, -14, 0] }}
+                transition={{
+                  opacity: { duration: 0.65 },
+                  scale: { duration: 0.75, type: 'spring' },
+                  rotate: { duration: 0.75, type: 'spring' },
+                  y: { duration: 6.5, ease: 'easeInOut', repeat: Infinity },
+                }}
                 className="relative"
               >
-                <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-tr from-primary/30 to-accent/30 blur-3xl" />
-                <div className="relative mx-auto max-w-md rotate-3 transform overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-card p-6 shadow-2xl transition-transform duration-500 hover:rotate-0">
-                  <div className="mb-6 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-xl font-black text-primary">
-                        ∫
-                      </div>
-                      <div>
-                        <div className="text-sm font-black">Calculus 101</div>
-                        <div className="text-xs font-medium text-muted-foreground">Derivatives</div>
-                      </div>
-                    </div>
-                    <div className="rounded-full bg-accent px-3 py-1.5 text-xs font-black text-accent-foreground">
-                      Level 4
-                    </div>
-                  </div>
-
-                  <div className="relative flex aspect-[4/5] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border bg-secondary p-6">
-                    <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-background/90 px-3 py-1 text-xs font-bold shadow-sm backdrop-blur">
-                      <TrendingUp size={14} className="text-primary" /> 12k
-                    </div>
-                    <h3 className="mb-6 text-center font-heading text-3xl font-black">
-                      Find the slope of
-                      <br />y = x² at x = 2
-                    </h3>
-                    <div className="relative mb-10 h-32 w-full">
-                      <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible">
-                        <path
-                          d="M10,90 L90,90 M10,10 L10,90"
-                          stroke="hsl(var(--muted-foreground))"
-                          strokeWidth="2"
-                          fill="none"
-                          opacity="0.3"
-                        />
-                        <path
-                          d="M10,90 Q50,90 90,10"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth="4"
-                          fill="none"
-                          strokeLinecap="round"
-                        />
-                        <circle cx="65" cy="40" r="5" fill="hsl(var(--accent))" />
-                        <path
-                          d="M45,70 L85,10"
-                          stroke="hsl(var(--accent))"
-                          strokeWidth="2"
-                          strokeDasharray="4 4"
-                          fill="none"
-                        />
-                      </svg>
-                    </div>
-                    <div className="w-full space-y-3">
-                      <button className="w-full rounded-xl border-2 border-border bg-background py-3.5 font-black transition-colors hover:border-primary">
-                        A) 2
-                      </button>
-                      <button className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary py-3.5 font-black text-primary-foreground shadow-lg">
-                        B) 4 <CheckCircle2 size={20} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <svg
+                  viewBox="0 0 120 120"
+                  className="relative mx-auto aspect-square w-[min(82vw,29rem)] overflow-visible drop-shadow-[0_28px_42px_rgba(82,28,160,0.24)]"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M16,104 H108 M16,104 V12"
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth="2.25"
+                    fill="none"
+                    opacity="0.62"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M16,104 C42,104 66,84 78,58 C88,36 96,20 108,16"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M61,79 L98,22"
+                    stroke="hsl(var(--accent))"
+                    strokeWidth="2.5"
+                    strokeDasharray="5 6"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="76" cy="62" r="5.5" fill="hsl(var(--accent))" />
+                </svg>
               </motion.div>
             </div>
           </div>
@@ -1367,7 +1350,7 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 className="flex flex-col items-center gap-4 text-center"
               >
-                <div className="font-heading text-7xl font-black text-foreground md:text-8xl lg:text-9xl">99%</div>
+                <FeedbackCounter />
                 <div className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest text-primary md:text-base">
                   <Heart size={18} fill="currentColor" /> Positive Feedback from Students
                 </div>
@@ -1419,8 +1402,8 @@ export default function HomePage() {
         <FinalCtaSection onOpenWaitlist={() => setWaitlistOpen(true)} />
       </main>
 
-      <footer className="relative overflow-hidden bg-[#080a13] px-6 py-16 text-white">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.18),transparent_38%,rgba(59,130,246,0.14))]" />
+      <footer className="relative overflow-hidden bg-black px-6 py-16 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,245,0.24),transparent_38%,rgba(85,212,220,0.18))]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:54px_54px] opacity-25" />
 
         <div className="container relative mx-auto max-w-6xl">
@@ -1436,7 +1419,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setWaitlistOpen(true)}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-slate-950 shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:bg-primary hover:text-white"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-black shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:bg-primary hover:text-white"
               >
                 Get early access
                 <ArrowRight size={16} />
@@ -1472,14 +1455,18 @@ export default function HomePage() {
             <span className="md:justify-self-start">&copy; 2025 Shazaxx Inc. All rights reserved.</span>
             <span className="md:justify-self-center">
               Made with <span className="text-white/70">{'\u2764\uFE0F'}</span> by{' '}
-              <a
+              <motion.a
                 href="https://www.instagram.com/med_shazaxx/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/62 transition hover:text-white"
+                whileHover={{ y: -2, scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="group relative ml-1 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 font-black text-white shadow-[0_10px_28px_rgba(0,0,0,0.22)] transition hover:border-accent/70 hover:bg-accent hover:text-black"
               >
-                med_shazaxx
-              </a>
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_18px_rgba(85,212,220,0.85)] motion-safe:animate-ping" />
+                <Star size={12} fill="currentColor" className="text-accent transition group-hover:text-black" />
+                @med_shazaxx
+              </motion.a>
             </span>
             <span className="md:justify-self-end">Made for focused students, one module at a time.</span>
           </div>

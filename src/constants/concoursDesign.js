@@ -1,10 +1,10 @@
 export const CONCOURS_DESIGN = {
   colors: {
-    primary: '#7c3aed',
-    electricBlue: '#2563eb',
-    background: '#f7f8ff',
+    primary: '#526ff5',
+    electricBlue: '#2430f5',
+    background: '#f0f1fa',
     card: '#ffffff',
-    text: '#0f172a',
+    text: '#000000',
   },
   radius: {
     card: '1.75rem',
@@ -12,8 +12,8 @@ export const CONCOURS_DESIGN = {
     pill: '999px',
   },
   shadow: {
-    card: '0 2px 8px rgba(15, 23, 42, 0.06)',
-    floating: '0 18px 40px rgba(15, 23, 42, 0.12)',
+    card: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    floating: '0 18px 40px rgba(36, 48, 245, 0.14)',
   },
   spacing: {
     page: 'clamp(1rem, 2vw, 2rem)',

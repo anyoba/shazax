@@ -90,7 +90,7 @@ const termsSections = [
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[#f4f6fb] px-5 py-10 text-slate-950">
+    <main className="min-h-screen bg-[#f0f1fa] px-5 py-10 text-black">
       <div className="mx-auto max-w-4xl">
         <Link
           to="/"

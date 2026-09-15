@@ -254,44 +254,60 @@ const MODULE_ICON_COMPONENTS = {
 
 const MODULE_THEME_STYLES = {
   cyan: {
-    card: 'border-cyan-100 bg-[linear-gradient(135deg,#dffbfb_0%,#ecfffd_55%,#f1fff8_100%)]',
-    iconColor: 'text-cyan-600',
-    linkColor: 'text-cyan-600',
+    card: 'border-[#2638ff]/20 bg-[linear-gradient(135deg,#2434ff_0%,#3841e8_48%,#35b4d3_100%)]',
+    iconColor: 'text-white',
+    linkColor: 'text-white/80',
+    titleColor: 'text-white',
+    iconBg: 'bg-white/14',
   },
   violet: {
-    card: 'border-violet-100 bg-[linear-gradient(135deg,#f3eaff_0%,#faf3ff_55%,#f8f3ff_100%)]',
-    iconColor: 'text-violet-500',
-    linkColor: 'text-violet-400',
+    card: 'border-[#3430f6]/20 bg-[linear-gradient(135deg,#3430f6_0%,#2434ff_56%,#5171f2_100%)]',
+    iconColor: 'text-white',
+    linkColor: 'text-white/80',
+    titleColor: 'text-white',
+    iconBg: 'bg-white/14',
   },
   sky: {
-    card: 'border-sky-100 bg-[linear-gradient(135deg,#eaf5ff_0%,#f2fbff_55%,#eef9ff_100%)]',
-    iconColor: 'text-sky-500',
-    linkColor: 'text-sky-400',
+    card: 'border-[#35b4d3]/30 bg-[linear-gradient(135deg,#35b4d3_0%,#57d4de_52%,#eef9ff_100%)]',
+    iconColor: 'text-[#07111f]',
+    linkColor: 'text-[#07111f]/70',
+    titleColor: 'text-[#07111f]',
+    iconBg: 'bg-white/42',
   },
   orange: {
-    card: 'border-orange-100 bg-[linear-gradient(135deg,#fff4df_0%,#fff7ec_55%,#fff2f2_100%)]',
-    iconColor: 'text-orange-500',
-    linkColor: 'text-orange-400',
+    card: 'border-[#5171f2]/20 bg-[linear-gradient(135deg,#0b0b0d_0%,#2434ff_54%,#57d4de_100%)]',
+    iconColor: 'text-white',
+    linkColor: 'text-white/80',
+    titleColor: 'text-white',
+    iconBg: 'bg-white/14',
   },
   emerald: {
-    card: 'border-emerald-100 bg-[linear-gradient(135deg,#dcfce7_0%,#ecfff5_55%,#effef6_100%)]',
-    iconColor: 'text-emerald-500',
-    linkColor: 'text-emerald-500',
+    card: 'border-[#57d4de]/30 bg-[linear-gradient(135deg,#eef9ff_0%,#57d4de_48%,#35b4d3_100%)]',
+    iconColor: 'text-[#07111f]',
+    linkColor: 'text-[#07111f]/70',
+    titleColor: 'text-[#07111f]',
+    iconBg: 'bg-white/45',
   },
   white: {
-    card: 'border-slate-100 bg-white',
-    iconColor: 'text-primary',
-    linkColor: 'text-primary',
+    card: 'border-[#d8dcf0] bg-white',
+    iconColor: 'text-[#2434ff]',
+    linkColor: 'text-[#2434ff]',
+    titleColor: 'text-[#07070a]',
+    iconBg: 'bg-[#f0f1fa]',
   },
   rose: {
-    card: 'border-rose-100 bg-[linear-gradient(135deg,#fff1f2_0%,#fff7fb_55%,#fff1f6_100%)]',
-    iconColor: 'text-rose-500',
-    linkColor: 'text-rose-500',
+    card: 'border-[#5171f2]/20 bg-[linear-gradient(135deg,#5171f2_0%,#3841e8_54%,#f0f1fa_100%)]',
+    iconColor: 'text-white',
+    linkColor: 'text-white/80',
+    titleColor: 'text-white',
+    iconBg: 'bg-white/14',
   },
   slate: {
-    card: 'border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#ffffff_55%,#f1f5f9_100%)]',
-    iconColor: 'text-slate-500',
-    linkColor: 'text-slate-500',
+    card: 'border-[#d8dcf0] bg-[linear-gradient(135deg,#ffffff_0%,#f0f1fa_58%,#dfe5ff_100%)]',
+    iconColor: 'text-[#2434ff]',
+    linkColor: 'text-[#2434ff]',
+    titleColor: 'text-[#07070a]',
+    iconBg: 'bg-white/70',
   },
 };
 
@@ -342,12 +358,12 @@ function ModuleCard({ institution, program, semester, moduleItem, resources }) {
   return (
     <Link
       to={`/learn/${institution.slug}/${program.slug}/${semester.slug}/${moduleItem.slug}`}
-      className={`group min-h-[180px] rounded-[2rem] border p-7 shadow-[0_18px_45px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(15,23,42,0.09)] ${theme.card}`}
+      className={`group min-h-[180px] rounded-[2rem] border p-7 shadow-[0_18px_45px_rgba(36,52,255,0.10)] transition hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(36,52,255,0.18)] ${theme.card}`}
     >
-      <div className={`mb-8 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/45 shadow-sm ${theme.iconColor}`}>
+      <div className={`mb-8 flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm ${theme.iconBg} ${theme.iconColor}`}>
         <Icon size={25} strokeWidth={2.4} />
       </div>
-      <h2 className="font-heading text-xl font-black tracking-tight text-slate-900">{moduleItem.name}</h2>
+      <h2 className={`font-heading text-xl font-black tracking-tight ${theme.titleColor}`}>{moduleItem.name}</h2>
       <div className={`mt-3 inline-flex items-center gap-1 text-sm font-bold ${theme.linkColor}`}>
         Open module
         <ChevronRight size={15} className="transition group-hover:translate-x-1" />

@@ -563,7 +563,7 @@ function WaitlistModal({ isOpen, onClose }) {
       placeholder="your@email.com"
       required
       data-testid="input-waitlist-email"
-      className="w-full rounded-xl border border-border bg-secondary/50 py-3.5 pl-10 pr-4 font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+      className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-10 pr-4 font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
     />
   </div>
 
@@ -658,7 +658,7 @@ function InteractiveDemo() {
   }
 
   return (
-    <section id="demo" className="relative overflow-hidden bg-secondary/50 px-4 py-24">
+    <section id="demo" className="relative overflow-hidden px-4 py-24" style={{ background: '#f0f1fa' }}>
       <div className="container mx-auto max-w-6xl">
         <div className="relative z-10 mb-16 text-center">
           <h2 className="mb-6 font-heading text-4xl font-black md:text-5xl">Learn by Doing</h2>
@@ -979,7 +979,12 @@ function FocusSection() {
   }, []);
 
   return (
-    <section id="how-it-works" ref={sectionRef} className="relative z-10 overflow-hidden bg-primary px-6 py-20 text-primary-foreground shadow-[0_-42px_90px_rgba(18,12,40,0.18)] lg:px-0 lg:py-0">
+    <section
+      id="how-it-works"
+      ref={sectionRef}
+      className="relative z-10 overflow-hidden px-6 py-20 text-primary-foreground shadow-[0_-42px_90px_rgba(18,12,40,0.18)] lg:px-0 lg:py-0"
+      style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}
+    >
       <svg
         className="pointer-events-none absolute left-1/2 top-1/2 z-0 hidden h-[34rem] w-[min(94rem,120vw)] -translate-x-1/2 -translate-y-1/2 overflow-visible lg:block"
         viewBox="0 0 1440 520"
@@ -1023,7 +1028,10 @@ function FocusSection() {
                 }}
                 className="relative h-full rounded-[26px] lg:[transform-style:preserve-3d] lg:[will-change:transform]"
               >
-                <div className="absolute inset-0 overflow-hidden rounded-[26px] border-[3px] border-white bg-primary text-white shadow-[0_34px_80px_rgba(15,10,60,0.28)] [backface-visibility:hidden]">
+                <div
+                  className="absolute inset-0 overflow-hidden rounded-[26px] border-[3px] border-white text-white shadow-[0_34px_80px_rgba(15,10,60,0.28)] [backface-visibility:hidden]"
+                  style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}
+                >
                   <div className="absolute inset-3 rounded-[20px] border-2 border-white/95" />
                   <div className="absolute inset-7 rounded-[15px] border border-white/62" />
                   <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.18)_0_1px,transparent_1px_13px)] opacity-70" />
@@ -1043,25 +1051,29 @@ function FocusSection() {
                     ref={(node) => {
                       iconRefs.current[index] = node;
                     }}
-                    className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-[0_0_0_8px_rgba(255,255,255,0.08)] lg:[will-change:transform]"
+                    className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white text-white shadow-[0_0_0_8px_rgba(255,255,255,0.08)] lg:[will-change:transform]"
+                    style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}
                   >
                     <feature.icon size={42} strokeWidth={1.7} />
                   </div>
                 </div>
 
-                <div className="absolute inset-0 flex flex-col rounded-[26px] border border-slate-950/10 bg-white p-6 text-slate-950 shadow-[0_34px_90px_rgba(15,10,60,0.22)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-7 md:p-6 xl:p-7">
+                <div
+                  className="absolute inset-0 flex flex-col rounded-[26px] border border-white/20 bg-white p-6 text-slate-950 shadow-[0_34px_90px_rgba(15,10,60,0.22)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-7 md:p-6 xl:p-7"
+                  style={{ background: 'linear-gradient(180deg, #f3f5ff 0%, #edf0ff 100%)' }}
+                >
                   <div className="flex items-start justify-between gap-5">
                     <div>
                       <div className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary/70">{feature.backLabel}</div>
                       <h3 className="mt-2 font-heading text-[1.42rem] font-black leading-none tracking-tight text-slate-950 lg:text-[1.56rem]">{feature.title}</h3>
                     </div>
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_10px_26px_rgba(97,74,190,0.24)]">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_10px_26px_rgba(15,35,130,0.2)]" style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}>
                       <feature.icon size={22} strokeWidth={2.1} />
                     </div>
                   </div>
 
-                  <p className="mt-5 text-[0.78rem] font-semibold leading-[1.18rem] text-slate-600">{feature.desc}</p>
-                  <p className="mt-4 rounded-2xl bg-primary/[0.07] px-4 py-3 text-[0.74rem] font-bold leading-[1.14rem] text-primary">{feature.backText}</p>
+                  <p className="mt-5 text-[0.78rem] font-semibold leading-[1.18rem] text-slate-700">{feature.desc}</p>
+                  <p className="mt-4 rounded-2xl bg-primary/[0.08] px-4 py-3 text-[0.74rem] font-bold leading-[1.14rem] text-primary">{feature.backText}</p>
 
                   <div className="mt-auto grid gap-2 pt-5">
                     {feature.backItems.map((item) => (
@@ -1241,11 +1253,7 @@ export default function HomePage() {
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.96 }}
             data-testid="button-nav-login"
-            className={`rounded-full px-6 py-2.5 text-sm font-bold transition-all ${
-              headerScrolled
-                ? 'border border-slate-900/10 bg-white/35 text-slate-900 shadow-sm hover:bg-white/60'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
+            className="rounded-full bg-[#2a2a2a] px-6 py-2.5 text-sm font-black text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all hover:bg-[#1f1f1f]"
           >
             Log In
           </motion.button>
@@ -1274,21 +1282,21 @@ export default function HomePage() {
                   Bridge the gap between lectures and exams. Master universities with organized TD, solutions, and interactive tools for total success.
                 </p>
                 <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-                      <motion.button
-  onClick={() => window.location.href = '/auth'}
-  whileHover={{ y: -2 }}
-  whileTap={{ scale: 0.95 }}
-  data-testid="button-hero-cta"
-  className="flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
->
-  Start Learning <ArrowRight size={20} />
-</motion.button>
+                  <motion.button
+                    onClick={() => window.location.href = '/auth'}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    data-testid="button-hero-cta"
+                    className="flex items-center justify-center gap-2 rounded-full bg-[#0c2ddb] px-8 py-4 text-lg font-black text-white shadow-[0_12px_28px_rgba(12,45,219,0.22)] transition-all hover:scale-105 hover:bg-[#0b27c5] active:scale-95"
+                  >
+                    Start Learning <ArrowRight size={20} />
+                  </motion.button>
                   <motion.button
                     onClick={() => setWaitlistOpen(true)}
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     data-testid="button-hero-secondary"
-                    className="rounded-full border border-border bg-secondary px-8 py-4 text-lg font-bold text-secondary-foreground transition-all hover:bg-secondary/80"
+                    className="rounded-full border border-primary/20 bg-primary/85 px-8 py-4 text-lg font-bold text-white shadow-[0_12px_28px_rgba(13,62,255,0.18)] transition-all hover:bg-primary/95"
                   >
                     Join Waitlist
                   </motion.button>

@@ -31,6 +31,7 @@ const appElement = (
       <BrowserRouter>
         <ClerkProvider
   publishableKey={clerkPublishableKey}
+  proxyUrl="https://shazax.vercel.app/__clerk"
   navigate={handleClerkNavigate}
   afterSignInUrl="/learn"
   afterSignUpUrl="/learn"

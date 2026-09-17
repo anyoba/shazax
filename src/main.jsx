@@ -30,14 +30,13 @@ const appElement = (
     <ErrorBoundary>
       <BrowserRouter>
         <ClerkProvider
-          publishableKey={clerkPublishableKey}
-          proxyUrl="https://clerk.shazax.vercel.app/__clerk"
-          navigate={handleClerkNavigate}
-          afterSignInUrl="/learn"
-          afterSignUpUrl="/learn"
-        >
-          <App />
-        </ClerkProvider>
+  publishableKey={clerkPublishableKey}
+  navigate={handleClerkNavigate}
+  afterSignInUrl="/learn"
+  afterSignUpUrl="/learn"
+>
+  <App />
+</ClerkProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>

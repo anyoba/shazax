@@ -5,7 +5,7 @@ import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
-proxyUrl="https://clerk.shazax.vercel.app/__clerk"
+
 
 const clerkPublishableKey =
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
@@ -30,12 +30,14 @@ const appElement = (
     <ErrorBoundary>
       <BrowserRouter>
         <ClerkProvider
-  publishableKey={ClerkPublishableKey}
-  proxyUrl="https://clerk.shazax.vercel.app/__clerk"
-  navigate={handleClerkNavigate}
-  afterSignInUrl="/learn"
-  afterSignUpUrl="/learn"
->
+          publishableKey={clerkPublishableKey}
+          proxyUrl="https://clerk.shazax.vercel.app/__clerk"
+          navigate={handleClerkNavigate}
+          afterSignInUrl="/learn"
+          afterSignUpUrl="/learn"
+        >
+          <App />
+        </ClerkProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>

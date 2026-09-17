@@ -29,7 +29,7 @@ const appElement = (
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-        <ClerkProvider
+     <ClerkProvider
   publishableKey={clerkPublishableKey}
   proxyUrl="https://shazax.vercel.app/__clerk"
   navigate={handleClerkNavigate}

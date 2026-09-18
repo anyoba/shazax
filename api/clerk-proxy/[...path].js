@@ -74,11 +74,12 @@ export default async function handler(req, res) {
     method,
     headers,
     body: hasBody && body ? body : undefined,
-    redirect: 'follow',
+    redirect: 'manual',
   });
 
   console.log('[clerk-proxy] Clerk status =', response.status);
   console.log('[clerk-proxy] Clerk content-type =', response.headers.get('content-type'));
+  console.log('[clerk-proxy] Clerk location =', response.headers.get('location'));
 
   const responseHeaders = {};
   response.headers.forEach((value, key) => {
@@ -91,10 +92,14 @@ export default async function handler(req, res) {
     res.setHeader(key, value);
   });
 
+  res.status(response.status);
+
+  if (response.status >= 300 && response.status < 400) {
+    return res.end();
+  }
+
   const text = await response.text();
   console.log('[clerk-proxy] response-preview =', text.slice(0, 140));
-
-  res.status(response.status);
 
   if (!text) {
     return res.end();

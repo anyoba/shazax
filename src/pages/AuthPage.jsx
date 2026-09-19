@@ -171,14 +171,14 @@ export default function AuthPage() {
                     <SignUp
                       routing="hash"
                       signInUrl="/auth"
-                      afterSignUpUrl="/learn"
+                      fallbackRedirectUrl="/learn"
                       appearance={clerkAppearance}
                     />
                   ) : (
                     <SignIn
                       routing="hash"
                       signUpUrl="/auth"
-                      afterSignInUrl="/learn"
+                      fallbackRedirectUrl="/learn"
                       appearance={clerkAppearance}
                     />
                   )}

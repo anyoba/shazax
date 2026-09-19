@@ -1,16 +1,10 @@
-HTTP/1.1 200 OK
-Accept-Ranges: bytes
-Access-Control-Allow-Origin: *
-Age: 748224
+HTTP/1.1 404 Not Found
 Cache-Control: public, max-age=0, must-revalidate
-Content-Disposition: inline; filename="index.html"
-Content-Length: 751
-Content-Type: text/html; charset=utf-8
-Date: Sat, 19 Sep 2026 09:52:27 GMT
-Etag: "afedcb504ebc09c90f514f99829b17f7"
-Last-Modified: Thu, 10 Sep 2026 18:02:02 GMT
+Content-Length: 79
+Content-Type: text/plain; charset=utf-8
+Date: Sat, 19 Sep 2026 10:31:36 GMT
 Server: Vercel
 Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-X-Vercel-Cache: HIT
-X-Vercel-Id: cdg1::s8ngk-1789811547342-7a3ce112cbdd
+X-Vercel-Error: NOT_FOUND
+X-Vercel-Id: cdg1::chckj-1789813896694-75c17098721b
 

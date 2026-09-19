@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/__clerk/(.*)", "dest": "/api/clerk-proxy/$1" },
-    { "src": "/api/clerk-proxy/(.*)", "dest": "/api/clerk-proxy/$1" },
+    { "src": "/__clerk/(.*)", "dest": "/api/clerk-proxy?path=$1" },
+    { "src": "/api/clerk-proxy", "dest": "/api/clerk-proxy" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

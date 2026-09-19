@@ -37,8 +37,8 @@ const appElement = (
       publishableKey={clerkPublishableKey}
       proxyUrl={proxyUrl}
       navigate={handleClerkNavigate}
-      afterSignInUrl="/learn"
-      afterSignUpUrl="/learn"
+      signInFallbackRedirectUrl="/learn"
+      signUpFallbackRedirectUrl="/learn"
     >
       <App />
     </ClerkProvider>

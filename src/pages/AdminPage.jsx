@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { useClerk } from '@clerk/clerk-react';
+import { collection, limit, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 
 import {
   Activity,
+  Building2,
   BookOpen,
   ChevronDown,
   Eye,
@@ -16,9 +17,19 @@ import {
   Users,
   CheckCircle,
   Globe,
+  Layers,
 } from 'lucide-react';
 import { db } from '../firebase';
 import { submitFormspreeContact } from '../formspree';
+import AcademicStructureManager from '../components/admin/academic/AcademicStructureManager.jsx';
+import InstitutionsManager from '../components/admin/academic/InstitutionsManager.jsx';
+import AdminShell from '../components/admin/layout/AdminShell.jsx';
+import AcademicResourcesManager from '../components/admin/resources/AcademicResourcesManager.jsx';
+import { USER_ROLES } from '../constants/roles.js';
+import { useUserRole } from '../hooks/useUserRole.js';
+import { useResources } from '../hooks/useResources.js';
+import { getFirestoreErrorMessage } from '../utils/firebaseErrors.js';
+import { getAdminDashboard, getAdminUsers, updateAdminUserRole } from '../services/concoursApi.js';
 
 const MODULES = [
   { id: 'Thermodynamics', label: 'Thermodynamics' },
@@ -37,6 +48,8 @@ const CATEGORIES = [
 
 const VISITS_KEY = 'admin_dashboard_visits';
 const FORMSPREE_ID = 'mjgjpnbb'; // Replace with your Formspree ID
+const ADMIN_LIST_LIMIT = 100;
+const ANALYTICS_LIST_LIMIT = 50;
 
 function readJson(key, fallback) {
   try {
@@ -81,22 +94,34 @@ function getStats(visits, resources, emails) {
 
 function StatCard({ icon, label, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
-        {icon}
+    <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.22)] transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]">
+      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.7),transparent)] opacity-35" />
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-[0_16px_35px_rgba(139,92,246,0.22)]">
+          {icon}
+        </div>
+        <div className="h-2 w-2 rounded-full bg-blue-300/80 shadow-[0_0_18px_rgba(147,197,253,0.9)]" />
       </div>
-      <div className="text-3xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-sm text-white/50">{label}</div>
+      <div className="text-3xl font-black tracking-tight text-white">{value}</div>
+      <div className="mt-1 text-sm font-medium text-white/48">{label}</div>
     </div>
   );
 }
 
-export default function AdminPage({ resources, onAddResource, onDeleteResource }) {
+export default function AdminPage({ onAddResource, onDeleteResource, onRestoreResource, onUpdateResource }) {
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
+  const { role } = useUserRole();
   const [activeTab, setActiveTab] = useState('analytics');
+  const lastEmailCountRef = useRef(0);
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
   const [users, setUsers] = useState([]);
+  const [adminStats, setAdminStats] = useState(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userQuery, setUserQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [roleSavingUserId, setRoleSavingUserId] = useState('');
   const [firestoreError, setFirestoreError] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -106,7 +131,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [firebaseAnalytics, setFirebaseAnalytics] = useState([]);
   const [newEmailCount, setNewEmailCount] = useState(0);
-  const [lastEmailCount, setLastEmailCount] = useState(0);
+  const [selectedStructureInstitutionId, setSelectedStructureInstitutionId] = useState('');
   const [resForm, setResForm] = useState({
     module: MODULES[0].id,
     category: CATEGORIES[0].id,
@@ -116,31 +141,87 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     correctionTitle: '',
     correctionUrl: '',
   });
+  const canViewAdminData = [USER_ROLES.ADMIN, USER_ROLES.OWNER].includes(role);
+  const canManageResources = [USER_ROLES.EDITOR, USER_ROLES.ADMIN, USER_ROLES.OWNER].includes(role);
+  const canAccessInstitutions = [
+    USER_ROLES.MODERATOR,
+    USER_ROLES.EDITOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.OWNER,
+  ].includes(role);
+  const tabs = useMemo(() => {
+    const nextTabs = [];
+
+    if (canViewAdminData) {
+      nextTabs.push(
+        ['analytics', 'Dashboard', Activity],
+        ['analytics-live', 'Live Analytics', Globe],
+        ['emails', 'Emails & Contact', Mail],
+        ['users', 'Users', Users],
+      );
+    }
+
+    if (canAccessInstitutions) {
+      nextTabs.push(['institutions', 'Etablissements', Building2]);
+      nextTabs.push(['academic-structure', 'Manage Resources', Layers]);
+    }
+
+    if (canManageResources) {
+      nextTabs.push(['resources', 'Resources', BookOpen]);
+    }
+
+    return nextTabs;
+  }, [canAccessInstitutions, canManageResources, canViewAdminData]);
+  const { resources, refetch: refetchResources } = useResources({
+    enabled: canManageResources && activeTab === 'resources',
+    includeArchived: true,
+  });
 
   useEffect(() => {
     setVisits(recordVisit());
   }, []);
 
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.some(([id]) => id === activeTab)) {
+      setActiveTab(tabs[0][0]);
+    }
+  }, [activeTab, tabs]);
+
   function handleFirestoreError(error) {
-    console.error('Firebase snapshot failed', error);
-    setFirestoreError(
-      'Impossible de charger les données Firebase. Vérifie le projet Firebase et les règles de lecture.'
+    const message = getFirestoreErrorMessage(
+      error,
+      'Impossible de charger les donnees Firebase. Verifie le projet Firebase et les regles de lecture.',
     );
+    console.error('Firebase snapshot failed', message);
+    setFirestoreError(message);
   }
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
+    if (!canViewAdminData) {
+      setEmails([]);
+      setNewEmailCount(0);
+      lastEmailCountRef.current = 0;
+      return undefined;
+    }
+
+    if (activeTab !== 'emails') return undefined;
+
+    const waitlistQuery = query(
       collection(db, 'waitlist'),
+      orderBy('createdAt', 'desc'),
+      limit(ADMIN_LIST_LIMIT),
+    );
+    const unsubscribe = onSnapshot(
+      waitlistQuery,
       (snapshot) => {
         const newEmails = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setEmails(newEmails);
         
-        // Detect new emails
-        if (lastEmailCount !== 0 && newEmails.length > lastEmailCount) {
-          setNewEmailCount(newEmails.length - lastEmailCount);
+        if (lastEmailCountRef.current !== 0 && newEmails.length > lastEmailCountRef.current) {
+          setNewEmailCount(newEmails.length - lastEmailCountRef.current);
           window.setTimeout(() => setNewEmailCount(0), 5000);
         }
-        setLastEmailCount(newEmails.length);
+        lastEmailCountRef.current = newEmails.length;
       },
       (error) => {
         setEmails([]);
@@ -149,14 +230,25 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, [lastEmailCount]);
+  }, [activeTab, canViewAdminData]);
 
   useEffect(() => {
-    const q = query(collection(db, 'analytics_visits'), orderBy('createdAt', 'desc'));
+    if (!canViewAdminData) {
+      setFirebaseAnalytics([]);
+      return undefined;
+    }
+
+    if (activeTab !== 'analytics-live') return undefined;
+
+    const q = query(
+      collection(db, 'analytics_visits'),
+      orderBy('createdAt', 'desc'),
+      limit(ANALYTICS_LIST_LIMIT),
+    );
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setFirebaseAnalytics(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).slice(0, 50));
+        setFirebaseAnalytics(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       },
       (error) => {
         setFirebaseAnalytics([]);
@@ -165,34 +257,101 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [activeTab, canViewAdminData]);
 
   useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        setUsers(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      },
-      (error) => {
-        setUsers([]);
-        handleFirestoreError(error);
-      },
-    );
+    if (!canViewAdminData) {
+      setUsers([]);
+      return undefined;
+    }
 
-    return () => unsubscribe();
-  }, []);
+    if (activeTab !== 'users') return undefined;
+
+    let cancelled = false;
+    setUsersLoading(true);
+    getAdminUsers(getToken)
+      .then((body) => {
+        if (!cancelled) setUsers(body.users || []);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setUsers([]);
+          setFirestoreError(error?.message || 'Unable to load users.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setUsersLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, canViewAdminData, getToken]);
 
   const stats = useMemo(
     () => getStats(visits, resources, emails),
     [visits, resources, emails],
   );
 
-  function refreshDashboard() {
+  useEffect(() => {
+    if (!canViewAdminData || activeTab !== 'analytics') return undefined;
+    let cancelled = false;
+    getAdminDashboard(getToken)
+      .then((body) => {
+        if (!cancelled) setAdminStats(body.stats || null);
+      })
+      .catch((error) => {
+        if (!cancelled) setFirestoreError(error?.message || 'Unable to load admin stats.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, canViewAdminData, getToken]);
+
+  const filteredUsers = useMemo(() => {
+    const normalized = userQuery.trim().toLowerCase();
+    return users.filter((userItem) => {
+      const matchesRole = userRoleFilter === 'all' || userItem.role === userRoleFilter;
+      const matchesText = !normalized || [userItem.fullName, userItem.email, userItem.id].some((value) => String(value || '').toLowerCase().includes(normalized));
+      return matchesRole && matchesText;
+    });
+  }, [userQuery, userRoleFilter, users]);
+
+  async function refreshDashboard() {
     setLoading(true);
     setVisits(recordVisit());
     setLastRefresh(new Date());
-    window.setTimeout(() => setLoading(false), 300);
+    try {
+      if (canViewAdminData) {
+        const body = await getAdminDashboard(getToken);
+        setAdminStats(body.stats || null);
+        if (activeTab === 'users') {
+          const usersBody = await getAdminUsers(getToken);
+          setUsers(usersBody.users || []);
+        }
+        if (activeTab === 'resources') {
+          await refetchResources();
+        }
+      }
+    } catch (error) {
+      setFirestoreError(error?.message || 'Unable to refresh dashboard.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function changeUserRole(userId, nextRole, nextStatus = 'active') {
+    setRoleSavingUserId(userId);
+    setFirestoreError('');
+    try {
+      await updateAdminUserRole({ userId, role: nextRole, status: nextStatus }, getToken);
+      const usersBody = await getAdminUsers(getToken);
+      setUsers(usersBody.users || []);
+    } catch (error) {
+      setFirestoreError(error?.message || 'Unable to update role.');
+    } finally {
+      setRoleSavingUserId('');
+    }
   }
 
   async function addResource(event) {
@@ -239,6 +398,11 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
     }
   }
 
+  function openStructureForInstitution(institution) {
+    setSelectedStructureInstitutionId(institution.id);
+    setActiveTab('academic-structure');
+  }
+
   async function handleContactSubmit(event) {
     event.preventDefault();
     setContactMsg('');
@@ -264,76 +428,67 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-white/10 px-6 py-4">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/5 p-1">
-            {[
-              ['analytics', 'Dashboard', Activity],
-              ['analytics-live', 'Live Analytics', Globe],
-              ['emails', 'Emails & Contact', Mail],
-              ['users', 'Users', Users],
-              ['resources', 'Resources', BookOpen],
-            ].map(([id, label, Icon]) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${
-                  activeTab === id ? 'bg-white/15 text-white' : 'text-white/50'
-                }`}
-              >
-                <Icon size={14} />
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4">
-            {newEmailCount > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-2 rounded-full bg-green-500/20 px-4 py-2 text-sm text-green-400"
-              >
-                <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                {newEmailCount} new email{newEmailCount !== 1 ? 's' : ''}
-              </motion.div>
-            )}
-            {lastRefresh ? <span className="text-xs text-white/30">Last refresh: {lastRefresh.toLocaleTimeString()}</span> : null}
-            <button onClick={refreshDashboard} className="flex items-center gap-2 text-sm text-white/60 hover:text-white">
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
-            <button
-              onClick={() => signOut({ redirectUrl: '/' })}
-              className="flex items-center gap-2 text-sm text-white/60 hover:text-red-400"
-            >
-              <LogOut size={14} />
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <AdminShell
+      activeTab={activeTab}
+      canAccessConcours={[USER_ROLES.ADMIN, USER_ROLES.OWNER].includes(role)}
+      loading={loading}
+      newEmailCount={newEmailCount}
+      onChangeTab={setActiveTab}
+      onRefresh={refreshDashboard}
+      onSignOut={() => signOut({ redirectUrl: '/' })}
+      role={role}
+      tabs={tabs}
+      lastRefresh={lastRefresh}
+    >
         {firestoreError ? (
           <div className="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {firestoreError}
           </div>
         ) : null}
-        {activeTab === 'analytics' ? (
+        {canViewAdminData && activeTab === 'analytics' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Dashboard</h2>
-            <div className="grid gap-4 md:grid-cols-4">
-              <StatCard icon={<Eye size={18} />} label="Page Views" value={stats.pageViews} />
-              <StatCard icon={<Users size={18} />} label="Today's Views" value={stats.todayViews} />
-              <StatCard icon={<BookOpen size={18} />} label="Resources" value={stats.resourceCount} />
-              <StatCard icon={<Mail size={18} />} label="Waitlist Emails" value={stats.emailCount} />
+            <div className="grid gap-6 xl:grid-cols-2">
+              <section className="space-y-4">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-black text-white">
+                    <Building2 size={19} />
+                    Universities
+                  </h3>
+                  <p className="mt-1 text-sm text-white/40">Etablissements, structure Learn et ressources.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StatCard icon={<Building2 size={18} />} label="Etablissements" value={adminStats?.totalInstitutions ?? 0} />
+                  <StatCard icon={<CheckCircle size={18} />} label="Etablissements publies" value={adminStats?.publishedInstitutions ?? 0} />
+                  <StatCard icon={<Layers size={18} />} label="Filieres" value={adminStats?.totalPrograms ?? 0} />
+                  <StatCard icon={<BookOpen size={18} />} label="Modules" value={adminStats?.totalModules ?? 0} />
+                  <StatCard icon={<BookOpen size={18} />} label="Ressources actives" value={adminStats?.publishedResources ?? 0} />
+                  <StatCard icon={<Trash2 size={18} />} label="Corbeille ressources" value={adminStats?.trashedResources ?? 0} />
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-black text-white">
+                    <Activity size={19} />
+                    Concours
+                  </h3>
+                  <p className="mt-1 text-sm text-white/40">Concours, questions, tentatives et utilisateurs.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StatCard icon={<BookOpen size={18} />} label="Total concours" value={adminStats?.totalConcours ?? 0} />
+                  <StatCard icon={<Layers size={18} />} label="Total questions" value={adminStats?.totalQuestions ?? 0} />
+                  <StatCard icon={<Eye size={18} />} label="Total attempts" value={adminStats?.totalAttempts ?? 0} />
+                  <StatCard icon={<CheckCircle size={18} />} label="Average score" value={(adminStats?.averageScore ?? 0) + '%'} />
+                  <StatCard icon={<Users size={18} />} label="Total users" value={adminStats?.totalUsers ?? 0} />
+                  <StatCard icon={<Mail size={18} />} label="Waitlist Emails" value={stats.emailCount} />
+                </div>
+              </section>
             </div>
           </div>
         ) : null}
 
-        {activeTab === 'analytics-live' ? (
+        {canViewAdminData && activeTab === 'analytics-live' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Real-time Visitor Analytics</h2>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -371,7 +526,7 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'emails' ? (
+        {canViewAdminData && activeTab === 'emails' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Emails & Contact Management</h2>
             
@@ -472,21 +627,62 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'users' ? (
+        {canViewAdminData && activeTab === 'users' ? (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold">Registered Users</h2>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className="text-xl font-bold">Registered Users</h2>
+              <div className="grid gap-3 md:grid-cols-[1fr_12rem]">
+                <input
+                  value={userQuery}
+                  onChange={(event) => setUserQuery(event.target.value)}
+                  placeholder="Search users"
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/25 focus:border-primary/50 focus:outline-none"
+                />
+                <select
+                  value={userRoleFilter}
+                  onChange={(event) => setUserRoleFilter(event.target.value)}
+                  className="rounded-xl border border-white/10 bg-gray-950 px-4 py-3 text-white focus:border-primary/50 focus:outline-none"
+                >
+                  <option value="all">All roles</option>
+                  {Object.values(USER_ROLES).map((roleValue) => <option key={roleValue} value={roleValue}>{roleValue}</option>)}
+                </select>
+              </div>
+            </div>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-              {users.length === 0 ? (
-                <div className="p-6 text-white/40">No registered users found yet.</div>
+              {usersLoading ? (
+                <div className="p-6 text-white/40">Loading users...</div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="p-6 text-white/40">No registered users found.</div>
               ) : (
                 <div className="divide-y divide-white/5">
-                  {users.map((userItem) => (
-                    <div key={userItem.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  {filteredUsers.map((userItem) => (
+                    <div key={userItem.id} className="grid gap-4 p-4 lg:grid-cols-[1fr_10rem_13rem_10rem] lg:items-center">
                       <div>
                         <div className="font-medium">{userItem.fullName || userItem.email || 'Student'}</div>
                         <div className="text-sm text-white/40">{userItem.email || 'No email yet'}</div>
+                        <div className="mt-1 text-xs text-white/25">Joined {formatTimestamp(userItem.createdAt)}</div>
                       </div>
-                      <div className="text-sm text-white/40">Joined {formatTimestamp(userItem.createdAt)}</div>
+                      <div className="text-sm text-white/45">
+                        <div>{userItem.attemptsCount || 0} attempts</div>
+                        <div>{userItem.bestScore || 0}% best</div>
+                      </div>
+                      <select
+                        value={userItem.role || USER_ROLES.STUDENT}
+                        disabled={role !== USER_ROLES.OWNER || roleSavingUserId === userItem.id}
+                        onChange={(event) => changeUserRole(userItem.id, event.target.value, userItem.roleStatus || 'active')}
+                        className="rounded-xl border border-white/10 bg-gray-950 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        {Object.values(USER_ROLES).map((roleValue) => <option key={roleValue} value={roleValue}>{roleValue}</option>)}
+                      </select>
+                      <select
+                        value={userItem.roleStatus || 'active'}
+                        disabled={role !== USER_ROLES.OWNER || roleSavingUserId === userItem.id}
+                        onChange={(event) => changeUserRole(userItem.id, userItem.role || USER_ROLES.STUDENT, event.target.value)}
+                        className="rounded-xl border border-white/10 bg-gray-950 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        <option value="active">active</option>
+                        <option value="suspended">suspended</option>
+                      </select>
                     </div>
                   ))}
                 </div>
@@ -495,7 +691,25 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
           </div>
         ) : null}
 
-        {activeTab === 'resources' ? (
+        {canAccessInstitutions && activeTab === 'institutions' ? (
+          <InstitutionsManager onManageStructure={openStructureForInstitution} />
+        ) : null}
+
+        {canAccessInstitutions && activeTab === 'academic-structure' ? (
+          <AcademicStructureManager initialInstitutionId={selectedStructureInstitutionId} />
+        ) : null}
+
+        {canManageResources && activeTab === 'resources' ? (
+          <AcademicResourcesManager
+            resources={resources}
+            onAddResource={onAddResource}
+            onDeleteResource={onDeleteResource}
+            onRestoreResource={onRestoreResource}
+            onUpdateResource={onUpdateResource}
+          />
+        ) : null}
+
+        {false && canManageResources && activeTab === 'resources' ? (
           <div className="space-y-6">
             <h2 className="text-xl font-bold">Manage Resources</h2>
 
@@ -604,7 +818,6 @@ export default function AdminPage({ resources, onAddResource, onDeleteResource }
             </div>
           </div>
         ) : null}
-      </main>
-    </div>
+    </AdminShell>
   );
 }

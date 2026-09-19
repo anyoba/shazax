@@ -1,4 +1,8 @@
-import { ACADEMIC_STATUS_VALUES, RESOURCE_CATEGORY_VALUES } from '../constants/academic';
+import {
+  ACADEMIC_STATUS_VALUES,
+  INSTITUTION_TYPE_VALUES,
+  RESOURCE_CATEGORY_VALUES,
+} from '../constants/academic.js';
 
 export function normalizeSlug(value) {
   return String(value || '')
@@ -21,6 +25,10 @@ export function isValidStatus(value) {
 
 export function isValidResourceCategory(value) {
   return RESOURCE_CATEGORY_VALUES.includes(value);
+}
+
+export function isValidInstitutionType(value) {
+  return INSTITUTION_TYPE_VALUES.includes(value);
 }
 
 export function validateRequiredText(value, maxLength = 160) {

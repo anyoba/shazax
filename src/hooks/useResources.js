@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   collection,
-  deleteDoc,
   doc,
-  onSnapshot,
+  getDocs,
+  limit,
   orderBy,
   query,
   serverTimestamp,
@@ -11,8 +11,28 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sampleResources } from '../data/modules';
+import { getFirestoreErrorMessage } from '../utils/firebaseErrors';
 
 const RESOURCES_STORAGE_KEY = 'shazax_resources_cache';
+const DEFAULT_RESOURCE_LIMIT = 200;
+const RESOURCE_CACHE_TTL_MS = 2 * 60 * 1000;
+let resourcesCache = null;
+let resourcesCacheExpiresAt = 0;
+let resourcesRequest = null;
+
+function isVisibleResource(resource) {
+  return (
+    resource?.status !== 'draft' &&
+    resource?.status !== 'archived' &&
+    resource?.visibility !== 'private' &&
+    resource?.isDeleted !== true
+  );
+}
+
+function filterResources(resources, includeArchived) {
+  if (includeArchived) return resources;
+  return resources.filter(isVisibleResource);
+}
 
 function readLocalResources() {
   try {
@@ -32,33 +52,102 @@ function saveLocalResources(resources) {
   }
 }
 
-export function useResources() {
-  const [resources, setResources] = useState(() => readLocalResources() || sampleResources);
+async function fetchResources(maxResults) {
+  if (resourcesCache && resourcesCacheExpiresAt > Date.now()) {
+    return resourcesCache;
+  }
+
+  if (resourcesRequest) return resourcesRequest;
+
+  resourcesRequest = (async () => {
+    const resourcesQuery = query(
+      collection(db, 'resources'),
+      orderBy('createdAt', 'desc'),
+      limit(maxResults),
+    );
+    const snapshot = await getDocs(resourcesQuery);
+
+    const nextResources = snapshot.empty
+      ? readLocalResources() || sampleResources
+      : snapshot.docs.map((docItem) => ({ id: docItem.id, ...docItem.data() }));
+
+    resourcesCache = nextResources;
+    resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
+    saveLocalResources(nextResources);
+
+    return nextResources;
+  })().finally(() => {
+    resourcesRequest = null;
+  });
+
+  return resourcesRequest;
+}
+
+export function useResources({
+  enabled = true,
+  includeArchived = false,
+  maxResults = DEFAULT_RESOURCE_LIMIT,
+} = {}) {
+  const [resources, setResources] = useState(() =>
+    filterResources(readLocalResources() || sampleResources, includeArchived),
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function loadResources({ ignoreCache = false } = {}) {
+    if (ignoreCache) {
+      resourcesCache = null;
+      resourcesCacheExpiresAt = 0;
+      resourcesRequest = null;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const nextResources = await fetchResources(maxResults);
+      setResources(filterResources(nextResources, includeArchived));
+    } catch (loadError) {
+      const message = getFirestoreErrorMessage(loadError);
+      console.error('Failed to load resources', message);
+      setError(message);
+      const cached = readLocalResources();
+      setResources(filterResources(cached || sampleResources, includeArchived));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(
-      resourcesQuery,
-      (snapshot) => {
-        if (snapshot.empty) {
-          const cached = readLocalResources();
-          setResources(cached || sampleResources);
-          return;
-        }
+    if (!enabled) return undefined;
+    let cancelled = false;
 
-        const nextResources = snapshot.docs.map((docItem) => ({ id: docItem.id, ...docItem.data() }));
-        setResources(nextResources);
-        saveLocalResources(nextResources);
-      },
-      (error) => {
-        console.error('Failed to load resources', error);
+    async function guardedLoadResources() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const nextResources = await fetchResources(maxResults);
+        if (cancelled) return;
+        setResources(filterResources(nextResources, includeArchived));
+      } catch (loadError) {
+        if (cancelled) return;
+        const message = getFirestoreErrorMessage(loadError);
+        console.error('Failed to load resources', message);
+        setError(message);
         const cached = readLocalResources();
-        setResources(cached || sampleResources);
-      },
-    );
+        setResources(filterResources(cached || sampleResources, includeArchived));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
 
-    return unsubscribe;
-  }, []);
+    guardedLoadResources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, includeArchived, maxResults]);
 
   const addResource = async (resource) => {
     const id = resource.id || `resource-${Date.now()}`;
@@ -71,19 +160,39 @@ export function useResources() {
     await setDoc(doc(db, 'resources', id), nextResource);
 
     const cached = readLocalResources() || resources;
-    saveLocalResources([...cached, { ...resource, id, createdAt: new Date().toISOString() }]);
+    const nextResources = [...cached, { ...resource, id, createdAt: new Date().toISOString() }];
+    resourcesCache = nextResources;
+    resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
+    saveLocalResources(nextResources);
+    setResources(filterResources(nextResources, includeArchived));
   };
 
   const removeResource = async (resourceId) => {
-    await deleteDoc(doc(db, 'resources', resourceId));
+    await setDoc(
+      doc(db, 'resources', resourceId),
+      {
+        status: 'archived',
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     const cached = readLocalResources() || resources;
-    saveLocalResources(cached.filter((resource) => resource.id !== resourceId));
+    const nextResources = cached.map((resource) =>
+      resource.id === resourceId ? { ...resource, status: 'archived' } : resource,
+    );
+    resourcesCache = nextResources;
+    resourcesCacheExpiresAt = Date.now() + RESOURCE_CACHE_TTL_MS;
+    saveLocalResources(nextResources);
+    setResources(filterResources(nextResources, includeArchived));
   };
 
   return {
     resources,
+    loading,
+    error,
     addResource,
     removeResource,
+    refetch: () => loadResources({ ignoreCache: true }),
   };
 }

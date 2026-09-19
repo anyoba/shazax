@@ -1,24 +1,461 @@
-import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, animate, motion, useScroll, useTransform } from 'framer-motion';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useInView,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+} from 'framer-motion';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
   ArrowRight,
   Book,
   BrainCircuit,
   CheckCircle,
-  CheckCircle2,
   Heart,
   Loader2,
   Mail,
   Play,
   Star,
-  TrendingUp,
   X,
   Zap,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import logo from '../assets/he.png';
+import BrandLogo from '../components/BrandLogo';
 import { addEmail } from '../waitlist';
+
+gsap.registerPlugin(ScrollTrigger);
+
+const pageMotifs = [
+  { left: '6%', top: '18%', size: 18, color: 'hsl(var(--primary) / 0.45)', x: '8px', y: '-10px', delay: 0 },
+  { left: '87%', top: '20%', size: 14, color: 'rgba(255, 200, 18, 0.55)', x: '-9px', y: '7px', delay: 0.5 },
+  { left: '12%', top: '58%', size: 11, color: 'rgba(8, 145, 178, 0.38)', x: '7px', y: '9px', delay: 0.25 },
+  { left: '78%', top: '68%', size: 20, color: 'hsl(var(--primary) / 0.34)', x: '-7px', y: '-12px', delay: 0.7 },
+  { left: '45%', top: '12%', size: 10, color: 'rgba(255, 200, 18, 0.45)', x: '10px', y: '6px', delay: 0.95 },
+];
+
+const ctaTopMarks = [
+  { left: '16%', top: '23%', size: 28, x: '5px', y: '-8px' },
+  { left: '84%', top: '23%', size: 28, x: '-6px', y: '9px' },
+];
+
+const finalTitleMotion = {
+  'Ready to Upgrade': {
+    up: [9, 14],
+    down: [0, 6],
+  },
+  'Your Brain?': {
+    up: [1, 8],
+    down: [0, 5],
+  },
+};
+
+function MotifCross({ left, top, bottom, size, color = 'rgba(255,255,255,0.6)', x = '6px', y = '-8px', delay = 0 }) {
+  return (
+    <span
+      className="shazax-motif-cross absolute block"
+      style={{
+        left,
+        top,
+        bottom,
+        width: size,
+        height: size,
+        color,
+        animationDelay: `${delay}s`,
+        '--motif-x': x,
+        '--motif-y': y,
+      }}
+    >
+      <span className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 rounded-full bg-current" />
+      <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 rounded-full bg-current" />
+    </span>
+  );
+}
+
+function AnimatedTitleLetter({ char, direction, delay }) {
+  if (char === ' ') {
+    return <span className="inline-block w-[0.28em]" aria-hidden="true" />;
+  }
+
+  if (!direction) {
+    return <span className="inline-block">{char}</span>;
+  }
+
+  return (
+    <span
+      className={`shazax-title-letter shazax-title-letter-${direction}`}
+      style={{ '--letter-delay': `${delay}s` }}
+    >
+      <span className="shazax-title-letter-track">
+        <span>{char}</span>
+        <span>{char}</span>
+      </span>
+    </span>
+  );
+}
+
+function WaterCursorLayer() {
+  const layerRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    const canvas = canvasRef.current;
+    if (!layer || !canvas) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) return undefined;
+
+    const trail = [];
+    let dpr = 1;
+    let frameId = 0;
+    let previousFrameAt = performance.now();
+    let lastMoveAt = 0;
+    let lastPointer = null;
+
+    function resizeCanvas() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      canvas.width = Math.ceil(window.innerWidth * dpr);
+      canvas.height = Math.ceil(window.innerHeight * dpr);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function addTrailPoint(x, y, speed, now) {
+      trail.push({
+        x,
+        y,
+        age: 0,
+        life: 560 + Math.min(speed * 1.45, 260),
+        width: Math.max(7, Math.min(30, 10 + speed * 0.07)),
+        wobble: Math.random() * Math.PI * 2,
+      });
+
+      if (trail.length > 48) {
+        trail.splice(0, trail.length - 48);
+      }
+    }
+
+    function scheduleRender() {
+      if (!frameId) {
+        frameId = window.requestAnimationFrame(render);
+      }
+    }
+
+    function handlePointerMove(event) {
+      if (event.pointerType === 'touch') return;
+
+      const now = performance.now();
+      const nextPointer = { x: event.clientX, y: event.clientY, time: now };
+
+      if (lastPointer && now - lastPointer.time > 180) {
+        lastPointer = null;
+      }
+
+      if (!lastPointer) {
+        addTrailPoint(nextPointer.x, nextPointer.y, 0, now);
+        lastPointer = nextPointer;
+        lastMoveAt = now;
+        scheduleRender();
+        return;
+      }
+
+      const deltaX = nextPointer.x - lastPointer.x;
+      const deltaY = nextPointer.y - lastPointer.y;
+      const distance = Math.hypot(deltaX, deltaY);
+      if (distance < 2) return;
+
+      const elapsed = Math.max(16, now - lastPointer.time);
+      const speed = distance / elapsed * 16.67;
+      const steps = Math.max(1, Math.min(4, Math.ceil(distance / 24)));
+
+      for (let step = 1; step <= steps; step += 1) {
+        const progress = step / steps;
+        addTrailPoint(
+          lastPointer.x + deltaX * progress,
+          lastPointer.y + deltaY * progress,
+          speed,
+          now,
+        );
+      }
+
+      lastPointer = nextPointer;
+      lastMoveAt = now;
+      scheduleRender();
+    }
+
+    function drawStroke(points, {
+      color,
+      widthScale = 1,
+      alphaScale = 1,
+      blur = 0,
+      offset = 0,
+      wave = 0,
+      composite = 'source-over',
+    }) {
+      if (points.length < 2) return;
+
+      context.save();
+      context.globalCompositeOperation = composite;
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      if (blur) {
+        context.shadowBlur = blur;
+        context.shadowColor = color;
+      }
+
+      for (let index = 1; index < points.length; index += 1) {
+        const previous = points[index - 1];
+        const point = points[index];
+        const fade = Math.max(0, 1 - point.age / point.life);
+        if (fade <= 0.01) continue;
+
+        const angle = Math.atan2(point.y - previous.y, point.x - previous.x);
+        const normalX = Math.cos(angle + Math.PI / 2);
+        const normalY = Math.sin(angle + Math.PI / 2);
+        const shimmer = Math.sin(point.wobble + point.age * 0.028 + index * 0.62) * wave;
+        const lineWidth = Math.max(1, point.width * widthScale * fade);
+        const alpha = Math.min(1, Math.pow(fade, 1.45) * alphaScale);
+
+        context.globalAlpha = alpha;
+        context.strokeStyle = color;
+        context.lineWidth = lineWidth;
+        context.beginPath();
+        context.moveTo(previous.x + normalX * (offset + shimmer), previous.y + normalY * (offset + shimmer));
+        context.quadraticCurveTo(
+          previous.x * 0.45 + point.x * 0.55 + normalX * (offset - shimmer * 0.35),
+          previous.y * 0.45 + point.y * 0.55 + normalY * (offset - shimmer * 0.35),
+          point.x + normalX * (offset + shimmer),
+          point.y + normalY * (offset + shimmer),
+        );
+        context.stroke();
+      }
+
+      context.restore();
+    }
+
+    function render(now) {
+      frameId = 0;
+      const delta = Math.min(48, now - previousFrameAt);
+      previousFrameAt = now;
+      const idleFor = now - lastMoveAt;
+      const activeAmount = trail.length
+        ? Math.max(0, Math.min(1, 1 - Math.max(idleFor - 520, 0) / 900))
+        : 0;
+
+      layer.style.setProperty('--water-active', activeAmount.toFixed(3));
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let index = trail.length - 1; index >= 0; index -= 1) {
+        trail[index].age += delta;
+        if (trail[index].age >= trail[index].life) {
+          trail.splice(index, 1);
+        }
+      }
+
+      if (!trail.length) {
+        layer.style.setProperty('--water-active', '0');
+        return;
+      }
+
+      if (trail.length > 1) {
+        const visibleTrail = trail.slice(-42);
+        drawStroke(visibleTrail, {
+          color: 'rgba(71, 54, 142, 0.12)',
+          widthScale: 1.72,
+          alphaScale: 0.54,
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(217, 226, 255, 0.48)',
+          widthScale: 0.86,
+          alphaScale: 0.86,
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(93, 92, 255, 0.34)',
+          widthScale: 0.16,
+          alphaScale: 0.62,
+          offset: 7,
+          wave: 3.6,
+          composite: 'lighter',
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(255, 166, 94, 0.26)',
+          widthScale: 0.1,
+          alphaScale: 0.42,
+          offset: -8,
+          wave: 3.2,
+          composite: 'lighter',
+        });
+        drawStroke(visibleTrail, {
+          color: 'rgba(255, 255, 255, 0.88)',
+          widthScale: 0.055,
+          alphaScale: 0.58,
+          offset: -1.5,
+          wave: 2.6,
+          composite: 'lighter',
+        });
+      }
+
+      if (trail.length) {
+        scheduleRender();
+      }
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, []);
+
+  return (
+    <div ref={layerRef} className="shazax-water-trail-layer absolute inset-0">
+      <canvas ref={canvasRef} className="shazax-water-trail-canvas" aria-hidden="true" />
+    </div>
+  );
+}
+
+function PageMotifLayer() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[12] overflow-hidden" aria-hidden="true">
+      <div className="shazax-page-grid absolute inset-0" />
+      <WaterCursorLayer />
+      {pageMotifs.map((motif) => (
+        <MotifCross key={`${motif.left}-${motif.top}`} {...motif} />
+      ))}
+    </div>
+  );
+}
+
+function FinalCtaSection({ onOpenWaitlist }) {
+  const titleLines = [
+    'Ready to Upgrade',
+    'Your Brain?',
+  ];
+
+  return (
+    <section className="relative isolate min-h-[100svh] overflow-hidden bg-[#2430f5] px-4 py-14 text-white sm:px-8 sm:py-16">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#526ff5_0%,#3f48e3_48%,#2430f5_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:96px_96px] opacity-25" />
+
+      <div className="relative z-20 mx-auto flex min-h-[calc(100svh-7rem)] max-w-[92rem] flex-col items-center justify-center gap-10 text-center sm:gap-12 md:min-h-[calc(100vh-8rem)]">
+        <p className="text-xs font-medium uppercase tracking-[0.08em] text-white/86 sm:text-sm md:text-lg">
+          IS YOUR SUCCESS READY TO GO WILD ?
+        </p>
+        <h2
+          className="relative inline-block max-w-[min(100%,68rem)] font-heading text-[clamp(2.65rem,14vw,4.8rem)] font-black leading-[1.02] tracking-normal text-white sm:text-[clamp(3.6rem,8.4vw,7.4rem)]"
+          aria-label={titleLines.join(' ')}
+        >
+          {titleLines.map((line, index) => (
+            <motion.span
+              key={line}
+              initial={{ opacity: 0, y: 80, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.55 }}
+              transition={{ delay: index * 0.12, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+              className="block"
+              aria-hidden="true"
+            >
+              <span className="inline-block [text-shadow:0_22px_64px_rgba(18,0,82,0.24)]">
+                {line.split(' ').map((word, wordIndex, words) => {
+                  const charOffset = words.slice(0, wordIndex).join(' ').length + (wordIndex > 0 ? 1 : 0);
+
+                  return (
+                    <span key={`${line}-${word}-${wordIndex}`} className="inline-flex whitespace-nowrap">
+                      {Array.from(word).map((char, wordCharIndex) => {
+                        const charIndex = charOffset + wordCharIndex;
+                        const motionConfig = finalTitleMotion[line];
+                        const direction = motionConfig?.up.includes(charIndex)
+                          ? 'up'
+                          : motionConfig?.down.includes(charIndex)
+                            ? 'down'
+                            : null;
+
+                        return (
+                          <AnimatedTitleLetter
+                            key={`${line}-${char}-${charIndex}`}
+                            char={char}
+                            direction={direction}
+                            delay={2.05 + index * 0.35 + charIndex * 0.045}
+                          />
+                        );
+                      })}
+                      {wordIndex < words.length - 1 ? <span className="inline-block w-[0.28em]" aria-hidden="true" /> : null}
+                    </span>
+                  );
+                })}
+              </span>
+            </motion.span>
+          ))}
+        </h2>
+
+        <motion.button
+          onClick={onOpenWaitlist}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          data-testid="button-final-cta"
+          className="inline-flex w-[min(24rem,calc(100vw-2rem))] items-center justify-between gap-4 rounded-full bg-white px-6 py-4 text-xs font-black uppercase tracking-[0.04em] text-black shadow-[0_12px_34px_rgba(0,0,0,0.28),inset_0_0_16px_rgba(82,111,245,0.14)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:w-[min(26rem,calc(100vw-2rem))] sm:px-9 sm:py-5 sm:text-base"
+        >
+          <BrainCircuit size={23} strokeWidth={2.5} />
+          <span>Get Early Access Now</span>
+          <Zap size={23} strokeWidth={2.5} fill="currentColor" />
+        </motion.button>
+      </div>
+
+      {ctaTopMarks.map((mark, index) => (
+        <MotifCross
+          key={`${mark.left}-${mark.top}`}
+          left={mark.left}
+          top={mark.top}
+          size={mark.size}
+          color="rgba(255,255,255,0.88)"
+          x={mark.x}
+          y={mark.y}
+          delay={index * 0.18}
+        />
+      ))}
+
+    </section>
+  );
+}
+
+function FeedbackCounter() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.72 });
+  const [count, setCount] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!isInView) return undefined;
+
+    const controls = animate(0, 99, {
+      duration: 1.05,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (value) => setCount(Math.round(value)),
+    });
+
+    return () => controls.stop();
+  }, [isInView]);
+
+  return (
+    <div ref={ref} className="font-heading text-7xl font-black text-foreground md:text-8xl lg:text-9xl">
+      {String(count).padStart(2, '0')}%
+    </div>
+  );
+}
 
 
 function WaitlistModal({ isOpen, onClose }) {
@@ -94,12 +531,13 @@ function WaitlistModal({ isOpen, onClose }) {
                       We&apos;ll notify you when Shazaxx launches any{' '}
                       <span className="font-bold text-foreground">Update</span>
                     </p>
-                    <button
+                    <motion.button
                       onClick={handleClose}
+                      whileTap={{ scale: 0.97 }}
                       className="mt-8 w-full rounded-xl bg-primary py-3 text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       Got it!
-                    </button>
+                    </motion.button>
                   </motion.div>
                 ) : (
                   <motion.div key="form">
@@ -125,13 +563,14 @@ function WaitlistModal({ isOpen, onClose }) {
       placeholder="your@email.com"
       required
       data-testid="input-waitlist-email"
-      className="w-full rounded-xl border border-border bg-secondary/50 py-3.5 pl-10 pr-4 font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+      className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-10 pr-4 font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
     />
   </div>
 
-  <button
+  <motion.button
     type="submit"
     disabled={status === "loading"}
+    whileTap={{ scale: status === "loading" ? 1 : 0.96 }}
     data-testid="button-waitlist-submit"
     className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-base font-black text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95 disabled:scale-100 disabled:opacity-70"
   >
@@ -144,7 +583,7 @@ function WaitlistModal({ isOpen, onClose }) {
         Notify Me <ArrowRight size={18} />
       </>
     )}
-  </button>
+  </motion.button>
 
   {/* ✅ feedback utilisateur */}
   {status === "success" && (
@@ -219,7 +658,7 @@ function InteractiveDemo() {
   }
 
   return (
-    <section id="demo" className="relative overflow-hidden bg-secondary/50 px-4 py-24">
+    <section id="demo" className="relative overflow-hidden px-4 py-24" style={{ background: '#f0f1fa' }}>
       <div className="container mx-auto max-w-6xl">
         <div className="relative z-10 mb-16 text-center">
           <h2 className="mb-6 font-heading text-4xl font-black md:text-5xl">Learn by Doing</h2>
@@ -297,14 +736,15 @@ function InteractiveDemo() {
                   ) : null}
                 </AnimatePresence>
 
-                <button
+                <motion.button
                   onClick={launch}
                   disabled={animating}
+                  whileTap={{ scale: animating ? 1 : 0.97 }}
                   data-testid="button-launch-demo"
                   className="mt-4 w-full rounded-xl bg-foreground py-4 font-bold text-background shadow-lg transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {animating ? 'In flight...' : 'Launch Projectile'}
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -333,6 +773,325 @@ function InteractiveDemo() {
               </svg>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const focusFeatures = [
+  {
+    icon: Play,
+    title: 'Courses',
+    desc: 'Short visual lessons that turn dense concepts into clear study moves.',
+    backLabel: 'LEARN',
+    backText: 'From first idea to confident understanding.',
+    backItems: ['Visual courses', 'Fast explanations', 'Module roadmap'],
+  },
+  {
+    icon: BrainCircuit,
+    title: 'TD & Solutions',
+    desc: 'Step-by-step practice that shows the logic behind every exercise.',
+    backLabel: 'PRACTICE',
+    backText: 'Solve, compare, and understand the method.',
+    backItems: ['Guided TDs', 'Clear solutions', 'Reasoning steps'],
+  },
+  {
+    icon: Book,
+    title: 'Exams',
+    desc: 'Real challenges that help you test speed, accuracy, and mastery.',
+    backLabel: 'MASTER',
+    backText: 'Train with exam-style pressure and feedback.',
+    backItems: ['Exam problems', 'Timed practice', 'Instant feedback'],
+  },
+];
+
+const focusCurvePaths = [
+  {
+    from: 'M 126 330 C 330 330 470 330 654 330',
+    to: 'M 126 330 C 330 145 470 185 654 286',
+  },
+  {
+    from: 'M 374 110 C 610 110 840 110 1066 110',
+    to: 'M 374 110 C 620 250 842 250 1066 126',
+  },
+  {
+    from: 'M 760 386 C 965 386 1130 386 1318 386',
+    to: 'M 760 386 C 940 220 1116 218 1318 320',
+  },
+];
+
+function FocusSection() {
+  const sectionRef = useRef(null);
+  const titleRef = useRef(null);
+  const stageRef = useRef(null);
+  const cardRefs = useRef([]);
+  const innerRefs = useRef([]);
+  const iconRefs = useRef([]);
+  const curveRefs = useRef([]);
+
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      const cards = cardRefs.current.filter(Boolean);
+      const inners = innerRefs.current.filter(Boolean);
+      const curves = curveRefs.current.filter(Boolean);
+      curves.forEach((curve, index) => {
+        curve.setAttribute('d', focusCurvePaths[index].to);
+        const length = curve.getTotalLength();
+        gsap.set(curve, { autoAlpha: 0.36, strokeDasharray: length, strokeDashoffset: 0 });
+      });
+      gsap.set([titleRef.current, ...cards], { clearProps: 'all' });
+      gsap.set(inners, { rotateY: 180 });
+      return undefined;
+    }
+
+    const mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      const cards = cardRefs.current.filter(Boolean);
+      const inners = innerRefs.current.filter(Boolean);
+      const icons = iconRefs.current.filter(Boolean);
+      const curves = curveRefs.current.filter(Boolean);
+
+      curves.forEach((curve, index) => {
+        curve.setAttribute('d', focusCurvePaths[index].from);
+        const length = curve.getTotalLength();
+        gsap.set(curve, { autoAlpha: 0, strokeDasharray: length, strokeDashoffset: length });
+      });
+      gsap.set(titleRef.current, { autoAlpha: 0, y: 34 });
+      gsap.set(inners, { transformStyle: 'preserve-3d', transformOrigin: '50% 50%', rotateY: 0 });
+      gsap.set(cards, { transformOrigin: '50% 50%', transformStyle: 'preserve-3d' });
+
+      mm.add('(min-width: 1024px)', () => {
+        gsap.set(stageRef.current, { perspective: 1400 });
+        gsap.set(cards[0], { x: '124%', y: 18, z: 15, rotateX: 0, rotateY: -5, rotateZ: -11, scale: 0.98 });
+        gsap.set(cards[1], { x: 0, y: 0, z: 90, rotateX: 0, rotateY: 0, rotateZ: 1, scale: 1 });
+        gsap.set(cards[2], { x: '-124%', y: 14, z: 45, rotateX: 0, rotateY: 5, rotateZ: 10, scale: 0.98 });
+
+        gsap.to(inners, {
+          y: (index) => [-6, 4, -5][index],
+          duration: (index) => [2.8, 3.2, 2.95][index],
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          stagger: 0.12,
+        });
+
+        const tl = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: '+=2800',
+            scrub: 1.2,
+            pin: true,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        tl.addLabel('intro')
+          .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.42, ease: 'power3.out' }, 0)
+          .addLabel('shuffle', 0.28)
+          .to(cards[0], { x: '96%', y: 6, z: 55, rotateX: 0, rotateY: -8, rotateZ: -16, duration: 0.62, ease: 'power2.inOut' }, 'shuffle')
+          .to(cards[1], { x: 0, y: -8, z: 140, rotateX: 0, rotateY: 0, rotateZ: 1, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.04')
+          .to(cards[2], { x: '-96%', y: 8, z: 70, rotateX: 0, rotateY: 8, rotateZ: 15, duration: 0.62, ease: 'power2.inOut' }, 'shuffle+=0.08')
+          .to(curves[0], { attr: { d: focusCurvePaths[0].to }, strokeDashoffset: 0, autoAlpha: 0.44, duration: 0.72, ease: 'power2.inOut' }, 'shuffle+=0.06')
+          .to(icons, { scale: 1.1, rotateZ: 8, boxShadow: '0 0 0 10px rgba(255,255,255,0.08)', duration: 0.42, stagger: 0.06, ease: 'power2.out' }, 'shuffle+=0.08')
+          .addLabel('deal', 0.92)
+          .to(cards[0], { x: 0, y: 6, z: 85, rotateX: 0, rotateY: 0, rotateZ: -7, duration: 0.82, ease: 'power2.inOut' }, 'deal')
+          .to(cards[1], { x: 0, y: -16, z: 165, rotateX: 0, rotateY: 0, rotateZ: 0, duration: 0.82, ease: 'power2.inOut' }, 'deal+=0.06')
+          .to(cards[2], { x: 0, y: 6, z: 85, rotateX: 0, rotateY: 0, rotateZ: 7, duration: 0.82, ease: 'power2.inOut' }, 'deal+=0.12')
+          .to(curves[1], { attr: { d: focusCurvePaths[1].to }, strokeDashoffset: 0, autoAlpha: 0.38, duration: 0.78, ease: 'power2.inOut' }, 'deal+=0.02')
+          .addLabel('turn', 1.72)
+          .to(cards[0], { x: 0, y: 2, z: 105, rotateX: 0, rotateY: 0, rotateZ: -5, duration: 0.82, ease: 'power2.inOut' }, 'turn')
+          .to(cards[1], { x: 0, y: -18, z: 190, rotateX: 0, rotateY: 0, rotateZ: 0, duration: 0.82, ease: 'power2.inOut' }, 'turn+=0.1')
+          .to(cards[2], { x: 0, y: 2, z: 105, rotateX: 0, rotateY: 0, rotateZ: 5, duration: 0.82, ease: 'power2.inOut' }, 'turn+=0.2')
+          .to(curves[2], { attr: { d: focusCurvePaths[2].to }, strokeDashoffset: 0, autoAlpha: 0.34, duration: 0.78, ease: 'power2.inOut' }, 'turn+=0.1')
+          .addLabel('flip', 2.18)
+          .to(inners, { rotateY: 180, duration: 0.82, stagger: 0.08, ease: 'power2.inOut' }, 'flip')
+          .addLabel('frontFan', 2.86)
+          .to(cards[0], { x: 0, y: 4, z: 90, rotateX: 0, rotateY: 0, rotateZ: -6, scale: 1, duration: 0.86, ease: 'power2.inOut' }, 'frontFan')
+          .to(cards[1], { x: 0, y: -18, z: 185, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1.035, duration: 0.86, ease: 'power2.inOut' }, 'frontFan+=0.04')
+          .to(cards[2], { x: 0, y: 4, z: 90, rotateX: 0, rotateY: 0, rotateZ: 6, scale: 1, duration: 0.86, ease: 'power2.inOut' }, 'frontFan+=0.08')
+          .addLabel('settle', 3.72)
+          .to(cards[0], { x: 0, y: 2, z: 70, rotateX: 0, rotateY: 0, rotateZ: -4, scale: 1, duration: 0.78, ease: 'power2.inOut' }, 'settle')
+          .to(cards[1], { x: 0, y: -10, z: 155, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1.03, duration: 0.78, ease: 'power2.inOut' }, 'settle+=0.04')
+          .to(cards[2], { x: 0, y: 2, z: 70, rotateX: 0, rotateY: 0, rotateZ: 4, scale: 1, duration: 0.78, ease: 'power2.inOut' }, 'settle+=0.08')
+          .addLabel('exit', 4.72)
+          .to(curves, { autoAlpha: 0.18, duration: 0.5, stagger: 0.04, ease: 'power2.inOut' }, 'exit')
+          .to(cards, { y: (index) => [4, -8, 4][index], z: (index) => [55, 140, 55][index], scale: (index) => (index === 1 ? 1.02 : 0.99), duration: 0.58, stagger: 0.03, ease: 'power2.inOut' }, 'exit')
+          .to(icons, { scale: 1, rotateZ: 0, boxShadow: '0 0 0 0 rgba(255,255,255,0)', duration: 0.45, stagger: 0.04, ease: 'power2.inOut' }, 'exit+=0.05');
+      });
+
+      mm.add('(max-width: 1023px)', () => {
+        const cardTilts = [-3, 0, 3];
+        gsap.set(cards, { autoAlpha: 0, y: 46, rotateZ: (index) => cardTilts[index], scale: 0.96 });
+        gsap.set(inners, { rotateY: 0 });
+
+        gsap.to(inners, {
+          y: (index) => [-5, 3, -4][index],
+          duration: (index) => [2.8, 3.15, 2.95][index],
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          stagger: 0.12,
+        });
+
+        gsap.timeline({
+          defaults: { ease: 'power2.out' },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 78%',
+            end: 'top 38%',
+            scrub: 0.65,
+          },
+        })
+          .to(titleRef.current, { autoAlpha: 1, y: 0, duration: 0.35 }, 0)
+          .to(curves[0], { attr: { d: focusCurvePaths[0].to }, strokeDashoffset: 0, autoAlpha: 0.26, duration: 0.7 }, 0.08)
+          .to(curves[1], { attr: { d: focusCurvePaths[1].to }, strokeDashoffset: 0, autoAlpha: 0.22, duration: 0.7 }, 0.2)
+          .to(curves[2], { attr: { d: focusCurvePaths[2].to }, strokeDashoffset: 0, autoAlpha: 0.2, duration: 0.7 }, 0.32);
+
+        cards.forEach((card, index) => {
+          gsap.timeline({
+            defaults: { ease: 'power2.out' },
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 82%',
+              end: 'center 48%',
+              scrub: 0.72,
+            },
+          })
+            .to(card, { autoAlpha: 1, y: 0, rotateZ: cardTilts[index], scale: 1, duration: 0.42 }, 0)
+            .to(inners[index], { rotateY: 180, duration: 0.54, ease: 'power2.inOut' }, 0.36)
+            .to(card, { y: -8, rotateZ: cardTilts[index] * 0.72, scale: index === 1 ? 1.015 : 1, duration: 0.4 }, 0.72);
+        });
+      });
+    }, section);
+
+    return () => {
+      mm.revert();
+      ctx.revert();
+    };
+  }, []);
+
+  return (
+    <section
+      id="how-it-works"
+      ref={sectionRef}
+      className="relative z-10 overflow-hidden px-6 py-20 text-primary-foreground shadow-[0_-42px_90px_rgba(18,12,40,0.18)] lg:px-0 lg:py-0"
+      style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}
+    >
+      <svg
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 hidden h-[34rem] w-[min(94rem,120vw)] -translate-x-1/2 -translate-y-1/2 overflow-visible lg:block"
+        viewBox="0 0 1440 520"
+        fill="none"
+        aria-hidden="true"
+      >
+        {focusCurvePaths.map((curve, index) => (
+          <path
+            key={curve.to}
+            ref={(node) => {
+              curveRefs.current[index] = node;
+            }}
+            d={curve.from}
+            stroke="rgba(255,255,255,0.46)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col justify-center py-8 lg:py-10">
+        <div className="mx-auto mb-14 max-w-3xl text-center lg:mb-16">
+          <h2 ref={titleRef} className="font-heading text-4xl font-black tracking-tight text-white md:text-5xl xl:text-6xl">
+            Designed for Focus
+          </h2>
+        </div>
+
+        <div ref={stageRef} className="relative mx-auto grid w-full max-w-[57rem] gap-8 md:grid-cols-3 md:gap-7 lg:[perspective:1400px] lg:[transform-style:preserve-3d]">
+          {focusFeatures.map((feature, index) => (
+            <div
+              key={feature.title}
+              ref={(node) => {
+                cardRefs.current[index] = node;
+              }}
+              className="relative mx-auto aspect-[5/7.75] w-[min(78vw,14.5rem)] sm:w-[15.5rem] md:w-[14.35rem] lg:w-[15.65rem] lg:[transform-style:preserve-3d] lg:[will-change:transform] xl:w-[16.15rem]"
+            >
+              <div
+                ref={(node) => {
+                  innerRefs.current[index] = node;
+                }}
+                className="relative h-full rounded-[26px] lg:[transform-style:preserve-3d] lg:[will-change:transform]"
+              >
+                <div
+                  className="absolute inset-0 overflow-hidden rounded-[26px] border-[3px] border-white text-white shadow-[0_34px_80px_rgba(15,10,60,0.28)] [backface-visibility:hidden]"
+                  style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}
+                >
+                  <div className="absolute inset-3 rounded-[20px] border-2 border-white/95" />
+                  <div className="absolute inset-7 rounded-[15px] border border-white/62" />
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.18)_0_1px,transparent_1px_13px)] opacity-70" />
+                  <div className="absolute left-1/2 top-1/2 h-[54%] w-[54%] -translate-x-1/2 -translate-y-1/2 rotate-45 border-2 border-white/90" />
+                  <div className="absolute left-1/2 top-1/2 h-[35%] w-[35%] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/80" />
+                  <div className="absolute left-5 top-5 grid h-8 w-8 grid-cols-2 gap-1.5">
+                    {[...Array(4)].map((_, dot) => (
+                      <span key={dot} className="rounded-full bg-white/90" />
+                    ))}
+                  </div>
+                  <div className="absolute bottom-5 right-5 grid h-8 w-8 rotate-180 grid-cols-2 gap-1.5">
+                    {[...Array(4)].map((_, dot) => (
+                      <span key={dot} className="rounded-full bg-white/90" />
+                    ))}
+                  </div>
+                  <div
+                    ref={(node) => {
+                      iconRefs.current[index] = node;
+                    }}
+                    className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white text-white shadow-[0_0_0_8px_rgba(255,255,255,0.08)] lg:[will-change:transform]"
+                    style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}
+                  >
+                    <feature.icon size={42} strokeWidth={1.7} />
+                  </div>
+                </div>
+
+                <div
+                  className="absolute inset-0 flex flex-col rounded-[26px] border border-white/20 bg-white p-6 text-slate-950 shadow-[0_34px_90px_rgba(15,10,60,0.22)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-7 md:p-6 xl:p-7"
+                  style={{ background: 'linear-gradient(180deg, #f3f5ff 0%, #edf0ff 100%)' }}
+                >
+                  <div className="flex items-start justify-between gap-5">
+                    <div>
+                      <div className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-primary/70">{feature.backLabel}</div>
+                      <h3 className="mt-2 font-heading text-[1.42rem] font-black leading-none tracking-tight text-slate-950 lg:text-[1.56rem]">{feature.title}</h3>
+                    </div>
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_10px_26px_rgba(15,35,130,0.2)]" style={{ background: 'linear-gradient(180deg, #0d3eff 0%, #0a35d8 100%)' }}>
+                      <feature.icon size={22} strokeWidth={2.1} />
+                    </div>
+                  </div>
+
+                  <p className="mt-5 text-[0.78rem] font-semibold leading-[1.18rem] text-slate-700">{feature.desc}</p>
+                  <p className="mt-4 rounded-2xl bg-primary/[0.08] px-4 py-3 text-[0.74rem] font-bold leading-[1.14rem] text-primary">{feature.backText}</p>
+
+                  <div className="mt-auto grid gap-2 pt-5">
+                    {feature.backItems.map((item) => (
+                      <div key={item} className="border-b border-dotted border-primary/25 pb-1.5 text-[0.74rem] font-bold leading-4 text-slate-800 last:border-b-0">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  {feature.title === 'TD & Solutions' && (
+                    <div className="mt-4 text-center text-[0.58rem] font-black uppercase tracking-[0.2em] text-slate-400">
+                      Shazaxx learning card
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -369,13 +1128,41 @@ function TestimonialCard({ name, handle, quote, delay }) {
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll();
+  const { scrollY, scrollYProgress } = useScroll();
   const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+  const statsPinRef = useRef(null);
+
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    setHeaderScrolled(latest > 24);
+  });
+
+  useLayoutEffect(() => {
+    const stats = statsPinRef.current;
+    if (!stats) return undefined;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: stats,
+        start: 'center center',
+        end: '+=100%',
+        pin: true,
+        pinSpacing: false,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+      });
+    }, stats);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background selection:bg-primary selection:text-white">
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-background selection:bg-primary selection:text-white">
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-30">
@@ -415,46 +1202,63 @@ export default function HomePage() {
         <div className="absolute left-1/2 top-[20%] h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
         <div className="absolute bottom-[10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-accent/10 blur-[100px]" />
       </div>
+      <PageMotifLayer />
 
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 items-center justify-between px-6">
+      <motion.header
+        className={`fixed left-0 right-0 top-0 z-50 w-full transition-all duration-500 ${
+          headerScrolled ? 'px-3 py-3' : 'border-b border-border bg-background/80 backdrop-blur-xl'
+        }`}
+      >
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+          className={`container mx-auto flex items-center justify-between px-6 transition-all duration-500 ${
+            headerScrolled
+              ? 'h-16 max-w-6xl rounded-full border border-white/45 bg-white/58 shadow-[0_18px_55px_rgba(15,23,42,0.16)] ring-1 ring-slate-900/5 backdrop-blur-2xl'
+              : 'h-20'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Shazaxx Logo"
-              className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20"
-            />
+            <BrandLogo className="h-10 w-10" alt="Shazax" />
             <span className="font-heading text-2xl font-black tracking-tight">Shazaxx</span>
           </div>
           <nav className="hidden items-center gap-8 md:flex">
             <a
               href="#how-it-works"
-              className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-bold transition-colors hover:text-foreground ${
+                headerScrolled ? 'text-slate-700' : 'text-muted-foreground'
+              }`}
             >
               How it works
             </a>
             <a
               href="#demo"
-              className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-bold transition-colors hover:text-foreground ${
+                headerScrolled ? 'text-slate-700' : 'text-muted-foreground'
+              }`}
             >
               Play Demo
             </a>
             <a
               href="#reviews"
-              className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-bold transition-colors hover:text-foreground ${
+                headerScrolled ? 'text-slate-700' : 'text-muted-foreground'
+              }`}
             >
               Reviews
             </a>
           </nav>
-          <button
+          <motion.button
             onClick={() => navigate('/auth')}
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.96 }}
             data-testid="button-nav-login"
-            className="rounded-full bg-secondary px-6 py-2.5 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/80"
+            className="rounded-full bg-[#2a2a2a] px-6 py-2.5 text-sm font-black text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all hover:bg-[#1f1f1f]"
           >
             Log In
-          </button>
-        </div>
-      </header>
+          </motion.button>
+        </motion.div>
+      </motion.header>
 
       <main className="relative z-10">
         <section className="px-6 pb-20 pt-24 md:pb-32 md:pt-36">
@@ -471,114 +1275,91 @@ export default function HomePage() {
                   <span>The new way to learn STEM</span>
                 </div>
                 <h1 className="font-heading text-6xl font-black leading-[1.05] tracking-tight md:text-7xl lg:text-8xl">
-                  Stop Reading.
-                  <br />
-                  <span className="text-primary">Start Doing.</span>
+                  <span className="block">Stop Reading.</span>
+                  <span className="block text-primary">Start Doing.</span>
                 </h1>
                 <p className="max-w-lg text-xl font-medium leading-relaxed text-muted-foreground">
-                  Bridge the gap between lectures and exams. Master FST with organized TD, solutions, and interactive tools for total success.
+                  Bridge the gap between lectures and exams. Master universities with organized TD, solutions, and interactive tools for total success.
                 </p>
                 <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-                      <button
-  onClick={() => window.location.href = '/auth'}
-  data-testid="button-hero-cta"
-  className="flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-black text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
->
-  Start Learning <ArrowRight size={20} />
-</button>
-                  <button
+                  <motion.button
+                    onClick={() => window.location.href = '/auth'}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    data-testid="button-hero-cta"
+                    className="flex items-center justify-center gap-2 rounded-full bg-[#0c2ddb] px-8 py-4 text-lg font-black text-white shadow-[0_12px_28px_rgba(12,45,219,0.22)] transition-all hover:scale-105 hover:bg-[#0b27c5] active:scale-95"
+                  >
+                    Start Learning <ArrowRight size={20} />
+                  </motion.button>
+                  <motion.button
                     onClick={() => setWaitlistOpen(true)}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     data-testid="button-hero-secondary"
-                    className="rounded-full border border-border bg-secondary px-8 py-4 text-lg font-bold text-secondary-foreground transition-all hover:bg-secondary/80"
+                    className="rounded-full border border-primary/20 bg-primary/85 px-8 py-4 text-lg font-bold text-white shadow-[0_12px_28px_rgba(13,62,255,0.18)] transition-all hover:bg-primary/95"
                   >
                     Join Waitlist
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ duration: 0.8, type: 'spring' }}
+                initial={{ opacity: 0, rotate: 1, scale: 0.94 }}
+                animate={{ opacity: 1, rotate: 2.5, scale: 1, y: [0, -14, 0] }}
+                transition={{
+                  opacity: { duration: 0.65 },
+                  scale: { duration: 0.75, type: 'spring' },
+                  rotate: { duration: 0.75, type: 'spring' },
+                  y: { duration: 6.5, ease: 'easeInOut', repeat: Infinity },
+                }}
                 className="relative"
               >
-                <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-tr from-primary/30 to-accent/30 blur-3xl" />
-                <div className="relative mx-auto max-w-md rotate-3 transform overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-card p-6 shadow-2xl transition-transform duration-500 hover:rotate-0">
-                  <div className="mb-6 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-xl font-black text-primary">
-                        ∫
-                      </div>
-                      <div>
-                        <div className="text-sm font-black">Calculus 101</div>
-                        <div className="text-xs font-medium text-muted-foreground">Derivatives</div>
-                      </div>
-                    </div>
-                    <div className="rounded-full bg-accent px-3 py-1.5 text-xs font-black text-accent-foreground">
-                      Level 4
-                    </div>
-                  </div>
-
-                  <div className="relative flex aspect-[4/5] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border bg-secondary p-6">
-                    <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-background/90 px-3 py-1 text-xs font-bold shadow-sm backdrop-blur">
-                      <TrendingUp size={14} className="text-primary" /> 12k
-                    </div>
-                    <h3 className="mb-6 text-center font-heading text-3xl font-black">
-                      Find the slope of
-                      <br />y = x² at x = 2
-                    </h3>
-                    <div className="relative mb-10 h-32 w-full">
-                      <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible">
-                        <path
-                          d="M10,90 L90,90 M10,10 L10,90"
-                          stroke="hsl(var(--muted-foreground))"
-                          strokeWidth="2"
-                          fill="none"
-                          opacity="0.3"
-                        />
-                        <path
-                          d="M10,90 Q50,90 90,10"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth="4"
-                          fill="none"
-                          strokeLinecap="round"
-                        />
-                        <circle cx="65" cy="40" r="5" fill="hsl(var(--accent))" />
-                        <path
-                          d="M45,70 L85,10"
-                          stroke="hsl(var(--accent))"
-                          strokeWidth="2"
-                          strokeDasharray="4 4"
-                          fill="none"
-                        />
-                      </svg>
-                    </div>
-                    <div className="w-full space-y-3">
-                      <button className="w-full rounded-xl border-2 border-border bg-background py-3.5 font-black transition-colors hover:border-primary">
-                        A) 2
-                      </button>
-                      <button className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary py-3.5 font-black text-primary-foreground shadow-lg">
-                        B) 4 <CheckCircle2 size={20} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <svg
+                  viewBox="0 0 120 120"
+                  className="relative mx-auto aspect-square w-[min(82vw,29rem)] overflow-visible drop-shadow-[0_28px_42px_rgba(82,28,160,0.24)]"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M16,104 H108 M16,104 V12"
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth="2.25"
+                    fill="none"
+                    opacity="0.62"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M16,104 C42,104 66,84 78,58 C88,36 96,20 108,16"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M61,79 L98,22"
+                    stroke="hsl(var(--accent))"
+                    strokeWidth="2.5"
+                    strokeDasharray="5 6"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="76" cy="62" r="5.5" fill="hsl(var(--accent))" />
+                </svg>
               </motion.div>
             </div>
           </div>
         </section>
 
-        <section className="border-y border-border bg-secondary/30 py-12">
-          <div className="container mx-auto px-6">
+        <section ref={statsPinRef} className="relative z-0 flex min-h-screen items-center overflow-hidden border-y border-border bg-background px-6 py-16">
+          <div className="container mx-auto px-0">
             <div className="flex justify-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="flex flex-col items-center gap-2 text-center"
+                className="flex flex-col items-center gap-4 text-center"
               >
-                <div className="font-heading text-5xl font-black text-foreground md:text-6xl">99%</div>
-                <div className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+                <FeedbackCounter />
+                <div className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest text-primary md:text-base">
                   <Heart size={18} fill="currentColor" /> Positive Feedback from Students
                 </div>
               </motion.div>
@@ -586,56 +1367,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="how-it-works" className="px-6 py-24">
-          <div className="container mx-auto max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mb-20 text-center"
-            >
-              <h2 className="mb-6 font-heading text-4xl font-black md:text-6xl">Designed for Focus</h2>
-              <p className="mx-auto max-w-2xl text-xl font-medium text-muted-foreground">
-                We engineered the ultimate learning loop. Visual, fast, and intensely interactive.
-              </p>
-            </motion.div>
-
-            <div className="grid gap-8 md:grid-cols-3">
-              {[
-                {
-                  icon: Play,
-                  title: 'Courses',
-                  desc: 'Concept breakdowns immediately . Complex science simplified into quick, high-impact study sessions.',
-                },
-                {
-                  icon: BrainCircuit,
-                  title: 'TD & Solutions',
-                  desc: 'See the physics and math come alive. Master exercises through step-by-step logic and clear, fluid animations.',
-                },
-                {
-                  icon: Book,
-                  title: 'Exams',
-                  desc: 'Challenges for total mastery. Apply your knowledge immediately with real exam problems and instant feedback.',
-                },
-              ].map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="rounded-3xl border border-border bg-card p-8"
-                >
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                    <feature.icon size={28} />
-                  </div>
-                  <h3 className="mb-3 font-heading text-2xl font-bold">{feature.title}</h3>
-                  <p className="font-medium text-muted-foreground">{feature.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <FocusSection />
 
         <InteractiveDemo />
 
@@ -675,55 +1407,76 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden px-6 py-24">
-          <div className="absolute inset-0 bg-primary" />
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-          <div className="relative z-10 container mx-auto max-w-4xl text-center">
-            <h2 className="mb-8 font-heading text-5xl font-black text-primary-foreground md:text-7xl">
-              Ready to Upgrade
-              <br />
-              Your Brain?
-            </h2>
-            <button
-              onClick={() => setWaitlistOpen(true)}
-              data-testid="button-final-cta"
-              className="inline-flex items-center gap-3 rounded-full bg-accent px-10 py-5 text-xl font-black text-accent-foreground shadow-2xl transition-all hover:scale-105 hover:bg-white hover:text-foreground active:scale-95"
-            >
-              Get Early Access <Zap size={24} fill="currentColor" />
-            </button>
-          </div>
-        </section>
+        <FinalCtaSection onOpenWaitlist={() => setWaitlistOpen(true)} />
       </main>
 
-      <footer className="bg-foreground px-6 py-12 text-background">
-        <div className="container mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex items-center gap-2">
-            <img
-              src={logo}
-              alt="Shazaxx Logo"
-              className="h-8 w-8 rounded-lg"
-            />
-            <span className="font-heading text-xl font-bold tracking-tight">Shazaxx</span>
+      <footer className="relative overflow-hidden bg-black px-6 py-16 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(82,111,245,0.24),transparent_38%,rgba(85,212,220,0.18))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:54px_54px] opacity-25" />
+
+        <div className="container relative mx-auto max-w-6xl">
+          <div className="grid gap-10 rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl md:grid-cols-[1.25fr_0.75fr_0.75fr] md:p-8">
+            <div>
+              <div className="flex items-center gap-3">
+                <BrandLogo className="h-11 w-11" alt="Shazax" />
+                <span className="font-heading text-2xl font-black tracking-tight">Shazaxx</span>
+              </div>
+              <p className="mt-5 max-w-md text-sm font-medium leading-6 text-white/55">
+                Organized courses, TDs, exams, and academic resources built for Moroccan students who want to move faster.
+              </p>
+              <button
+                type="button"
+                onClick={() => setWaitlistOpen(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-black shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:bg-primary hover:text-white"
+              >
+                Get early access
+                <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div>
+              <h3 className="font-heading text-sm font-black uppercase tracking-[0.22em] text-white/35">Explore</h3>
+              <div className="mt-5 grid gap-3 text-sm font-bold text-white/62">
+                <a href="#how-it-works" className="transition hover:text-white">How it works</a>
+                <a href="#demo" className="transition hover:text-white">Play Demo</a>
+                <a href="#reviews" className="transition hover:text-white">Reviews</a>
+                <button
+                  type="button"
+                  onClick={() => navigate('/auth')}
+                  className="w-fit text-left transition hover:text-white"
+                >
+                  Log In
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-heading text-sm font-black uppercase tracking-[0.22em] text-white/35">Legal</h3>
+              <div className="mt-5 grid gap-3 text-sm font-bold text-white/62">
+                <Link to="/privacy" className="transition hover:text-white">Privacy</Link>
+                <Link to="/terms" className="transition hover:text-white">Terms</Link>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-6 text-sm font-medium opacity-70">
-            <span>© 2025 Shazaxx Inc.</span>
-            <a href="#" className="transition-opacity hover:opacity-100">
-              Privacy
-            </a>
-            <a href="#" className="transition-opacity hover:opacity-100">
-              Terms
-            </a>
-            <span className="text-white">
-              made by{' '}
-              <a
+
+          <div className="mt-8 grid items-center gap-3 border-t border-white/10 pt-6 text-center text-xs font-semibold text-white/38 md:grid-cols-3">
+            <span className="md:justify-self-start">&copy; 2025 Shazaxx Inc. All rights reserved.</span>
+            <span className="md:justify-self-center">
+              Made with <span className="text-white/70">{'\u2764\uFE0F'}</span> by{' '}
+              <motion.a
                 href="https://www.instagram.com/med_shazaxx/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 transition-colors"
+                whileHover={{ y: -2, scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="group relative ml-1 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 font-black text-white shadow-[0_10px_28px_rgba(0,0,0,0.22)] transition hover:border-accent/70 hover:bg-accent hover:text-black"
               >
-                med_shazaxx
-              </a>
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_18px_rgba(85,212,220,0.85)] motion-safe:animate-ping" />
+                <Star size={12} fill="currentColor" className="text-accent transition group-hover:text-black" />
+                @med_shazaxx
+              </motion.a>
             </span>
+            <span className="md:justify-self-end">Made for focused students, one module at a time.</span>
           </div>
         </div>
       </footer>

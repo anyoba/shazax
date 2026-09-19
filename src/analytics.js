@@ -1,8 +1,10 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { getFirestoreErrorMessage } from './utils/firebaseErrors';
 
 const SESSION_KEY = 'analytics_session_id';
 const LAST_TRACK_KEY = 'analytics_last_track';
+const customAnalyticsEnabled = import.meta.env.VITE_ENABLE_CUSTOM_ANALYTICS !== 'false';
 
 function getSessionId() {
   const existing = window.sessionStorage.getItem(SESSION_KEY);
@@ -14,6 +16,8 @@ function getSessionId() {
 }
 
 export async function trackPageVisit(pathname) {
+  if (!customAnalyticsEnabled) return false;
+
   const now = Date.now();
   const lastTrack = window.sessionStorage.getItem(LAST_TRACK_KEY);
 
@@ -21,7 +25,7 @@ export async function trackPageVisit(pathname) {
     try {
       const parsed = JSON.parse(lastTrack);
       if (parsed.pathname === pathname && now - parsed.ts < 1500) {
-        return;
+        return false;
       }
     } catch {
       // Ignore invalid cached analytics state.
@@ -36,14 +40,21 @@ export async function trackPageVisit(pathname) {
     }),
   );
 
-  await addDoc(collection(db, 'analytics_visits'), {
-    pathname,
-    sessionId: getSessionId(),
-    referrer: document.referrer || 'direct',
-    userAgent: navigator.userAgent,
-    language: navigator.language || 'unknown',
-    screenWidth: window.innerWidth,
-    screenHeight: window.innerHeight,
-    createdAt: serverTimestamp(),
-  });
+  try {
+    await addDoc(collection(db, 'analytics_visits'), {
+      pathname,
+      sessionId: getSessionId(),
+      referrer: document.referrer || 'direct',
+      userAgent: navigator.userAgent,
+      language: navigator.language || 'unknown',
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Unable to track analytics visit', getFirestoreErrorMessage(error));
+    return false;
+  }
+
+  return true;
 }

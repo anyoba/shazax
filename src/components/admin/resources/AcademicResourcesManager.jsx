@@ -1,0 +1,1001 @@
+import { useAuth } from '@clerk/clerk-react';
+import { BookOpen, ChevronDown, MapPin, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RESOURCE_CATEGORIES } from '../../../constants/academic.js';
+import { USER_ROLES } from '../../../constants/roles.js';
+import { useUserRole } from '../../../hooks/useUserRole.js';
+import { listAcademicItems } from '../../../services/academicAdminApi.js';
+import { listInstitutions } from '../../../services/institutionsApi.js';
+
+const RESOURCE_CATEGORY_OPTIONS = RESOURCE_CATEGORIES.filter((category) => !category.disabled);
+
+const initialForm = {
+  institutionId: '',
+  programId: '',
+  programYearId: '',
+  semesterId: '',
+  moduleId: '',
+  category: 'course',
+  title: '',
+  fileName: '',
+  fileUrl: '',
+  correctionTitle: '',
+  correctionUrl: '',
+};
+
+const initialTargetForm = {
+  institutionId: '',
+  programId: '',
+  programYearId: '',
+  semesterId: '',
+  moduleId: '',
+};
+
+function SelectField({ label, value, options, placeholder, disabled, onChange }) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm text-white/60">{label}</span>
+      <div className="relative">
+        <select
+          value={value}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-primary/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="" className="bg-gray-900">
+            {placeholder}
+          </option>
+          {options.map((option) => (
+            <option key={option.id} value={option.id} className="bg-gray-900">
+              {option.label || option.name}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={14} className="pointer-events-none absolute right-3 top-4 text-white/30" />
+      </div>
+    </label>
+  );
+}
+
+function TextInput({ label, value, placeholder, required, onChange }) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm text-white/60">{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        required={required}
+        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/20 focus:border-primary/50 focus:outline-none"
+      />
+    </label>
+  );
+}
+
+function getApiErrorMessage(error, fallback) {
+  const details = [];
+  if (error?.status) details.push(`HTTP ${error.status}`);
+  if (error?.code) details.push(`code: ${error.code}`);
+  if (error?.stage) details.push(`stage: ${error.stage}`);
+  if (error?.requestId) details.push(`requestId: ${error.requestId}`);
+
+  const message = error?.message || fallback;
+  return details.length > 0 ? `${message} (${details.join(' | ')})` : message;
+}
+
+export default function AcademicResourcesManager({
+  resources,
+  onAddResource,
+  onDeleteResource,
+  onRestoreResource,
+  onUpdateResource,
+}) {
+  const { getToken } = useAuth();
+  const { role } = useUserRole();
+  const canManageResourceStatus = [
+    USER_ROLES.EDITOR,
+    USER_ROLES.ADMIN,
+    USER_ROLES.OWNER,
+  ].includes(role);
+  const [form, setForm] = useState(initialForm);
+  const [resourceView, setResourceView] = useState('active');
+  const [statusOverrides, setStatusOverrides] = useState({});
+  const [localResources, setLocalResources] = useState([]);
+  const [editingResourceId, setEditingResourceId] = useState('');
+  const [editForm, setEditForm] = useState({ title: '', fileName: '', fileUrl: '' });
+  const [savingEditId, setSavingEditId] = useState('');
+  const [targetingResourceId, setTargetingResourceId] = useState('');
+  const [targetForm, setTargetForm] = useState(initialTargetForm);
+  const [targetOptions, setTargetOptions] = useState({
+    programs: [],
+    programYears: [],
+    semesters: [],
+    modules: [],
+  });
+  const [targetLoading, setTargetLoading] = useState({
+    programs: false,
+    programYears: false,
+    semesters: false,
+    modules: false,
+  });
+  const [savingTargetId, setSavingTargetId] = useState('');
+  const [institutions, setInstitutions] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [programYears, setProgramYears] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState({
+    institutions: false,
+    programs: false,
+    programYears: false,
+    semesters: false,
+    modules: false,
+    submit: false,
+  });
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const selectedInstitution = institutions.find((item) => item.id === form.institutionId);
+  const selectedProgram = programs.find((item) => item.id === form.programId);
+  const selectedProgramYear = programYears.find((item) => item.id === form.programYearId);
+  const selectedSemester = semesters.find((item) => item.id === form.semesterId);
+  const selectedModule = modules.find((item) => item.id === form.moduleId);
+  const selectedTargetModule = targetOptions.modules.find((item) => item.id === targetForm.moduleId);
+
+  const mergedResources = useMemo(() => {
+    const byId = new Map();
+    resources.forEach((resource) => {
+      byId.set(resource.id, resource);
+    });
+    localResources.forEach((resource) => {
+      byId.set(resource.id, {
+        ...(byId.get(resource.id) || {}),
+        ...resource,
+      });
+    });
+    return [...byId.values()];
+  }, [localResources, resources]);
+
+  const resourcesWithStatus = useMemo(
+    () =>
+      mergedResources.map((resource) => ({
+        ...resource,
+        status: statusOverrides[resource.id] || resource.status || 'published',
+      })),
+    [mergedResources, statusOverrides],
+  );
+
+  const filteredResources = useMemo(() => {
+    if (!form.moduleId) return resourcesWithStatus;
+    return resourcesWithStatus.filter((resource) => Array.isArray(resource.moduleIds) && resource.moduleIds.includes(form.moduleId));
+  }, [form.moduleId, resourcesWithStatus]);
+
+  const activeResources = useMemo(
+    () => filteredResources.filter((resource) => resource.status !== 'archived' && resource.isDeleted !== true),
+    [filteredResources],
+  );
+
+  const trashedResources = useMemo(
+    () => filteredResources.filter((resource) => resource.status === 'archived' || resource.isDeleted === true),
+    [filteredResources],
+  );
+
+  const visibleResources = resourceView === 'trash' ? trashedResources : activeResources;
+
+  function updateForm(updates) {
+    setForm((current) => ({ ...current, ...updates }));
+    setMessage('');
+    setError('');
+  }
+
+  function updateTargetForm(updates) {
+    setTargetForm((current) => ({ ...current, ...updates }));
+    setMessage('');
+    setError('');
+  }
+
+  function updateLocalResource(resourceId, updates) {
+    setLocalResources((current) => {
+      const nextResource = {
+        ...(current.find((resource) => resource.id === resourceId) || {}),
+        id: resourceId,
+        ...updates,
+      };
+      const remainingResources = current.filter((resource) => resource.id !== resourceId);
+      return [nextResource, ...remainingResources];
+    });
+  }
+
+  const loadInstitutions = useCallback(async () => {
+    setLoading((current) => ({ ...current, institutions: true }));
+    setError('');
+
+    try {
+      const items = await listInstitutions({ admin: true, status: 'all', getToken });
+      setInstitutions(items);
+      if (items[0]?.id) {
+        setForm((current) => (current.institutionId ? current : { ...current, institutionId: items[0].id }));
+      }
+    } catch (loadError) {
+      setError(getApiErrorMessage(loadError, 'Impossible de charger les etablissements.'));
+    } finally {
+      setLoading((current) => ({ ...current, institutions: false }));
+    }
+  }, [getToken]);
+
+  const loadAcademicItems = useCallback(
+    async (entityType, filters, loadingKey, setter) => {
+      setLoading((current) => ({ ...current, [loadingKey]: true }));
+      setError('');
+
+      try {
+        const items = await listAcademicItems(entityType, {
+          getToken,
+          status: 'all',
+          filters,
+        });
+        setter(items);
+      } catch (loadError) {
+        setError(getApiErrorMessage(loadError, `Impossible de charger ${entityType}.`));
+        setter([]);
+      } finally {
+        setLoading((current) => ({ ...current, [loadingKey]: false }));
+      }
+    },
+    [getToken],
+  );
+
+  const loadTargetAcademicItems = useCallback(
+    async (entityType, filters, loadingKey, optionKey) => {
+      setTargetLoading((current) => ({ ...current, [loadingKey]: true }));
+      setError('');
+
+      try {
+        const items = await listAcademicItems(entityType, {
+          getToken,
+          status: 'all',
+          filters,
+        });
+        setTargetOptions((current) => ({ ...current, [optionKey]: items }));
+      } catch (loadError) {
+        setError(getApiErrorMessage(loadError, `Impossible de charger ${entityType}.`));
+        setTargetOptions((current) => ({ ...current, [optionKey]: [] }));
+      } finally {
+        setTargetLoading((current) => ({ ...current, [loadingKey]: false }));
+      }
+    },
+    [getToken],
+  );
+
+  useEffect(() => {
+    loadInstitutions();
+  }, [loadInstitutions]);
+
+  useEffect(() => {
+    setPrograms([]);
+    setProgramYears([]);
+    setSemesters([]);
+    setModules([]);
+    setForm((current) => ({
+      ...current,
+      programId: '',
+      programYearId: '',
+      semesterId: '',
+      moduleId: '',
+    }));
+
+    if (form.institutionId) {
+      loadAcademicItems('programs', { institutionId: form.institutionId }, 'programs', setPrograms);
+    }
+  }, [form.institutionId, loadAcademicItems]);
+
+  useEffect(() => {
+    setProgramYears([]);
+    setSemesters([]);
+    setModules([]);
+    setForm((current) => ({
+      ...current,
+      programYearId: '',
+      semesterId: '',
+      moduleId: '',
+    }));
+
+    if (form.programId) {
+      loadAcademicItems(
+        'program_years',
+        { institutionId: form.institutionId, programId: form.programId },
+        'programYears',
+        setProgramYears,
+      );
+    }
+  }, [form.institutionId, form.programId, loadAcademicItems]);
+
+  useEffect(() => {
+    setSemesters([]);
+    setModules([]);
+    setForm((current) => ({
+      ...current,
+      semesterId: '',
+      moduleId: '',
+    }));
+
+    if (form.programYearId) {
+      loadAcademicItems(
+        'semesters',
+        {
+          institutionId: form.institutionId,
+          programId: form.programId,
+          programYearId: form.programYearId,
+        },
+        'semesters',
+        setSemesters,
+      );
+    }
+  }, [form.institutionId, form.programId, form.programYearId, loadAcademicItems]);
+
+  useEffect(() => {
+    setModules([]);
+    setForm((current) => ({ ...current, moduleId: '' }));
+
+    if (form.semesterId) {
+      loadAcademicItems(
+        'modules',
+        {
+          institutionId: form.institutionId,
+          programId: form.programId,
+          programYearId: form.programYearId,
+          semesterId: form.semesterId,
+        },
+        'modules',
+        setModules,
+      );
+    }
+  }, [form.institutionId, form.programId, form.programYearId, form.semesterId, loadAcademicItems]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.institutionId) {
+      setTargetOptions((current) => ({ ...current, programs: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'programs',
+      { institutionId: targetForm.institutionId },
+      'programs',
+      'programs',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetingResourceId]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.programId) {
+      setTargetOptions((current) => ({ ...current, programYears: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'program_years',
+      { institutionId: targetForm.institutionId, programId: targetForm.programId },
+      'programYears',
+      'programYears',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetForm.programId, targetingResourceId]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.programYearId) {
+      setTargetOptions((current) => ({ ...current, semesters: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'semesters',
+      {
+        institutionId: targetForm.institutionId,
+        programId: targetForm.programId,
+        programYearId: targetForm.programYearId,
+      },
+      'semesters',
+      'semesters',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetForm.programId, targetForm.programYearId, targetingResourceId]);
+
+  useEffect(() => {
+    if (!targetingResourceId || !targetForm.semesterId) {
+      setTargetOptions((current) => ({ ...current, modules: [] }));
+      return;
+    }
+
+    loadTargetAcademicItems(
+      'modules',
+      {
+        institutionId: targetForm.institutionId,
+        programId: targetForm.programId,
+        programYearId: targetForm.programYearId,
+        semesterId: targetForm.semesterId,
+      },
+      'modules',
+      'modules',
+    );
+  }, [loadTargetAcademicItems, targetForm.institutionId, targetForm.programId, targetForm.programYearId, targetForm.semesterId, targetingResourceId]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (loading.submit) return;
+
+    if (!selectedModule) {
+      setError('Choisis un module avant d ajouter la ressource.');
+      return;
+    }
+
+    setLoading((current) => ({ ...current, submit: true }));
+    setError('');
+    setMessage('');
+
+    try {
+      const createdResource = await onAddResource({
+        module: selectedModule.name,
+        moduleIds: [selectedModule.id],
+        institutionId: form.institutionId,
+        programId: form.programId,
+        programYearId: form.programYearId,
+        semesterId: form.semesterId,
+        category: form.category,
+        title: form.title,
+        fileName: form.fileName,
+        fileUrl: form.fileUrl,
+        correctionTitle: form.correctionTitle,
+        correctionUrl: form.correctionUrl,
+        status: 'published',
+      });
+
+      if (createdResource?.id) {
+        updateLocalResource(createdResource.id, createdResource);
+      }
+
+      setForm((current) => ({
+        ...current,
+        category: 'course',
+        title: '',
+        fileName: '',
+        fileUrl: '',
+        correctionTitle: '',
+        correctionUrl: '',
+      }));
+      setMessage(`Ressource ajoutee dans ${selectedModule.name}.`);
+    } catch (submitError) {
+      setError(getApiErrorMessage(submitError, 'Impossible d ajouter la ressource.'));
+    } finally {
+      setLoading((current) => ({ ...current, submit: false }));
+    }
+  }
+
+  async function handleDelete(resourceId) {
+    if (!window.confirm('Supprimer cette ressource ? Elle sera envoyee dans la corbeille.')) return;
+
+    try {
+      await onDeleteResource(resourceId);
+      setStatusOverrides((current) => ({ ...current, [resourceId]: 'archived' }));
+      updateLocalResource(resourceId, { status: 'archived' });
+      setResourceView('trash');
+      setMessage('Ressource envoyee dans la corbeille.');
+    } catch (deleteError) {
+      setError(getApiErrorMessage(deleteError, 'Impossible de supprimer la ressource.'));
+    }
+  }
+
+  function startEdit(resource) {
+    setEditingResourceId(resource.id);
+    setEditForm({
+      title: resource.title || '',
+      fileName: resource.fileName || '',
+      fileUrl: resource.fileUrl || '',
+    });
+    setMessage('');
+    setError('');
+  }
+
+  function cancelEdit() {
+    setEditingResourceId('');
+    setEditForm({ title: '', fileName: '', fileUrl: '' });
+    setSavingEditId('');
+  }
+
+  function getResourceModuleId(resource) {
+    if (Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0) {
+      return resource.moduleIds[0];
+    }
+
+    return resource.moduleId || '';
+  }
+
+  function startTarget(resource) {
+    cancelEdit();
+    setTargetingResourceId(resource.id);
+    setTargetForm({
+      institutionId: resource.institutionId || '',
+      programId: resource.programId || '',
+      programYearId: resource.programYearId || '',
+      semesterId: resource.semesterId || '',
+      moduleId: getResourceModuleId(resource),
+    });
+    setTargetOptions({
+      programs: [],
+      programYears: [],
+      semesters: [],
+      modules: [],
+    });
+    setMessage('');
+    setError('');
+  }
+
+  function cancelTarget() {
+    setTargetingResourceId('');
+    setTargetForm(initialTargetForm);
+    setTargetOptions({
+      programs: [],
+      programYears: [],
+      semesters: [],
+      modules: [],
+    });
+    setSavingTargetId('');
+  }
+
+  async function handleUpdateResource(event) {
+    event.preventDefault();
+
+    if (!editingResourceId || savingEditId) return;
+    if (!onUpdateResource) {
+      setError('La modification de ressource n est pas disponible.');
+      return;
+    }
+
+    setSavingEditId(editingResourceId);
+    setError('');
+    setMessage('');
+
+    try {
+      const updatedResource = await onUpdateResource(editingResourceId, {
+        title: editForm.title,
+        fileName: editForm.fileName,
+        fileUrl: editForm.fileUrl,
+      });
+      updateLocalResource(editingResourceId, updatedResource || editForm);
+      cancelEdit();
+      setMessage('Ressource modifiee.');
+    } catch (updateError) {
+      setError(getApiErrorMessage(updateError, 'Impossible de modifier la ressource.'));
+    } finally {
+      setSavingEditId('');
+    }
+  }
+
+  async function handleUpdateTarget(event) {
+    event.preventDefault();
+
+    if (!targetingResourceId || savingTargetId) return;
+    if (!onUpdateResource) {
+      setError('La modification de destination n est pas disponible.');
+      return;
+    }
+
+    if (!selectedTargetModule) {
+      setError('Choisis un module pour definir qui voit cette ressource.');
+      return;
+    }
+
+    const updates = {
+      module: selectedTargetModule.name,
+      moduleIds: [selectedTargetModule.id],
+      institutionId: targetForm.institutionId,
+      programId: targetForm.programId,
+      programYearId: targetForm.programYearId,
+      semesterId: targetForm.semesterId,
+    };
+
+    setSavingTargetId(targetingResourceId);
+    setError('');
+    setMessage('');
+
+    try {
+      const updatedResource = await onUpdateResource(targetingResourceId, updates);
+      updateLocalResource(targetingResourceId, updatedResource || updates);
+      cancelTarget();
+      setMessage('Destination de la ressource mise a jour.');
+    } catch (targetError) {
+      setError(getApiErrorMessage(targetError, 'Impossible de modifier la destination.'));
+    } finally {
+      setSavingTargetId('');
+    }
+  }
+
+  async function handleRestore(resource) {
+    if (!onRestoreResource) {
+      setError('La restauration de ressource n est pas disponible.');
+      return;
+    }
+
+    try {
+      await onRestoreResource(resource);
+      const restoredStatus =
+        resource.previousStatus && resource.previousStatus !== 'archived'
+          ? resource.previousStatus
+          : 'published';
+      setStatusOverrides((current) => ({ ...current, [resource.id]: restoredStatus }));
+      updateLocalResource(resource.id, { status: restoredStatus });
+      setResourceView('active');
+      setMessage('Ressource restauree.');
+    } catch (restoreError) {
+      setError(getApiErrorMessage(restoreError, 'Impossible de restaurer la ressource.'));
+    }
+  }
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h2 className="flex items-center gap-2 text-xl font-bold">
+          <BookOpen size={20} />
+          Resources
+        </h2>
+        <p className="mt-1 text-sm text-white/40">
+          Ajoute une ressource en choisissant son etablissement, semestre et module academique.
+        </p>
+      </div>
+
+      {message ? (
+        <div className="rounded-2xl border border-green-400/20 bg-green-500/10 px-4 py-3 text-sm text-green-200">
+          {message}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <SelectField
+            label="Etablissement"
+            value={form.institutionId}
+            options={institutions}
+            placeholder={loading.institutions ? 'Chargement...' : 'Choisir un etablissement'}
+            disabled={loading.institutions}
+            onChange={(institutionId) => updateForm({ institutionId })}
+          />
+          <SelectField
+            label="Filiere"
+            value={form.programId}
+            options={programs}
+            placeholder={form.institutionId ? 'Choisir une filiere' : 'Choisis d abord un etablissement'}
+            disabled={!form.institutionId || loading.programs}
+            onChange={(programId) => updateForm({ programId })}
+          />
+          <SelectField
+            label="Annee"
+            value={form.programYearId}
+            options={programYears}
+            placeholder={form.programId ? 'Choisir une annee' : 'Choisis d abord une filiere'}
+            disabled={!form.programId || loading.programYears}
+            onChange={(programYearId) => updateForm({ programYearId })}
+          />
+          <SelectField
+            label="Semestre"
+            value={form.semesterId}
+            options={semesters}
+            placeholder={form.programYearId ? 'Choisir un semestre' : 'Choisis d abord une annee'}
+            disabled={!form.programYearId || loading.semesters}
+            onChange={(semesterId) => updateForm({ semesterId })}
+          />
+          <SelectField
+            label="Module"
+            value={form.moduleId}
+            options={modules}
+            placeholder={form.semesterId ? 'Choisir un module' : 'Choisis d abord un semestre'}
+            disabled={!form.semesterId || loading.modules}
+            onChange={(moduleId) => updateForm({ moduleId })}
+          />
+          <SelectField
+            label="Type de ressource"
+            value={form.category}
+            options={RESOURCE_CATEGORY_OPTIONS}
+            placeholder="Choisir une categorie"
+            disabled={false}
+            onChange={(category) => updateForm({ category })}
+          />
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-white/10 bg-gray-950/40 p-4 text-sm text-white/45">
+          {selectedInstitution && selectedProgram && selectedProgramYear && selectedSemester && selectedModule ? (
+            <span>
+              Destination: <strong className="text-white">{selectedInstitution.name}</strong> / {selectedProgram.shortName || selectedProgram.name} / {selectedProgramYear.name} / {selectedSemester.name} / {selectedModule.name}
+            </span>
+          ) : (
+            <span>Choisis la destination academique avant d ajouter le fichier.</span>
+          )}
+        </div>
+
+        <div className="mt-5 grid gap-4">
+          <TextInput
+            label="Titre"
+            value={form.title}
+            placeholder="Titre de la ressource"
+            required
+            onChange={(title) => updateForm({ title })}
+          />
+          <TextInput
+            label="Nom du fichier"
+            value={form.fileName}
+            placeholder="ex: analyse-2-cours-01.pdf"
+            required
+            onChange={(fileName) => updateForm({ fileName })}
+          />
+          <TextInput
+            label="URL du fichier"
+            value={form.fileUrl}
+            placeholder="https://..."
+            required
+            onChange={(fileUrl) => updateForm({ fileUrl })}
+          />
+          <TextInput
+            label="Titre correction"
+            value={form.correctionTitle}
+            placeholder="Correction facultative"
+            onChange={(correctionTitle) => updateForm({ correctionTitle })}
+          />
+          <TextInput
+            label="URL correction"
+            value={form.correctionUrl}
+            placeholder="https://..."
+            onChange={(correctionUrl) => updateForm({ correctionUrl })}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading.submit || !selectedModule}
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Plus size={14} />
+          {loading.submit ? 'Enregistrement...' : 'Add Resource'}
+        </button>
+      </form>
+
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
+          <div>
+            <h3 className="font-semibold text-white">Ressources</h3>
+            <p className="mt-1 text-sm text-white/40">
+              Les suppressions vont dans la corbeille et peuvent etre restaurees.
+            </p>
+          </div>
+          <div className="flex rounded-xl border border-white/10 bg-gray-950 p-1">
+            <button
+              type="button"
+              onClick={() => setResourceView('active')}
+              className={`rounded-lg px-3 py-2 text-sm font-bold ${
+                resourceView === 'active' ? 'bg-white text-gray-950' : 'text-white/55 hover:text-white'
+              }`}
+            >
+              Actives ({activeResources.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setResourceView('trash')}
+              className={`rounded-lg px-3 py-2 text-sm font-bold ${
+                resourceView === 'trash' ? 'bg-white text-gray-950' : 'text-white/55 hover:text-white'
+              }`}
+            >
+              Corbeille ({trashedResources.length})
+            </button>
+          </div>
+        </div>
+        {visibleResources.length === 0 ? (
+          <div className="p-6 text-white/40">
+            {resourceView === 'trash'
+              ? 'Aucune ressource dans la corbeille pour cette selection.'
+              : 'Aucune ressource trouvee pour cette selection.'}
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {visibleResources.map((resource) => (
+              <div key={resource.id} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+                {editingResourceId === resource.id ? (
+                  <form onSubmit={handleUpdateResource} className="grid flex-1 gap-3 lg:grid-cols-[1fr_1fr_1.4fr_auto] lg:items-end">
+                    <TextInput
+                      label="Titre"
+                      value={editForm.title}
+                      placeholder="Titre de la ressource"
+                      required
+                      onChange={(title) => setEditForm((current) => ({ ...current, title }))}
+                    />
+                    <TextInput
+                      label="Nom du fichier"
+                      value={editForm.fileName}
+                      placeholder="ex: analyse-1-cours.pdf"
+                      required
+                      onChange={(fileName) => setEditForm((current) => ({ ...current, fileName }))}
+                    />
+                    <TextInput
+                      label="URL du fichier"
+                      value={editForm.fileUrl}
+                      placeholder="https://..."
+                      required
+                      onChange={(fileUrl) => setEditForm((current) => ({ ...current, fileUrl }))}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={savingEditId === resource.id}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Sauvegarder les modifications"
+                        title="Sauvegarder"
+                      >
+                        <Save size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/50 hover:text-white"
+                        aria-label="Annuler la modification"
+                        title="Annuler"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </form>
+                ) : targetingResourceId === resource.id ? (
+                  <form onSubmit={handleUpdateTarget} className="grid flex-1 gap-3 lg:grid-cols-3 xl:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] xl:items-end">
+                    <SelectField
+                      label="Etablissement"
+                      value={targetForm.institutionId}
+                      options={institutions}
+                      placeholder={loading.institutions ? 'Chargement...' : 'Etablissement'}
+                      disabled={loading.institutions}
+                      onChange={(institutionId) =>
+                        updateTargetForm({
+                          institutionId,
+                          programId: '',
+                          programYearId: '',
+                          semesterId: '',
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Filiere"
+                      value={targetForm.programId}
+                      options={targetOptions.programs}
+                      placeholder={targetForm.institutionId ? 'Filiere' : 'Choisis un etablissement'}
+                      disabled={!targetForm.institutionId || targetLoading.programs}
+                      onChange={(programId) =>
+                        updateTargetForm({
+                          programId,
+                          programYearId: '',
+                          semesterId: '',
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Annee"
+                      value={targetForm.programYearId}
+                      options={targetOptions.programYears}
+                      placeholder={targetForm.programId ? 'Annee' : 'Choisis une filiere'}
+                      disabled={!targetForm.programId || targetLoading.programYears}
+                      onChange={(programYearId) =>
+                        updateTargetForm({
+                          programYearId,
+                          semesterId: '',
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Semestre"
+                      value={targetForm.semesterId}
+                      options={targetOptions.semesters}
+                      placeholder={targetForm.programYearId ? 'Semestre' : 'Choisis une annee'}
+                      disabled={!targetForm.programYearId || targetLoading.semesters}
+                      onChange={(semesterId) =>
+                        updateTargetForm({
+                          semesterId,
+                          moduleId: '',
+                        })
+                      }
+                    />
+                    <SelectField
+                      label="Module"
+                      value={targetForm.moduleId}
+                      options={targetOptions.modules}
+                      placeholder={targetForm.semesterId ? 'Module' : 'Choisis un semestre'}
+                      disabled={!targetForm.semesterId || targetLoading.modules}
+                      onChange={(moduleId) => updateTargetForm({ moduleId })}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={savingTargetId === resource.id || !selectedTargetModule}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Sauvegarder la destination"
+                        title="Sauvegarder la destination"
+                      >
+                        <Save size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelTarget}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/50 hover:text-white"
+                        aria-label="Annuler la destination"
+                        title="Annuler"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{resource.title}</div>
+                    <div className="text-sm text-white/40">
+                      {resource.module || 'Module non renseigne'} - {resource.category}
+                      {Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0 ? ' - moduleIds' : ' - legacy'}
+                    </div>
+                    <div className="mt-1 text-xs text-white/30">
+                      {institutions.find((institution) => institution.id === resource.institutionId)?.name ||
+                        'Aucun etablissement cible'}
+                    </div>
+                  </div>
+                )}
+                {canManageResourceStatus && resourceView === 'active' ? (
+                  <div className="flex items-center gap-3">
+                    {editingResourceId !== resource.id && targetingResourceId !== resource.id ? (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(resource)}
+                        className="text-white/40 hover:text-blue-300"
+                        aria-label="Modifier la ressource"
+                        title="Modifier la ressource"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    ) : null}
+                    {editingResourceId !== resource.id && targetingResourceId !== resource.id ? (
+                      <button
+                        type="button"
+                        onClick={() => startTarget(resource)}
+                        className="text-white/40 hover:text-emerald-300"
+                        aria-label="Definir l etablissement qui voit cette ressource"
+                        title="Definir la destination"
+                      >
+                        <MapPin size={16} />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(resource.id)}
+                      className="text-white/40 hover:text-red-400"
+                      aria-label="Supprimer la ressource"
+                      title="Envoyer dans la corbeille"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ) : null}
+                {canManageResourceStatus && resourceView === 'trash' ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRestore(resource)}
+                    className="text-white/40 hover:text-green-300"
+                    aria-label="Restaurer la ressource"
+                    title="Restaurer la ressource"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

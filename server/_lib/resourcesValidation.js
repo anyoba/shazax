@@ -1,4 +1,5 @@
 import { categories, modules } from '../../src/data/modules.js';
+import { RESOURCE_CATEGORY_VALUES } from '../../src/constants/academic.js';
 import { HttpError } from './auth.js';
 
 const ALLOWED_FIELDS = [
@@ -10,10 +11,15 @@ const ALLOWED_FIELDS = [
   'correctionTitle',
   'correctionUrl',
   'status',
+  'moduleIds',
+  'institutionId',
+  'programId',
+  'programYearId',
+  'semesterId',
 ];
 
 const MAX_LENGTHS = {
-  module: 80,
+  module: 140,
   category: 40,
   title: 180,
   fileName: 180,
@@ -21,6 +27,10 @@ const MAX_LENGTHS = {
   correctionTitle: 180,
   correctionUrl: 1000,
   status: 40,
+  institutionId: 160,
+  programId: 160,
+  programYearId: 160,
+  semesterId: 160,
 };
 
 const PUBLIC_STATUSES = ['published', 'draft', 'archived'];
@@ -73,14 +83,16 @@ function assertUrl(value, field, { required = false } = {}) {
   }
 }
 
-function validateModule(moduleName) {
+function validateModule(moduleName, { hasModuleIds = false } = {}) {
+  if (hasModuleIds) return;
+
   if (!modules.includes(moduleName)) {
     throw new HttpError(400, 'module is invalid.');
   }
 }
 
 function validateCategory(categoryName) {
-  if (!categories.includes(categoryName)) {
+  if (!categories.includes(categoryName) && !RESOURCE_CATEGORY_VALUES.includes(categoryName)) {
     throw new HttpError(400, 'category is invalid.');
   }
 }
@@ -91,6 +103,29 @@ function cleanStatus(value) {
     throw new HttpError(400, 'status is invalid.');
   }
   return status;
+}
+
+function cleanModuleIds(value) {
+  if (value === undefined || value === null) return undefined;
+
+  if (!Array.isArray(value)) {
+    throw new HttpError(400, 'moduleIds must be an array.');
+  }
+
+  const ids = value.map((item) => {
+    if (typeof item !== 'string') {
+      throw new HttpError(400, 'moduleIds must contain only strings.');
+    }
+
+    const trimmed = item.trim();
+    if (!trimmed || trimmed.length > 160) {
+      throw new HttpError(400, 'moduleIds contains an invalid id.');
+    }
+
+    return trimmed;
+  });
+
+  return [...new Set(ids)];
 }
 
 export function validateResourcePayload(payload, { partial = false } = {}) {
@@ -105,10 +140,11 @@ export function validateResourcePayload(payload, { partial = false } = {}) {
   }
 
   const cleaned = {};
+  const hasModuleIds = Array.isArray(payload.moduleIds) && payload.moduleIds.length > 0;
 
   if (!partial || payload.module !== undefined) {
     cleaned.module = cleanString(payload.module, 'module', { required: true });
-    validateModule(cleaned.module);
+    validateModule(cleaned.module, { hasModuleIds });
   }
 
   if (!partial || payload.category !== undefined) {
@@ -140,9 +176,34 @@ export function validateResourcePayload(payload, { partial = false } = {}) {
     cleaned.status = cleanStatus(payload.status);
   }
 
+  if (payload.moduleIds !== undefined) {
+    cleaned.moduleIds = cleanModuleIds(payload.moduleIds);
+  }
+
+  if (payload.institutionId !== undefined) {
+    cleaned.institutionId = cleanString(payload.institutionId, 'institutionId');
+  }
+
+  if (payload.programId !== undefined) {
+    cleaned.programId = cleanString(payload.programId, 'programId');
+  }
+
+  if (payload.programYearId !== undefined) {
+    cleaned.programYearId = cleanString(payload.programYearId, 'programYearId');
+  }
+
+  if (payload.semesterId !== undefined) {
+    cleaned.semesterId = cleanString(payload.semesterId, 'semesterId');
+  }
+
   return cleaned;
 }
 
 export function isPublicResource(resource) {
-  return resource.status !== 'draft' && resource.status !== 'archived' && resource.visibility !== 'private';
+  return (
+    resource.status !== 'draft' &&
+    resource.status !== 'archived' &&
+    resource.visibility !== 'private' &&
+    resource.isDeleted !== true
+  );
 }

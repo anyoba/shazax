@@ -10,6 +10,13 @@ export default async function handler(req, res) {
 	const path = requestUrl.searchParams.get('path') || '/';
 	const targetUrl = new URL(path, 'https://frontend-api.clerk.dev');
 
+	// Forward any query params from the original request except the internal `path` param.
+	for (const [k, v] of requestUrl.searchParams.entries()) {
+		if (k === 'path') continue;
+		// append other params to the target URL
+		targetUrl.searchParams.append(k, v);
+	}
+
 	const method = req.method || 'GET';
 
 	const headers = new Headers();
@@ -55,6 +62,11 @@ export default async function handler(req, res) {
 		body: hasBody && body ? body : undefined,
 		redirect: 'manual',
 	});
+
+	// Expose the final target URL for debugging when enabled (safe off by default).
+	if (process.env.DEBUG_CLERK_PROXY) {
+		res.setHeader('X-Clerk-Proxy-Target', targetUrl.toString());
+	}
 
 	const responseHeaders = {};
 	response.headers.forEach((value, key) => {

@@ -1,0 +1,13 @@
+HTTP/1.1 405 Method Not Allowed
+Age: 0
+Allow: GET, POST
+Cache-Control: public, max-age=0, must-revalidate
+Content-Length: 159
+Content-Type: application/json; charset=utf-8
+Date: Sat, 19 Sep 2026 11:35:50 GMT
+Etag: W/"9f-h/QgB0ZzBhgkyrnQU+TU1P51ix4"
+Server: Vercel
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::qgnwv-1789817748890-113a6720d2cc
+

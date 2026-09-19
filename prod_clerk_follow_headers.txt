@@ -1,0 +1,40 @@
+HTTP/1.1 307 Temporary Redirect
+Access-Control-Allow-Origin: *
+Age: 0
+Cache-Control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+Cf-Ray: a3d93d92eadc81d5-IAD
+Content-Length: 0
+Cross-Origin-Resource-Policy: cross-origin
+Date: Sat, 19 Sep 2026 14:22:05 GMT
+Location: https://shazax.vercel.app/__clerk/npm/@clerk/clerk-js@5.127.2/dist/clerk.browser.js
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=OMhDtX9%2FgXtMpttzIi1mpOxmTUYw%2BLWU9jxfP4N413tiMGWK060oNkZ7HDqjhcjd%2B3NLD6SinCBlLSDmJrmMGxi7G7oQO3QYRg3aoxbdCLcZVE7H3OnE7n7r%2FVqgN556ZW3jKMpz%2F1g%3D"}]}
+Server: Vercel
+Set-Cookie: __cf_bm=2tGM_zRSnuyWww_SveInYuoIwLiAgUVHkaRqhg9ELac-1789827725.262691-1.0.1.1-mu6cwfeHPru.Tt591QYnqDOM8KtOwujulsrOLKcG5.n_LKFBNVvYWSKLPZos7y38as3psoMPAs53YbT9j3VGU9BhKc2VrgsznGdHQsTTZWCozxej2tHnYajeCdwhKDpj; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev; Expires=Sat, 19 Sep 2026 14:52:05 GMT
+Strict-Transport-Security: max-age=63072000;
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::wp6d7-1789827725178-80156460cc71
+
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Age: 0
+Cache-Control: public, max-age=31536000, immutable
+Cf-Ray: a3d93d94ec7e81d5-IAD
+Content-Length: 321927
+Content-Type: application/javascript; charset=utf-8
+Cross-Origin-Resource-Policy: cross-origin
+Date: Sat, 19 Sep 2026 14:22:05 GMT
+Etag: W/"4e987-99kPppcrLfAOYEDTXY/MlFZJN1I"
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=vWMZZQ2qU23c2RskMwIG1eC9agd%2BKMHGKsdDeKr%2F12Zr86LJ8LA4LejMjPXbFJydEL%2BJ0ZlmIASpND%2B5gksBK6%2FRynyhocHQTvWdm6dx4gA2Cw9zPMMPHD79rU250RoRuRMcrmKBq9w%3D"}]}
+Server: Vercel
+Set-Cookie: __cf_bm=cF8niba3cdTSYnMHjaDIqoxThrUzbF8XFXKdlR4foQY-1789827725.5849004-1.0.1.1-SRRTupC8rZj.ZHVlgcrpIRU8RmqGdc7JU3z8jbHamEnqcRsx8mrkYIEd.461.X4o.H6b5KY.NNFBbpI5Ar4FiGkiwXjX0tjauq2IvhsYtaUWZ03FUmmUOqTGDs6vnH.4; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev; Expires=Sat, 19 Sep 2026 14:52:05 GMT
+Strict-Transport-Security: max-age=63072000;
+Timing-Allow-Origin: *
+Vary: Accept-Encoding
+X-Jsd-Version: 5.127.2
+X-Jsd-Version-Type: version
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::6vlcw-1789827725403-e2f68844882f
+

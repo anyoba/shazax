@@ -1,0 +1,17 @@
+HTTP/1.1 307 Temporary Redirect
+Access-Control-Allow-Origin: *
+Age: 0
+Cache-Control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+Cf-Ray: a3d93c997abf7044-IAD
+Content-Length: 0
+Cross-Origin-Resource-Policy: cross-origin
+Date: Sat, 19 Sep 2026 14:21:25 GMT
+Location: https://shazax.vercel.app/__clerk/npm/@clerk/clerk-js@5.127.2/dist/clerk.browser.js
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=3hncP3Eh%2FVaV71sdVx7529dpIjWDxb9ZNycPVvCBHQADoUGX9BSPamBhlBJxIS1E4sslBXbEFOyj7PaGa4GRy3LTtlVIUfGkeUHXAqIOu6XqGxsj9xAV2qCPJGQK2cW6X6R%2B%2B21l6fI%3D"}]}
+Server: Vercel
+Set-Cookie: __cf_bm=JD1U4_3xLrpVM5zswbUxvMDFseMpFDecJ4ruyJn9dh0-1789827685.3572607-1.0.1.1-tnSWFob0dCZiPw7MHcBYGto_CkyzsmFXGoLu7bRnLnBFhghHS_VZeFYMFE6IbUsVkm1MqGYTL0tJ27MTPu_2GKpjer0GyDQEXXwc77YozwAbF57Lr8eOwTO9LJ88Wma7; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev; Expires=Sat, 19 Sep 2026 14:51:25 GMT
+Strict-Transport-Security: max-age=63072000;
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::6jjd5-1789827685109-20b12d62035d
+

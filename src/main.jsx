@@ -25,9 +25,9 @@ function handleClerkNavigate(to) {
 
 const rootElement = document.getElementById('root');
 
-const isProductionHost = typeof window !== 'undefined' && window.location.hostname === 'shazax.vercel.app';
+const isVercelHost = typeof window !== 'undefined' && (window.location.hostname === 'shazax.vercel.app' || window.location.hostname.endsWith('.vercel.app'));
 
-const proxyUrl = isProductionHost ? 'https://shazax.vercel.app/__clerk' : undefined;
+const proxyUrl = isVercelHost ? `${window.location.protocol}//${window.location.hostname}/__clerk` : undefined;
 
 const appElement = (
   <React.StrictMode>

@@ -25,19 +25,23 @@ function handleClerkNavigate(to) {
 
 const rootElement = document.getElementById('root');
 
+const isProductionHost = typeof window !== 'undefined' && window.location.hostname === 'shazax.vercel.app';
+
+const proxyUrl = isProductionHost ? 'https://shazax.vercel.app/__clerk' : undefined;
+
 const appElement = (
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-     <ClerkProvider
-  publishableKey={clerkPublishableKey}
-  proxyUrl="https://shazax.vercel.app/__clerk"
-  navigate={handleClerkNavigate}
-  afterSignInUrl="/learn"
-  afterSignUpUrl="/learn"
->
-  <App />
-</ClerkProvider>
+          <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      proxyUrl={proxyUrl}
+      navigate={handleClerkNavigate}
+      afterSignInUrl="/learn"
+      afterSignUpUrl="/learn"
+    >
+      <App />
+    </ClerkProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>

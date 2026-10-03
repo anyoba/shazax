@@ -1,0 +1,1581 @@
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994a30f6ff274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:31 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=T%2B863rJqfgaVGF83W73SMyUwTclA%2BQGG2kTEVuwJXooZECt9nzOf55pv7p%2FbLeKsfjuilaW2TomcbUTB1SVn3%2BzcKweM107dbZG9epHYV73NaMiHW067u3k1xkbt%2Bky%2FGtNuZhlvfrY%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=3G.62D9uyORzPjW.e_5JzmbgjAxKJozQyggB8ib3ESQ-1789831291.3701856-1.0.1.1-ZmVi3fjOE8KrXLCKCimtzfcT1OEbSpW3CfwTOB8g5pw; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: fd5cc7a78fb1996873ddad426a2dee4e
+X-Cloud-Trace-Context: e650681f11847f307f20126977f24e71
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9vdnp-1789831291293-ce50e79c524d
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994a5a9a6f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:31 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=pQVR4D%2FDupF0qZOD%2BvFmmM450kiaowTEQsdLl1yK1hiGfvBFGPbDs9Ni1x8OKt2%2F731zG5DS%2FoPC2dDI6j%2BfdaPZmOHPjncvM7X9bai%2BwgeEpW5s3n4ZL6wddLzRFFIu07AlI%2FuVgJQ%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=tnAr.X9_qjuwYhG2TJfHKJ4Akr9y6MtF_ZZ4a6h1tU4-1789831291.7899249-1.0.1.1-V_d8Uegm3U6.12jkHOcnje_9bbCmV1VgWaYjc1RJ8do; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 75ba8515757cabf62d373993b84d4423
+X-Cloud-Trace-Context: f4c7493b916eafc7a0daa5df67cbb90c
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5mdzn-1789831291572-cd854d9e97fb
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994a86b9af274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:32 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=zyilY3mq%2F9Uulru4KgYy7sbbzPEX5Yb2yPhc%2BgRT%2B1P%2BptZsj%2FjQIPgS%2FQt9aKz0KLZJFSJy3STqDZYaOMOp3%2FUn%2BJk4%2BGlRx6o1IYwV5hNSJf2HX9RTcR%2BR2pCkSUd7ngpIYpHasuI%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=rUW0ElK61bE.sgrdjXr37nggsAK4G1tfJfo6l4tVgBc-1789831292.223648-1.0.1.1-7V5w_I3E3TFAMwQTLoZN8bvXUwcgaNoRjFo1FnG0Xyw; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 3e29220dc2a7ea885a2400e1c882e5c9
+X-Cloud-Trace-Context: c7895ca6cbfb1b9276b875e79106692c
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::8mmz9-1789831292162-4dba7737daea
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994aa3ae3f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:32 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=diBb5bijR1o2Jkf1HWp25Ir0rNNE6R%2FwqMWUrjXxKLRmyyy85V9SGLns5ZFQpfqMqAsr0H9XAuWBcRnHS6XS2eta1EI1dnABI%2BbgCDt6PG%2Ba%2BRF4MG2aWfVtl9eqXWWmCHR5NEmLYqM%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=kGXW7st9QD_DcyFu3MPBrp0AumGPwafMqtqaGxRBCm0-1789831292.5121992-1.0.1.1-WlU34_jcy4UNN0fLSp3lLVnemxV07vTKNTVkjr2JJt0; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 30c0ef5b6b6db5eafdf2da8fbffa3023
+X-Cloud-Trace-Context: f97ffd1afdbffe296ca10b1752f5d466
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hskjk-1789831292429-05e92af9305f
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994abc8a8f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:32 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=mcBD8For8NzoD0qM%2Fy1ZLmqJkTxiQqo0gOu15Yw4%2Fmsh4ZcWk%2BEcVWFmh9CoxMgAFQRmxI3knD1Eew9X5%2Bmbi6gobCc6hQLh%2B7xFAB5%2FQG57jk%2BlBkjApvE%2FAw6PKAfOPGr9wdiCmJQ%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=.2bQTheQuLG8TgVoxL_nJfykbNqHBYfGZocXm5Frn48-1789831292.7615848-1.0.1.1-JkXUudPMl23DcjhygAYV7cfL2sdV6ESkGyQj9U52gUo; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 01809e0a7ac4385fc006cf3a6c58b238
+X-Cloud-Trace-Context: 01809e0a7ac4385fc006cf3a6c58b238
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5mdzn-1789831292698-53d06c1f0cf8
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994ad4eb5f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:33 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=BUjYD7a9Os3S7kxL2shnv3iAOmQF0SAINkqi%2BIszRnAReAsR1N5PJe80%2BGaHzCI%2BaWz%2B0FbF86oOLcNZyvI52qHST8SPKg14L3GcdOU9oJ7XTsSV1ma%2BSWl4Bk6J9TdZFUxzSg7e0ag%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=brLmwxQSHnjYlEsLf99KOBGz4c8li_QNpktS0pfpjls-1789831293.009948-1.0.1.1-tQZaug1cUUOx3qywbhSsAK6zD0mz5F3ONUuV8e072Us; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: b3032d8ec3e4b364db5509b0e64b544f
+X-Cloud-Trace-Context: df2ce681c7b7fd4da0daa5df67cbb444
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5mdzn-1789831292944-5ca067362ba2
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994aeccc1f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:33 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=aY5AQA4aaxuqcRNp592nG%2FUgYXyZUboYT4dhYwqkPKXdEkED08LXFqLAAMKUnV86qOnEXkm4spgpLCAsJlS41kmoW1zG2lP6rOsyWyIIuRp4neRD3MEcP1R2nbv7U6IwFGCxqFP4MvA%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=mZMENL3OZ5xYZKAOlJHifK.n9gzoJTdYamYy.HjQjR0-1789831293.2506359-1.0.1.1-eroSxLfMVJDTc6xcFLU4pIhCdNJodn4KhgxwNPRC.LY; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 5a15ec7932407bf9b1d4b442be8b266e
+X-Cloud-Trace-Context: a062e48ca104a9d76ca10b1752f5da85
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hskjk-1789831293190-7da34cc9c3ac
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994b05ae9f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:33 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Lgd%2BtxjILOD2cHYXML62c9QHIK61ThSuVvkIoWnN%2BLdvgLfHLCJkP0Epo1g8gGHMJxj5TC8X0W1uaBXKoAUfH2H5TU7OTZKuBav8CvmgKGN0n7rAbXMsI5i5c0bxRTGk06DLJXeEsSI%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=jy72ukyhJJg8PvNruzxWqIWsSVdkUN8klQQUYKToedk-1789831293.4957852-1.0.1.1-2z.xrYxxVGkSh4wk50biikZIReVqmqqmVcLmYk8e7JU; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 65a3dd1da2d0ef182780ae29a483cf9a
+X-Cloud-Trace-Context: f1403ea12b60259f7f20126977f243d5
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hc6lg-1789831293429-43231a0d5726
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994b23a36f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:33 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ePhqIxf7Psg5rby%2FeWv%2FB9HLnb5CUS86keq2ZECoOW0s61WdKQKhEIjSyOF9gKiAaoTXMo7KZgaSHfX8K%2BJvro9XNA7egzXaXZ3BNZSBfLFN6b%2BE5j4PjAILAmDNbTRykzbohw%2Bc9Wc%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=U0knyzzG35079PA9pMnLd9bTV7qOSFVm22FFJifLfn8-1789831293.7934754-1.0.1.1-rALUzE2maz3gl6M8PVeodQRZxb3wymR5FbQIwWr69bQ; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 4f7c0ee4d6782e57c010340cd1a8d1f1
+X-Cloud-Trace-Context: 7367dfaad7edfb5076b875e791066ecd
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831293718-d31ffab107c4
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994b3cfeaf274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:34 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=nNPzdbzMias65loPe845%2BxEfr9loK2h4J0Oelx%2BkVLSweCaBKkI8NRucWS8T2yrVZBqHi23mmd0c%2FZ1iny9rAmjDT2CAkjSQTUhfeUF6hfzIPCdIie1Qp0sszHdQgxu3wD6ed4tNNv0%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=LhOVFHxJJtmWpLp_EjYO2o7AvX_.9AITFcnq_twEnfU-1789831294.0505705-1.0.1.1-VbjXqNmYBOMMiJimVqAbnmTqBQXuAnIZnRdBErPZ4a8; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 67d90a51b25ac502584221fe4a74226f
+X-Cloud-Trace-Context: 0dea3117a592d1e26ca10b1752f5d342
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::6jjd5-1789831293985-24e66fc5ad78
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994b5bf7bf274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:34 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=MrNlPxQJyKW6QLxmOCgz3l77uloobq2Gq7fMwgQHnz5BYvHHH2cGYSsEvf%2FsT6fS1d6RlTY1j80OPOnrtyN55n%2BAhAfqpim8TZRzEw2MwE3s5lMDc5mEde5fX%2BLtl9xmwXa8Mt47mPY%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=RltCQY2mwmeqINLEayg2IlQcuUhpkPAb_NgAg5aVYTA-1789831294.3609893-1.0.1.1-tRXUN_6CqN7L6ziXsrbgC4nrVLFPNnGul5hiKyJCNJM; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: fc1eee8c904321420db3e859daa56921
+X-Cloud-Trace-Context: 8a3e0b42697d4e5140b8b6b0e4b46c30
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::42hd2-1789831294298-3752ca85c680
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994b87a76f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:34 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=MWOVjTMHjIfeC5CNl1J7dxQw54LYeIZDKCJ10LZRWl%2BH9tSUDi29XhLkCUxn3DfeLkQ2wKvjx2i%2FkygTCI1XbKqb7w5riHQpLYSFQHTqf5Q6YzSwxJpnXRAXq%2FG10YoY2lE3iHSfVbU%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=nJ5vispibYCtJDWIQvcy0U03lDB6LznXdRdpFpZb_ZE-1789831294.7986395-1.0.1.1-0AnBBOFbgMPDtFXNWlpsT9XmQz8G.HnVQpk5O5Ido8s; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 8faffbb014ebf0f2a6944d8ca99c68b9
+X-Cloud-Trace-Context: 68ccb8cd1f51db8540b8b6b0e4b4690e
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::sxwcm-1789831294733-b01ea9cdf616
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994ba498bf274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:35 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=PN%2B9HCs%2BvCrcG9o6cd7hspgIPlvoYX1g1HvMgPVXuzlKKVfEXojgjELxtyWQKh1WGGBwzVi6S%2BXDVrFMnrTpw8fFc0ekwtlOS8JZqCM2q4Up3LTXs1rieM5RWahh35oSkkHFa6sGQYc%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=2atOvfFr2qEOx.0a7b.lKOStrOisxWMFphSFh2CgR.g-1789831295.0866687-1.0.1.1-.chsKPxe.350yTnnUx0YQ7c5k8rwbd48CTdaDiya47k; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: a320df30a2b51a5d25dfbac5b0abd21e
+X-Cloud-Trace-Context: a97dab17807830f0a0daa5df67cbb7a5
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831295022-da14b0ea06ed
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994bbdf61f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:35 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=eho3FBh2LCX2A5OE2lLASoLJ4FkOY%2Flw3Ef0nWzHUaPwEJAJTwuB9XGkHugA%2Fjc5kEhm643lnV43ZGI1NUcjm8p5TxQLqOSF13j6kmeDSNa%2B00hqSsx%2FWVEcxg9CK8mL3TCOgAAKuiM%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=GQaZIZ5fSCh7T4jVbAQiGYtxRIpU2fUlNpcfG__Fv0Y-1789831295.3354273-1.0.1.1-w840I_d12Dm5_tkh3mjXRNSfCN1WeLlGvM01Fapwpeg; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 4d1f476f6ebd611b36987d49cbd4b182
+X-Cloud-Trace-Context: ad1fa7697448cc5f897259daf2d151d4
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831295273-90df713a9605
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994bd5cfef274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:35 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=qkucKGhHWxP1l%2FZGABJrJ2eUnMABjddlnvKz9imL7w2WUfhqgclx943rpnK6QwKkzvfhYEGxekw0SZmesN34WmoEVV4qt%2FsFz07AqsCK3WsnCq9%2Fz3flBN%2BLosZuGW8vUheu%2B46a82k%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=nK9Gyoi_ndXZ2AmhPmxnXROwZiFCAq.naZMGZ8yEeSQ-1789831295.5782025-1.0.1.1-w7tWxL4y3_IcOzGFIm8F7.6vh1KLQ5qyrNekCUg5h9Y; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 1873ff0dc6ec4c6aa0db3a772103cd44
+X-Cloud-Trace-Context: 4cd4cbb609fbd08f40b8b6b0e4b4660c
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5g95l-1789831295513-499e03bc0090
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994beea73f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:35 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=nhWHV9SZjDs3pQiaTu1IAckCcDoGQgYKkaudYARIlifdAp4HMmnMDn0eZ7YjhumbbhINY4gPzArlz%2BOu7m9N86uXujNoTOLAF0ODwTEBpFJBOMgjlMWo%2FfMWrqVPN4HX5lWRhh3DUrc%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=psdrfJjhkwCqun.aH4paO3lvcoaz4jvkCYWYcx6DtZs-1789831295.8239121-1.0.1.1-VNOsJq3lx1Uu85LKz70PoMbIKUKPCmbAqlDNKR3KSEQ; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: e4291600b6dd6cb2090cbe49adc3e104
+X-Cloud-Trace-Context: 40be70944a31baf876b875e79106658a
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831295763-24737ae645c1
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c07835f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:36 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ImCoaOsLdmnI6MSiQbO4LV9cDHtGUNCJx2FsjchLu%2Baw3TmWtWk8MFb3f2gkiFYBc614UYAc50LBEXgyp9yor0EIB7pBvgH1pnZCjMq65uxv2DiGw2fkEhaA6NZHZc59z0Io5VzjTt4%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=.igknOzf7.DK6w2AkqXL7m_tRVmaatqzWiaU10FlLD0-1789831296.074536-1.0.1.1-EiHd4HP0P0.TuTHECGV_LDyXN.u.AoINJlfoL3Ua2m8; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: cf63f1e080d7d78b57d52e9f99c4aa65
+X-Cloud-Trace-Context: 66689e675382405e04f9fbffa4c554b7
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831296012-eefb768f2529
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c1dda2f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:36 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2BxXRj1hwb9d69IQQxpFAU6MauT2IVrFm86YX%2FecsEkCHi4FpHlxd%2FRCqE25%2Bid0NzXe5rthGCAvOiOW%2BGrVtejmcb4kBv5WEkWJoIunWvbsbvVWVi%2FF7dPGOh22vW%2BP0%2F8ZvOjp6K8Q%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=qt3rfHyngpnd3RgyAjUJWazfRupjTCWhoKfE9nRT_Ns-1789831296.3008516-1.0.1.1-E1jzbuMM51iS7tQbhWvtStYNrkF8YccTAit8z15qrL0; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 2aec5fbd5a69e30fd40208346972ad64
+X-Cloud-Trace-Context: f8d1e8064b86f3504ec7efb1a45ca219
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831296242-d11854a1570b
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c36baaf274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:36 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=6u4pXN%2Bog9EnjEYE1HK00fbssirh9iVofPzQyCSnbL3OLnZWYRb7nLBpTT%2FAIPg9GBKtTkQabWi1BPvc7XjXP1I8%2BJMR%2FmuK8KjM%2BF9acx%2FIt7QMSlAXTrTzlQ8Wvagc9PE8uwrdrOQ%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=nL2ktKsf2yJ7lejo_YTfyPev_tAUl_H8EiMJBTSDrX4-1789831296.5465648-1.0.1.1-ucEMFt8u0ES1ub6BvxbkA69oblVa8bkoDX.PKr84YXA; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: a2d162da119fdd8c46e8f5b677463afe
+X-Cloud-Trace-Context: 0ebbd0b7e23c0087897259daf2d1508f
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hc6lg-1789831296466-1dc7e95dd851
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c4d86df274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:36 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TSfo5vqYzWyRdNII4JYosT%2BfJs3M8mbjOtabzuATEzCRwE4BHZe1f7COCInW3ACvY4%2F6OTKCd5PGjtGOtFJ6b1LSYBKJSk7NJe%2Fp%2B8%2B0JvObvRakOgXObrz5FCHISwHw650tgwB0Dg0%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=HUa8lW06fwtcHrEZ.G1lKhNF5uIYlNQtr5C2o9rOkcE-1789831296.7800055-1.0.1.1-qXzcIG0mrNXiJ7l_MsE.QKYV1XA7FYetvG_kBNFxuZA; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 2effbe8ecb52076df4b30ae415c7ad80
+X-Cloud-Trace-Context: ac2e20fbf2ddf86a04f9fbffa4c552b0
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::6jjd5-1789831296712-0f88f1fbcca0
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c64d4cf274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:37 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=wYygKuv8S4XSamamqJy%2FgAhvQVDEz%2Bpk1idTlTHuMZF4UekHiu3VuyA%2BF43bMXNjlvlUI5los0EvM5XAUa3GT%2BTzy1vHpEvLSjsWv6j5pGm4Y0trlSWfsnStJGJGiL1R8H%2Flo2YnfrI%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=.Ej6X6.3qj7sRlx7.2q7.Tn3UgOEl190wiW.oX0sFJw-1789831297.0075758-1.0.1.1-TVwDawG9VqNxrsxoxO3IfPbnAreCwyHHpFIaLLZjQ74; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 70cc63bcf3fad948b98b9b9720337f27
+X-Cloud-Trace-Context: b9376cd2fb1de580d6e2a5d94188d945
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hc6lg-1789831296945-77bb0e33d9e2
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c7bb54f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:37 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=BHAxa4JHsCkqBU4DVUs494cYhx4d1D7MupeOf%2BlHf%2FBNzLpC9r9ie1DZEO4JYqlu88E939HK74iR7AnU3LkUExv%2BmyfGk20G00RanpD4zueBnKMWKnUomJwsf1M303s0mEhGAKo%2BIZI%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=5vhymKq79zYSvir.ua.2jwzGIStdeNo.MfmRyTZdOC8-1789831297.2359092-1.0.1.1-9UytnhwIWhpKy0pVL41Q0BZnoLm7ctxwG7JshY24h9A; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: b95d20e507d75e6a5c28b0d9e4f6d53a
+X-Cloud-Trace-Context: 51145b057ae3835a76b875e7910669c6
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::6jjd5-1789831297177-78278c12fd48
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994c9fb34f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:37 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2Bf49QOxpTZu7EuR0elzMwxAjJ5hKooy%2BPRIdFdDj2ffkR3EcVF6j32L2BDGoKR7ecjoVWaA6OUWNMqBRZt2xpUy56ztBsh7epESDrcCvz6pAdlFpOVnYVKXnj7ybpmJFjRecSn%2FTNW8%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=l_0oequwUIiqUtx_RKLCcI6Ii9mqo6irVuP5IBxXgU8-1789831297.596829-1.0.1.1-H6kKl7inrqfNDaHIWKIcWk6pGJ_oKIvRi5qqUDEVg1U; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 227a8cab4a02e46eef3c5471f712e29f
+X-Cloud-Trace-Context: da21838aa71d17a2897259daf2d151a3
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::899mt-1789831297526-7f028c77603c
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994cb785bf274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:37 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=cfsO09dgT%2F8IZLAnr3KyRarHqU%2FZitunQThgY0%2Fd4%2FUqfJz6%2FXHn7sWn9udYFBf8nWqVCxparxJ5vRpAdK%2ByoIoFpSKKro5tIC5pUtIu9%2BollYE55GRJvQselivz21O8hPyv0bWNgkw%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=kXh6vZZSyqUpcIzC3P1gGUX2c3viqWZYRHAGF36LP6w-1789831297.83623-1.0.1.1-Q2SyUP4Q14vcpJH9WJcHE2p0bOo8YeC2p.asTZ8s89Y; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 404bb8bde391e225922f7b4eeea7f1da
+X-Cloud-Trace-Context: f4ad132b04ba54ef4ec7efb1a45ca4af
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::8mmz9-1789831297771-2d2560d63013
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994ccfd85f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:38 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=vD9w551usq3OjpUy6RNPSa3wXBOdusBOVB4wy5ZvWWkeNmtmBQspm%2FHMnWxzTzaOsX%2BnI6fRDiGbM%2FcvhGMsoPzIb936jIiQoPfGzKYaBE6ETrzZqZF0UhU5nJJQy%2Fz0Ru3%2Ft5sEWfk%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=35WTJKWu4IiV0FWGNa7BVQK0VoTdk1EVSsKJMR7q8ns-1789831298.0721152-1.0.1.1-cEDEx6B3BsR_xGUnRI8UVU891rHunL0jXDf8MKdWKrU; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 5f469a384f27d45885ec24a50ca139d3
+X-Cloud-Trace-Context: 088f72b4dc4507c504f9fbffa4c55419
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m9pr-1789831298001-9a159022ca3e
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994ce8b68f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:38 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=jGH6OtutpkPJUyCWq27zmKZdyboq9uhY0X9r0TEoyzow1wkDmo2aHrdYEaMiubuU5RdCQFZRqA5cu5JwT4ADo5JYgRyK7gA1fc3Eisjs8irU1xydCl98cEb%2FbIrv2HsLaabLgIEQT3w%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=tlZ1.AD4mSmVwQhVhFh8Yo2lwhYVuWYtBQ2fQkh7SSs-1789831298.3290792-1.0.1.1-ACjstoGjz8hThVa7JypD4n1V9rugKTkrIDmpna0T.Ys; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: c5b09450e898dafd8d5defc36cf7f00f
+X-Cloud-Trace-Context: b06357134ff4cd13756a3376b75f74c0
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::sxwcm-1789831298264-f03443d5452d
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994d029c0f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:38 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=kC8Rov%2BZzefsPVUOYnTeC70twINj6WnLdLRF3kySy%2FcCR9gvD0hlscOYPpdPLudPKzeu5WBowbScho1drMqD%2BzwC%2Fxe8ki%2BIC5bG0RIyXp0DqshWihun8PP%2FTcrc8rhLMf0AkWtH6GE%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=ltPXqIDyCePAAp7S0ocXjYYRH_HGYFygeQTxK8Lh50A-1789831298.5874834-1.0.1.1-9O3Lsyck3KzIodmLthjIufV_3toizLvuCv9riVqYguw; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 72bdf650f952a4eca7aa3d08a7b15172
+X-Cloud-Trace-Context: 8112614b9f31610f4ec7efb1a45caa00
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::lqpqr-1789831298521-440584aa9b97
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994d19f34f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:38 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=CaeZ3yOFWriWRL1t7okHmVA5Bs7UPgTd6ncYd%2BjT0NghiOb8FooeVg5bRYIWKZWA7NYVIEL1nZznzLP38idslmBbSvIvW4wxE4fxfuPZy5iU5Seu4qnQ98mP24oyzlVxU7PQWm4QRdY%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=ZXw9VJk1_PtiEClJfjDUGZoz5n1YaGliGT4NWSv0ui0-1789831298.8169954-1.0.1.1-7ACaHvTIhjpAc3AY9CeXchJOs_IkYORQcoT2LuiAUSE; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 26943126107628f1f94db78c958932d3
+X-Cloud-Trace-Context: a283364489f60f5576b875e791066aa6
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::8mmz9-1789831298753-34cd88d652ae
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994d32e56f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:39 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=jjUytOHThCT7L729L0TYjQUXE5%2BDAoIosmaEtFi2xNUXlOvK4OaqHxZXv6mM4JZVKI7AVjAgk0bdCW9BXEdzTZl62uReMczkVQGu%2B7HHi33cAVcYhhuOcqPmFrOcRkeSrfifR2VJugk%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=VVKKM6j.1_J7B21BZEGWuCJZ0wb0h6_PZ7FmcmwaDAM-1789831299.0708096-1.0.1.1-L5Fg6XksQ.Z96_T7BqN9N3ZMzMZpoIFjMYRrVt4Wot8; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 3a948f4e3924a4fc9f48d0d22187c368
+X-Cloud-Trace-Context: b06a7bbc83079443897259daf2d1584f
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5xp76-1789831299000-571cb5d3f6e5
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994d4cca0f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:39 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=KG1EDU6CNx1c0%2FL%2Bk9R6gCCz9bXzmGfN4XFYzy1S6WkMJCZhyLm9B%2BTUuiIISCYKEOmD0lEuQz83%2BTgeu%2BJKM5zSQvldLRLgffBnkWKka3BEOap%2FSeOPW31JVV7efm1ZwCqtlG1fMUU%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=1HpSnF941.cuC33aHNIjS6WMOpvgot5uPY3JSR5yTvk-1789831299.324267-1.0.1.1-dpxHo9JuSycU5BLjyX7VIB7y43pKowYFt_XrIxba7Cg; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 018fea15375258a6cb3108e316bc54cf
+X-Cloud-Trace-Context: 018fea15375258a6cb3108e316bc54cf;o=1
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5xp76-1789831299248-fde92eeb6669
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994d6dbe1f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:39 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=NJ1nmbNPxnf%2Fm2rsfd9iQy2apdB%2BOUfmduGFpinWbO59IqS%2Fa4EFJtuXfwkywoiD%2Fbmp0ryvxPeRVuH9QfdQdCPZgLQOg9vQ%2BVuJGshUikLNHqA6XtdRbk7wUnFviBM8%2BneIyk%2FGQtc%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=fA0ScwIsxWWfMd4LBw761OQRoRjvq1T0dQkEegLBLcU-1789831299.6522806-1.0.1.1-msN1DzLmNjfovEqcixR05SMnoOqxF18Z_AZ1hJKxxLg; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: cfd153c253556594570b0a4c4de267db
+X-Cloud-Trace-Context: a3f8cc0a8580ae3e4ec7efb1a45ca7d3
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hc6lg-1789831299586-b56f4c78d3f4
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994d86987f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:39 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=tlo1HtTK0kwM%2BJ7Ofmwi3treDC56PZ4zMjfPtGITUUX%2BlmRzVdorvBz6UhFufR%2FvT4frfVhlfU3L8D923mF%2Bbon%2FXzsHBU0%2BchRFfa7dVoT6hGWb0HDbQTfScWW5AyFYpqVNs1%2B26Ok%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=mVvxIqcA6J.R7LO1ad1XGugwJJ.AnOEqtG40F4gETxY-1789831299.9030473-1.0.1.1-eAhIzCrKMU3WLywrjvdKspj4C8M_QDdLd_RFtHyJ6RA; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 42728eb330d8c899c020742013233ecb
+X-Cloud-Trace-Context: 1ff56f9798d99342d6e2a5d94188d0f1
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::hc6lg-1789831299826-eab1e4b91fd9
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994da69a4f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:40 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=CPCX2Z5DYheLFhsWUGtUws%2FvDKUJ8YExRnPkdn%2BDv3d5G7pnik4XpIfRjofr1UQkv75weTRZ%2FRtR0kuODLNkw26a8leg3s82uFLk%2B9r0a8Z7YNFcGITdqSXHx6dvr48iXJExk7P32ns%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=J0zRlKeLYEpEQoPg7oPkodDt5p5RdHRG.4T9s8zGJxs-1789831300.224179-1.0.1.1-fd7Nc1Le6ptUuPAv7PBtpkJbWWUW1ePEMWyvZoN_32o; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 1c2901724110278325743e3b8870cfb0
+X-Cloud-Trace-Context: 7cb00ac70489add7756a3376b75f709c
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m5h6-1789831300135-05c8198c4ba9
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994dbdf8ff274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:40 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=NroF2GadIFi8QmP3X0RMzzSNFqJ%2FxJJ%2BO%2Bt7d%2BaUeYH1XSL0gdCyGuFFGF0X5q7PrsGSMYC3oGbJvN%2BFZy8vmpABhRD%2BQYXN%2BqknHVJDXy1%2FSknvMdTlLcsIOiywBGltNOpMukxNr%2BM%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=ShrkxWuJ_lc.3WvngW7PemZf5Um_rbd7.z7YNaa6JfI-1789831300.4574249-1.0.1.1-3pNmzw8Y4QqVenhTTwgN.o9ivacDBF9jYK0GkPgaqGA; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 27ed1d28dff78a0e7ae12bf3e78114e2
+X-Cloud-Trace-Context: 5f7ee725583b5d3e4ec7efb1a45ca768
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m5h6-1789831300392-85100875ceec
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994dd4cb7f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:40 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=RFCTTJv83GuzokuKTAcnl6nRBN54diJR%2Fhq89XaoEm4p0CGdxzK02%2F1lqsQ%2F5spNhUsvjrrDpoWS5wacl4vfmcmAgB%2B1f8iRF6EEpDjJpYlzUxGvfJGnXfHLUzM5HT23HPSkFamP52Y%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=KhfJCgtfu.pqsyBtfa0Y8NxD6uw.uoxhr9feljUPr_8-1789831300.6905515-1.0.1.1-WWEtAV15T3dUb1CtlHYQVYIaGNsdfAyBWUeXuKHjHn0; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: f6efc48b518e8be9b9dbf40c390b0773
+X-Cloud-Trace-Context: 1bb14c05423245a4756a3376b75f71c1
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831300625-c8db32250788
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994deca6af274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:40 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=AtPHRp%2F85qP2arFzvFPvuNX43ZN8orIRuWyCcy%2FJWF%2F4wyPeMRPNf18csP0tBILG6%2B%2FxXD1XejnhJNreEG4nSYdZXVjnbdJs12PWv0wuWcm76UP2X08kpIGryVEasmttRJkOOJrKgpo%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=HKtoMHyXLszUF5bhm8GrnYUyk1LT60hQuE_MShdD1ro-1789831300.923239-1.0.1.1-JrA18n07BEFGQA8XRq3r9w0pJIcWYf8QapFNVlPkZqU; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 1ad708bc09fa41b937ff4472527bcd56
+X-Cloud-Trace-Context: 5adb7ba8b1b2beb9897259daf2d153dd
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831300862-02d4ea509d06
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994e09917f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:41 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=0cEuJeMlwj3ASeXQ1AmslXrxNgUrhHKPZVciDobrn1s%2B%2B3JmHfcVmxy0hldhqtCgcmo7GEZ%2B9c9YQySGswc1Tj5IjqmRLoUNRi0r%2BwYv4yFqXbfb%2Fr3ZoSW4hZYPr07ZfelY2G89Fqw%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=XEFxp2nG3NFJ8rMP0FyrLPvDT7HbEVZoBShB0LlyEKo-1789831301.2150896-1.0.1.1-nh_Z22gU5sOI6Ca8RGDZe0QSHpb41EVjXIbi83JnMAY; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 90c2834da1e039ac595eeabeffc6e751
+X-Cloud-Trace-Context: a54d35bd0405e382f14ac27f3d4ae46c
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::6jjd5-1789831301150-2bc5c4518ac1
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994e288aff274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:41 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=BRdvlJnbsFs99HbWqnfY9KXBs5TXNPp2re%2BBEmN5m8hg9D77v5sM4DMWt0ubNfPVN0FnwyrFsW4M3hpw5Mb7WhITZbPw9ybu6KVfwJp%2BE5zrYIdJrKZWMv5fkD%2BHmOf2AGFPj14rHw0%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=fqqvTM5wcT9FZV2ixhP.Rs4Ftfkp2LFsOEXMo_b7cYQ-1789831301.5293486-1.0.1.1-4thpPX0dPeVpM0.speDA6r0d27g89P5H_Zf3PHVKdQo; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: b2b65e833ecb39dc53adcb80697e0432
+X-Cloud-Trace-Context: 53ce91595980aa68756a3376b75f7fd0
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m9pr-1789831301465-8107a636d8e6
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994e42e5df274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:41 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=GZxB3GwQH%2FfLYIAdwSzz%2B5D4aBHlIoryTY1whk3I%2FRrEKGu3jOFOxMptN%2B%2B%2B5Q1wURw5%2F8FElZTXylUva1tX2Ri0x1zHsQuTjIYlL36hAZDeb%2FaOqZenkrM9VEFj8Z%2B2e7gANoTYJF0%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=BkuYtj7GkjVwe46NbnXOtch_xWTVYHrMwLty4oc0BUY-1789831301.7823577-1.0.1.1-6R7_iZP3y33dQC.J3p2c.xxAkyS4_Mf8ZTYDrET2vaY; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 39c7be7dfb18c7f996a4666b20230a7b
+X-Cloud-Trace-Context: a45e1a3a382e3df34ec7efb1a45ca620
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831301711-94ea614a74cc
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994e5cca3f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:42 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2BUIjkphWtFRTOmh2pB0dzL8Iw3LuvCWA3nVY4D4U9a5Y1vfFc0DI3chaduHkc%2FvMblEoTbkMjjqjeN7H3YyCUdcMFdmCkwKADTh%2Bs2Z%2BkUfJ5e2M7jhLfWJ24P6dboZQQnrYIZ9yNvY%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=5zKBPhTvQfqgSaLlnsGcRKx4_mdw_V6SICcxRaKpUkI-1789831302.043293-1.0.1.1-BiTbde6mPlRk6Vrg5cEkEFvJHa3TzT.IBHB307IyuSg; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 69ce76d905c2f662adcfeb9b9ec24282
+X-Cloud-Trace-Context: 39af335c40462653d23d9707a52b0e4e
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831301982-56129c61e344
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994e76b64f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:42 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Irtdo9zCYatRJ8iFeRQlyd2TeHsmizDCSrZPc97V0aHVc5OgdWfoX4Q2XG5ErrQL0mwWtM2C0OubvjWjgkkSeizWIJ1M%2F2PDBTZMy0PyQgvgHaAIO6LmVu8Imb0a1QfT%2FZfZwSFEdeg%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=cZv73x0yIeQY6u32f3coRP1D8vdAQall8c4650Da1bo-1789831302.3025863-1.0.1.1-iCi66MQjdERQpzdT5LBYTUrR9EBoli4MdJmy5jkvy_g; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 7325f1d19d08cff8d9f0ed888282f37a
+X-Cloud-Trace-Context: 8e8ccc29d502ff860d108bcc7cfdd3e8
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m9pr-1789831302243-2023849006ef
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994e8f939f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:42 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=niRaZVW95PlMqs51GCIBACt1p5ldPzYBTazKqQ4QCbWi8wb%2Fk%2Bxn7BNQWAkq%2BlAXEKIcrEsugJ4qpJh8xjB2LjcudmGKE02zsVXEYzeC%2FF6ESMhfcaLJWq6ma3CnO0Pmz6G%2FD8jQg2o%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=SpZ0f9hk2SNO074Sky.npKOMmhotW2iKBrQ0Ac1lmtE-1789831302.554131-1.0.1.1-pDsWAhsK6iY8yXLL_07hmdtiWN4JF6PvjLghOuxD1ic; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 7c0860e4afedc6c6f25430f4a0d30bce
+X-Cloud-Trace-Context: 40c2c46d0c90d056756a3376b75f720e
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m9pr-1789831302489-903ad687d40a
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994eae871f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:42 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=qEtAoPY80MvjGIcRBwkPb2sMS7ZMSyX0ci%2BHlUVlGhoxRAe1Jo%2Fi89M8w7NON68EA0KxaPqs6ey4sOThL1KmHZU0OLuUSMQpXelYJCXFdNf0iQwZIZPl451zRHlf5ndMRyE0ZBZpGaU%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=GNQiIL6YIs_0.y6OUVYGJ6Uc5V0p7ScdPtpeWJaySkQ-1789831302.8622527-1.0.1.1-eY9k_bgiybm7t.xPDPRHJ5eVbpBve_PXTQ7jTxNsBNA; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 664fbb7fe6bb3998bdef9450eae56d1d
+X-Cloud-Trace-Context: b19df49d9c3642a02daf83442bb843c2
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831302798-6f59e603aa9c
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994ec5dd2f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:43 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ldiRAIZynQqzV36dbrhG5LZUq9%2BOtHIbw8375lbMVyiYYHxjon3PDhESTVm05K%2FFsvqEKs5CyHA3gxquVR8fcnZpGTBNGMS5GZMyWHZuRzNr6XrN7qN5FmEByifC0sDoEEQSpbMQ4Qk%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=rBhlOm1Q6EuUiwnqGDeoFNyaCS_f0c4paxTdYH_oUSY-1789831303.0935163-1.0.1.1-c573Dh_.oXwvTsBvOfWYN81ERomuUy4ZEcjFXAWPe7U; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 54af8288fbeb16356013f970e0e74fd1
+X-Cloud-Trace-Context: a991a5cdac92ab370d108bcc7cfdd951
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831303026-c392a440482f
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994eeaed9f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:43 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=c7C2aGAaGrHMJlWH9DazI5%2BSc4loa7XEDjviQovGI5QDOZ%2BdsbycAyGRX6jjzSvvs%2BbpemtYJMvZzQto5Nob4rjCqOf%2FEjDfdIjZw6VTGKQs0rfd95DGvaF47DaCs5ul6S584E4rRWs%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=uMTslxDCHRq4_iigVV_wgtXFSOJb35kcqQZePquq0.8-1789831303.4713438-1.0.1.1-YHz3Qm4d1bjSIHzEWH.9GmiIBXUscgyXbqtLYHJfSD4; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: f587ddde1b26ed4db30a287ad2155832
+X-Cloud-Trace-Context: 64a9b8f147f0ddfc1f17bbe0dc56bc88
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5m9pr-1789831303407-de6d703c00e7
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994f05cc2f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:43 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=o%2BXlu9wT2L9QaHS0%2FxJlHgQspby5X9gfJTF%2FysK5Xaz61khlU%2BNlFrdQeH0ZK451L%2BS8mUPu%2BQX5xLVG0D5%2Fex1Uf2MmcDknV1W93NNXeJytmhI3OmqwpPu7fcJIVDHgeyyt4dp0Db4%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=Tom4wNXcSXuosJTbkx9Mxwd_akv9dZMkDZPJhESy8w4-1789831303.7333186-1.0.1.1-fX4NbsAiAunyT7HR1Ekp3Vw_F2u3wcFzwQAt6zHdqJU; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 8855ea1cce181be8c2d744293c042a86
+X-Cloud-Trace-Context: 2cb8d0934dcf78870d108bcc7cfddfaa
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831303667-c4b29b18c765
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994f1c9aef274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:44 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=hnHznttpynSSCQiJwFUW7QltxMw9TBaKzBkU%2BFSw7zD8M2pVSU35CRxWcZExOZhxm%2FQoLlXDA3qI7vIfZ72dhFVt6dqyDCnwzGBYr32qkxvgwMgCuS8u8DZ2OEB2j12HRxfWVrqMMwc%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=rTADfQvxRievfTUlZMzFYjuTegVE1Fg7cCkQj3s1Ls4-1789831303.9661465-1.0.1.1-IJnTxaQar80W2NmfJkdOpKchkBwmbnQJYed1mGeklsI; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: fac2f8747c1553e2fd6e651fd3483562
+X-Cloud-Trace-Context: b6e6d6b437aeaa99f14ac27f3d4ae172
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::t66zl-1789831303904-8089e8f60e73
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994f33f7df274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:44 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=LYmHY9F4f9d%2FfzwoNq5T8NmnS851TIx2ojUO1QfWsdESIVJiiJXDFj71MG3JLCErRC4Xi%2BMtO24nuqv7ca4CcD6rIvu6rlXCuYB0L26taeZngjf5awZzo275IiBQpy%2BEf8aeVHP97z0%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=qavCudl3uiU3bF__E2HqEiFWg_YE6hnf4Pxq6BajcAA-1789831304.2004328-1.0.1.1-zd1ysnbiDS1XcMS2mG0eWxk2HZx5jupHFojfJN2TREg; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 7e3dda71bef03b2b714d4b4972de56eb
+X-Cloud-Trace-Context: 214cb9bf2b91bbeb2daf83442bb84a81
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::9mgmf-1789831304137-e0ba841a3b89
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994f4ccd1f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:44 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=hoQi7eB%2F2zZEVtz%2B023Po8St3THfvw7S8sQLMemhChclaqLl6p5LR3eDJ0hfIzHQAq10X3BQhernv3LCZxcuD%2BYQIOg%2B3cMVDyyj9jSFw%2FKhvv0FIZYpHGnC7AOGFdKOdfN%2BK35CY2M%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=hfjNkIItoEq82y32AsQpUcrj2XRbC6d7VpA9dwXYMws-1789831304.4508078-1.0.1.1-FopV6JXFEw2n6aE01cJAWRS5PoF0B35iKJEM6DbJYe0; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 1712de13d4ef7aaa1aaf46fb81846cad
+X-Cloud-Trace-Context: cae01c541e4af00ad4bfc950bb999fb1
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::t2h46-1789831304381-241debdd884a
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994f6fc3af274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:44 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=vzRosmlGMFHzh5ILM3X3%2F96II0YoQhLbaKOmRjaFUTR21TVXQRLtdrMT4LUqb1GitHyxpXd72Ps2pBrVxIzQZktmg6%2BdtjYwRbxTaFym2SIiMMXHb1BeGvc4AyJH2%2BsSIN750tzv2Kk%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=wwcFIwCY5EIgCaa3M_Lyl1G8sOBEhg6ZzLGyN7PJCtE-1789831304.7935658-1.0.1.1-bc00aF6Cjnld0AlDY.yWTjxYGpJ.dgj7S4ZbuoqYdPw; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: 9d0a2bb9f4491a5d412f1a60c641457c
+X-Cloud-Trace-Context: 5616d20882b7dc4d1f17bbe0dc56bf12
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::5mdzn-1789831304634-535ccc810bd7
+
+HTTP/1.1 301 Moved Permanently
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Authorization, X-Country, Retry-After
+Age: 0
+Cache-Control: no-store
+Cf-Cache-Status: DYNAMIC
+Cf-Ray: a3d994f8bab1f274-IAD
+Clerk-Api-Version: 2025-11-10
+Content-Length: 0
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+Content-Type: application/json
+Date: Sat, 19 Sep 2026 15:21:45 GMT
+Expires: 0
+Location: /v1/oauth_callback?err_code=authorization_invalid#
+Nel: {"report_to":"cf-nel","success_fraction":0.01,"max_age":604800}
+Pragma: no-cache
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=KCQ0Lxmtt%2Fzo9CkcBj%2F7ckxtB18U3qCozTC8CaMMDY1WYJxrqzSsbknuOomlmNVS5%2F40OWAa%2FrUXi419p%2BXjta9Q3UtYxF96siuTqsT6IomnAwqpHxldlb7N%2FsA6ovnEqyWdjyEYiVs%3D"}]}
+Server: Vercel
+Set-Cookie: _cfuvid=krBs4VT1Kesn3sys4_LRVGSH1pqIyeH1MdmoP7bjVOw-1789831305.073709-1.0.1.1-GRwm_JB...3oxAUdkv3VFmVs1DYts6ucxibMKE7y.aY; HttpOnly; SameSite=None; Secure; Path=/; Domain=frontend-api.clerk.dev
+Strict-Transport-Security: max-age=63072000;
+Vary: Origin
+Via: 1.1 google
+X-Cfworker: 1
+X-Clerk-Instance-Id: ins_3JPsGuCBdvabO3N9Ei0pFkJIjly
+X-Clerk-Trace-Id: cb5dd3f284180d32cc8040bf59975d56
+X-Cloud-Trace-Context: 42f888b24fb0bf35d23d9707a52b009f
+X-Country: US
+X-Robots-Tag: noindex, nofollow
+X-Vercel-Cache: MISS
+X-Vercel-Id: cdg1::iad1::c7p26-1789831305011-21ac47c8e49c
+

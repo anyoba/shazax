@@ -74,11 +74,12 @@ $env:SHAZAX_CONFIRM_FST_S2_APPLY='yes'; node scripts/academic/migrateFstS2Resour
 
 Le script utilise Firebase Admin SDK et exige :
 
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
+- soit `FIREBASE_SERVICE_ACCOUNT_JSON`, avec le JSON complet du compte de service Firebase ;
+- soit `FIREBASE_SERVICE_ACCOUNT_BASE64`, avec ce meme JSON encode en base64 ;
+- soit les trois variables separees `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`.
 
 Ne jamais utiliser les variables frontend `VITE_` comme credentials serveur.
+Sur Vercel, ajoute ces variables dans Project Settings -> Environment Variables, puis redeploie l'application.
 
 ## Rapport
 

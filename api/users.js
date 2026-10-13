@@ -23,6 +23,8 @@ async function syncUser(req, res) {
     fullName: String(body.fullName || body.name || body.email || 'Student').trim().slice(0, 180),
     email: String(body.email || '').trim().toLowerCase().slice(0, 220),
     profileImageUrl: String(body.profileImageUrl || '').trim().slice(0, 2000),
+    lastPath: String(body.lastPath || '').trim().slice(0, 300),
+    lastSeenAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
   if (!snapshot.exists) payload.createdAt = FieldValue.serverTimestamp();

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { collection, limit, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { useAuth, useClerk } from '@clerk/clerk-react';
@@ -50,6 +50,7 @@ const VISITS_KEY = 'admin_dashboard_visits';
 const FORMSPREE_ID = 'mjgjpnbb'; // Replace with your Formspree ID
 const ADMIN_LIST_LIMIT = 100;
 const ANALYTICS_LIST_LIMIT = 50;
+const USERS_REFRESH_INTERVAL_MS = 8000;
 
 function readJson(key, fallback) {
   try {
@@ -64,6 +65,18 @@ function formatTimestamp(value) {
   if (typeof value?.toDate === 'function') return value.toDate().toLocaleString();
   if (typeof value === 'string' || typeof value === 'number') return new Date(value).toLocaleString();
   return 'Unknown';
+}
+
+function timestampMs(value) {
+  if (!value) return 0;
+  if (typeof value?.toDate === 'function') return value.toDate().getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isRecentTimestamp(value, windowMs) {
+  const ms = timestampMs(value);
+  return ms > 0 && Date.now() - ms <= windowMs;
 }
 
 function recordVisit() {
@@ -114,9 +127,11 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
   const { role } = useUserRole();
   const [activeTab, setActiveTab] = useState('analytics');
   const lastEmailCountRef = useRef(0);
+  const knownUserIdsRef = useRef(new Set());
   const [visits, setVisits] = useState(() => readJson(VISITS_KEY, []));
   const [emails, setEmails] = useState([]);
   const [users, setUsers] = useState([]);
+  const [highlightedUserIds, setHighlightedUserIds] = useState(new Set());
   const [adminStats, setAdminStats] = useState(null);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userQuery, setUserQuery] = useState('');
@@ -176,6 +191,42 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
     enabled: canManageResources && activeTab === 'resources',
     includeArchived: true,
   });
+
+  const loadAdminUsers = useCallback(
+    async ({ showLoading = false } = {}) => {
+      if (!canViewAdminData) return [];
+      if (showLoading) setUsersLoading(true);
+      try {
+        const body = await getAdminUsers(getToken);
+        const nextUsers = body.users || [];
+        const previousIds = knownUserIdsRef.current;
+
+        if (previousIds.size > 0) {
+          const newIds = nextUsers
+            .map((userItem) => userItem.id)
+            .filter((userId) => userId && !previousIds.has(userId));
+
+          if (newIds.length > 0) {
+            setHighlightedUserIds((current) => new Set([...current, ...newIds]));
+            window.setTimeout(() => {
+              setHighlightedUserIds((current) => {
+                const next = new Set(current);
+                newIds.forEach((userId) => next.delete(userId));
+                return next;
+              });
+            }, 12000);
+          }
+        }
+
+        knownUserIdsRef.current = new Set(nextUsers.map((userItem) => userItem.id).filter(Boolean));
+        setUsers(nextUsers);
+        return nextUsers;
+      } finally {
+        if (showLoading) setUsersLoading(false);
+      }
+    },
+    [canViewAdminData, getToken],
+  );
 
   useEffect(() => {
     setVisits(recordVisit());
@@ -262,31 +313,33 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
   useEffect(() => {
     if (!canViewAdminData) {
       setUsers([]);
+      knownUserIdsRef.current = new Set();
+      setHighlightedUserIds(new Set());
       return undefined;
     }
 
     if (activeTab !== 'users') return undefined;
 
     let cancelled = false;
-    setUsersLoading(true);
-    getAdminUsers(getToken)
-      .then((body) => {
-        if (!cancelled) setUsers(body.users || []);
-      })
+    loadAdminUsers({ showLoading: true })
       .catch((error) => {
         if (!cancelled) {
           setUsers([]);
           setFirestoreError(error?.message || 'Unable to load users.');
         }
-      })
-      .finally(() => {
-        if (!cancelled) setUsersLoading(false);
       });
+
+    const intervalId = window.setInterval(() => {
+      loadAdminUsers().catch((error) => {
+        if (!cancelled) setFirestoreError(error?.message || 'Unable to refresh users.');
+      });
+    }, USERS_REFRESH_INTERVAL_MS);
 
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
-  }, [activeTab, canViewAdminData, getToken]);
+  }, [activeTab, canViewAdminData, loadAdminUsers]);
 
   const stats = useMemo(
     () => getStats(visits, resources, emails),
@@ -326,8 +379,7 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
         const body = await getAdminDashboard(getToken);
         setAdminStats(body.stats || null);
         if (activeTab === 'users') {
-          const usersBody = await getAdminUsers(getToken);
-          setUsers(usersBody.users || []);
+          await loadAdminUsers();
         }
         if (activeTab === 'resources') {
           await refetchResources();
@@ -345,8 +397,7 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
     setFirestoreError('');
     try {
       await updateAdminUserRole({ userId, role: nextRole, status: nextStatus }, getToken);
-      const usersBody = await getAdminUsers(getToken);
-      setUsers(usersBody.users || []);
+      await loadAdminUsers();
     } catch (error) {
       setFirestoreError(error?.message || 'Unable to update role.');
     } finally {
@@ -630,7 +681,12 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
         {canViewAdminData && activeTab === 'users' ? (
           <div className="space-y-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <h2 className="text-xl font-bold">Registered Users</h2>
+              <div>
+                <h2 className="text-xl font-bold">Registered Users</h2>
+                <p className="mt-1 text-sm text-white/40">
+                  Auto-refresh every {USERS_REFRESH_INTERVAL_MS / 1000}s. New users stay pinned at the top.
+                </p>
+              </div>
               <div className="grid gap-3 md:grid-cols-[1fr_12rem]">
                 <input
                   value={userQuery}
@@ -655,16 +711,50 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
                 <div className="p-6 text-white/40">No registered users found.</div>
               ) : (
                 <div className="divide-y divide-white/5">
-                  {filteredUsers.map((userItem) => (
-                    <div key={userItem.id} className="grid gap-4 p-4 lg:grid-cols-[1fr_10rem_13rem_10rem] lg:items-center">
+                  {filteredUsers.map((userItem) => {
+                    const isHighlighted = highlightedUserIds.has(userItem.id);
+                    const isNew = Boolean(userItem.isNew) || isHighlighted;
+                    const isActiveNow = isRecentTimestamp(userItem.lastActivityAt, 5 * 60 * 1000);
+
+                    return (
+                    <motion.div
+                      key={userItem.id}
+                      initial={isHighlighted ? { opacity: 0, y: -12 } : false}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`grid gap-4 p-4 transition lg:grid-cols-[1fr_10rem_13rem_10rem] lg:items-center ${
+                        isNew
+                          ? 'bg-primary/10 shadow-[inset_3px_0_0_rgba(82,111,245,0.95),0_0_38px_rgba(82,111,245,0.16)]'
+                          : 'hover:bg-white/[0.035]'
+                      }`}
+                    >
                       <div>
-                        <div className="font-medium">{userItem.fullName || userItem.email || 'Student'}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{userItem.fullName || userItem.email || 'Student'}</span>
+                          {isNew ? (
+                            <span className="rounded-full border border-primary/35 bg-primary/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-blue-100">
+                              New
+                            </span>
+                          ) : null}
+                          {isActiveNow ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.95)]" />
+                              Active
+                            </span>
+                          ) : null}
+                        </div>
                         <div className="text-sm text-white/40">{userItem.email || 'No email yet'}</div>
                         <div className="mt-1 text-xs text-white/25">Joined {formatTimestamp(userItem.createdAt)}</div>
+                        <div className="mt-1 text-xs text-white/30">
+                          Last activity {formatTimestamp(userItem.lastActivityAt)}
+                          {userItem.lastPath ? <span className="text-white/20"> - {userItem.lastPath}</span> : null}
+                        </div>
                       </div>
                       <div className="text-sm text-white/45">
                         <div>{userItem.attemptsCount || 0} attempts</div>
                         <div>{userItem.bestScore || 0}% best</div>
+                        {userItem.lastAttemptStatus ? (
+                          <div className="text-xs text-white/25">{userItem.lastAttemptStatus}</div>
+                        ) : null}
                       </div>
                       <select
                         value={userItem.role || USER_ROLES.STUDENT}
@@ -683,8 +773,9 @@ export default function AdminPage({ onAddResource, onDeleteResource, onRestoreRe
                         <option value="active">active</option>
                         <option value="suspended">suspended</option>
                       </select>
-                    </div>
-                  ))}
+                    </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>

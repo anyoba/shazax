@@ -33,6 +33,13 @@ function ts(value) {
   return null;
 }
 
+function timeMs(value) {
+  const normalized = ts(value);
+  if (!normalized) return 0;
+  const parsed = new Date(normalized).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function record(data = {}) {
   return Object.entries(data).reduce((next, [key, value]) => {
     next[key] = key.endsWith('At') || ['startedAt', 'completedAt', 'updatedAt', 'createdAt'].includes(key) ? ts(value) : value;
@@ -598,10 +605,22 @@ async function adminUsers(req, res) {
   ]);
   const roles = new Map(rolesSnapshot.docs.map((doc) => [doc.id, doc.data() || {}]));
   const attempts = attemptsSnapshot.docs.map(docData);
+  const nowMs = Date.now();
+  const newUserWindowMs = 24 * 60 * 60 * 1000;
   const users = usersSnapshot.docs.map((doc) => {
     const user = docData(doc);
-    const userAttempts = attempts.filter((attempt) => attempt.userId === user.id);
+    const userAttempts = attempts
+      .filter((attempt) => attempt.userId === user.id)
+      .sort((a, b) =>
+        Math.max(timeMs(b.updatedAt), timeMs(b.startedAt), timeMs(b.completedAt)) -
+        Math.max(timeMs(a.updatedAt), timeMs(a.startedAt), timeMs(a.completedAt)),
+      );
     const completed = userAttempts.filter((attempt) => [COMPLETED, EXPIRED].includes(attempt.status));
+    const lastAttempt = userAttempts[0] || null;
+    const lastActivityAt =
+      [user.lastSeenAt, user.updatedAt, lastAttempt?.updatedAt, lastAttempt?.startedAt, lastAttempt?.completedAt]
+        .sort((a, b) => timeMs(b) - timeMs(a))[0] || null;
+    const createdAtMs = timeMs(user.createdAt);
     return {
       ...user,
       role: roles.get(user.id)?.role || USER_ROLES.STUDENT,
@@ -610,9 +629,15 @@ async function adminUsers(req, res) {
       completedCount: completed.length,
       bestScore: completed.reduce((best, attempt) => Math.max(best, Number(attempt.percentage || 0)), 0),
       averageScore: completed.length ? Math.round(completed.reduce((sum, attempt) => sum + Number(attempt.percentage || 0), 0) / completed.length) : 0,
-      lastActivityAt: userAttempts[0]?.startedAt || null,
+      lastActivityAt,
+      lastAttemptStatus: lastAttempt?.status || null,
+      isNew: createdAtMs > 0 && nowMs - createdAtMs <= newUserWindowMs,
     };
-  }).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  }).sort((a, b) =>
+    Number(b.isNew) - Number(a.isNew) ||
+    timeMs(b.createdAt) - timeMs(a.createdAt) ||
+    timeMs(b.lastActivityAt) - timeMs(a.lastActivityAt),
+  );
   return sendJson(res, 200, { users });
 }
 

@@ -9,6 +9,7 @@ export async function syncCurrentUser(user, getToken) {
       fullName: user?.fullName || user?.firstName || user?.primaryEmailAddress?.emailAddress || 'Student',
       email: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '',
       profileImageUrl: user?.profileImageUrl || '',
+      lastPath: typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '',
     }),
   });
   return parseApiResponse(response);

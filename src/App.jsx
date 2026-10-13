@@ -126,6 +126,7 @@ export default function App() {
 function UserSync() {
   const { user } = useUser();
   const { getToken } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -134,16 +135,23 @@ function UserSync() {
       fullName: user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || '',
       email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '',
       profileImageUrl: user.profileImageUrl || '',
+      path: `${location.pathname}${location.search}`,
     });
 
-    if (syncedUsers.get(user.id) === cacheKey) return;
-    syncedUsers.set(user.id, cacheKey);
+    const previousSync = syncedUsers.get(user.id);
+    if (
+      previousSync?.cacheKey === cacheKey &&
+      Date.now() - previousSync.syncedAt < 60 * 1000
+    ) {
+      return;
+    }
+    syncedUsers.set(user.id, { cacheKey, syncedAt: Date.now() });
 
     syncCurrentUser(user, getToken).catch((error) => {
       syncedUsers.delete(user.id);
       console.error('Unable to sync Clerk user to Firestore', error?.message || error);
     });
-  }, [getToken, user]);
+  }, [getToken, location.pathname, location.search, user]);
 
   return null;
 }

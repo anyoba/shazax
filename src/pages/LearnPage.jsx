@@ -254,64 +254,66 @@ const MODULE_ICON_COMPONENTS = {
 
 const MODULE_THEME_STYLES = {
   cyan: {
-    card: 'border-[#2638ff]/20 bg-[linear-gradient(135deg,#2434ff_0%,#3841e8_48%,#35b4d3_100%)]',
-    iconColor: 'text-white',
-    linkColor: 'text-white/80',
-    titleColor: 'text-white',
-    iconBg: 'bg-white/14',
+    card: 'border-cyan-100 bg-white hover:border-cyan-200',
+    iconColor: 'text-cyan-700',
+    linkColor: 'text-cyan-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-cyan-50',
   },
   violet: {
-    card: 'border-[#3430f6]/20 bg-[linear-gradient(135deg,#3430f6_0%,#2434ff_56%,#5171f2_100%)]',
-    iconColor: 'text-white',
-    linkColor: 'text-white/80',
-    titleColor: 'text-white',
-    iconBg: 'bg-white/14',
+    card: 'border-violet-100 bg-white hover:border-violet-200',
+    iconColor: 'text-violet-700',
+    linkColor: 'text-violet-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-violet-50',
   },
   sky: {
-    card: 'border-[#35b4d3]/30 bg-[linear-gradient(135deg,#35b4d3_0%,#57d4de_52%,#eef9ff_100%)]',
-    iconColor: 'text-[#07111f]',
-    linkColor: 'text-[#07111f]/70',
-    titleColor: 'text-[#07111f]',
-    iconBg: 'bg-white/42',
+    card: 'border-sky-100 bg-white hover:border-sky-200',
+    iconColor: 'text-sky-700',
+    linkColor: 'text-sky-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-sky-50',
   },
   orange: {
-    card: 'border-[#5171f2]/20 bg-[linear-gradient(135deg,#0b0b0d_0%,#2434ff_54%,#57d4de_100%)]',
-    iconColor: 'text-white',
-    linkColor: 'text-white/80',
-    titleColor: 'text-white',
-    iconBg: 'bg-white/14',
+    card: 'border-amber-100 bg-white hover:border-amber-200',
+    iconColor: 'text-amber-700',
+    linkColor: 'text-amber-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-amber-50',
   },
   emerald: {
-    card: 'border-[#57d4de]/30 bg-[linear-gradient(135deg,#eef9ff_0%,#57d4de_48%,#35b4d3_100%)]',
-    iconColor: 'text-[#07111f]',
-    linkColor: 'text-[#07111f]/70',
-    titleColor: 'text-[#07111f]',
-    iconBg: 'bg-white/45',
+    card: 'border-emerald-100 bg-white hover:border-emerald-200',
+    iconColor: 'text-emerald-700',
+    linkColor: 'text-emerald-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-emerald-50',
   },
   white: {
-    card: 'border-[#d8dcf0] bg-white',
-    iconColor: 'text-[#2434ff]',
-    linkColor: 'text-[#2434ff]',
-    titleColor: 'text-[#07070a]',
-    iconBg: 'bg-[#f0f1fa]',
+    card: 'border-slate-200 bg-white hover:border-primary/30',
+    iconColor: 'text-primary',
+    linkColor: 'text-primary',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-primary/10',
   },
   rose: {
-    card: 'border-[#5171f2]/20 bg-[linear-gradient(135deg,#5171f2_0%,#3841e8_54%,#f0f1fa_100%)]',
-    iconColor: 'text-white',
-    linkColor: 'text-white/80',
-    titleColor: 'text-white',
-    iconBg: 'bg-white/14',
+    card: 'border-rose-100 bg-white hover:border-rose-200',
+    iconColor: 'text-rose-700',
+    linkColor: 'text-rose-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-rose-50',
   },
   slate: {
-    card: 'border-[#d8dcf0] bg-[linear-gradient(135deg,#ffffff_0%,#f0f1fa_58%,#dfe5ff_100%)]',
-    iconColor: 'text-[#2434ff]',
-    linkColor: 'text-[#2434ff]',
-    titleColor: 'text-[#07070a]',
-    iconBg: 'bg-white/70',
+    card: 'border-slate-200 bg-white hover:border-slate-300',
+    iconColor: 'text-slate-700',
+    linkColor: 'text-slate-700',
+    titleColor: 'text-slate-950',
+    iconBg: 'bg-slate-100',
   },
 };
 
 const MODULE_CARD_THEMES = [
+  { match: ['anatomie', 'anatomy'], iconKey: 'book', themeKey: 'rose' },
+  { match: ['medecine', 'medicine', 'medical'], iconKey: 'graduation', themeKey: 'rose' },
   { match: ['thermodynamics', 'thermodynamique'], iconKey: 'flask', themeKey: 'orange' },
   { match: ['mechanics', 'mecanique', 'mécanique'], iconKey: 'layers', themeKey: 'sky' },
   { match: ['analysis', 'analyse'], iconKey: 'calculator', themeKey: 'cyan' },
@@ -358,7 +360,7 @@ function ModuleCard({ institution, program, semester, moduleItem, resources }) {
   return (
     <Link
       to={`/learn/${institution.slug}/${program.slug}/${semester.slug}/${moduleItem.slug}`}
-      className={`group min-h-[180px] rounded-[2rem] border p-7 shadow-[0_18px_45px_rgba(36,52,255,0.10)] transition hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(36,52,255,0.18)] ${theme.card}`}
+      className={`group min-h-[180px] rounded-[2rem] border p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${theme.card}`}
     >
       <div className={`mb-8 flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm ${theme.iconBg} ${theme.iconColor}`}>
         <Icon size={25} strokeWidth={2.4} />

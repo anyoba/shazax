@@ -56,47 +56,31 @@ function hasMatchingAcademicScope(resource, moduleItem) {
   });
 }
 
-function hasAnyAcademicScope(resource) {
-  return ['institutionId', 'programId', 'programYearId', 'semesterId'].some((field) =>
-    Boolean(getResourceScopeValue(resource, field)),
-  );
-}
-
-function isFstSettatScope(scope) {
-  const institutionValues = [
-    scope?.institution?.slug,
-    scope?.institution?.shortName,
-    scope?.institution?.name,
-  ].map(normalizeLegacyValue);
-
-  return institutionValues.some((value) => value === 'fst settat' || value === 'fst');
-}
-
-function canUseFstLegacyFallback(resource, moduleItem, scope) {
-  if (hasAnyAcademicScope(resource)) return false;
-  if (!isFstSettatScope(scope)) return false;
-  if (moduleItem?.institutionId && scope?.institution?.id && moduleItem.institutionId !== scope.institution.id) {
-    return false;
-  }
-
-  return true;
-}
-
 export function isResourceLinkedToModule(resource, moduleItem, scope = {}) {
   if (!resource || !moduleItem) return false;
-  if (Array.isArray(resource.moduleIds) && resource.moduleIds.includes(moduleItem.id)) return true;
-  if (resource.moduleId && resource.moduleId === moduleItem.id) return true;
-  if (
-    Array.isArray(resource.moduleIds) &&
-    resource.moduleIds.length > 0 &&
-    !hasMatchingAcademicScope(resource, moduleItem) &&
-    !canUseFstLegacyFallback(resource, moduleItem, scope)
-  ) {
-    return false;
+  // Reject conflicting destinations even when a module identifier matches.
+  const scopeItems = {
+    institutionId: scope.institution,
+    programId: scope.program,
+    programYearId: scope.programYear,
+    semesterId: scope.semester,
+  };
+  if (Object.entries(scopeItems).some(([field, item]) => {
+    if (moduleItem[field] && item?.id && moduleItem[field] !== item.id) return true;
+    const value = getResourceScopeValue(resource, field);
+    return value && (
+      (moduleItem[field] && value !== moduleItem[field]) ||
+      (item?.id && value !== item.id)
+    );
+  })) return false;
+
+  // Explicit links are authoritative: never fall back to a shared module name.
+  if (Array.isArray(resource.moduleIds) && resource.moduleIds.length > 0) {
+    return Boolean(moduleItem.id) && resource.moduleIds.includes(moduleItem.id);
   }
-  if (!hasMatchingAcademicScope(resource, moduleItem) && !canUseFstLegacyFallback(resource, moduleItem, scope)) {
-    return false;
-  }
+  if (resource.moduleId) return Boolean(moduleItem.id) && resource.moduleId === moduleItem.id;
+  // A legacy name alone cannot identify an institution or academic destination.
+  if (!hasMatchingAcademicScope(resource, moduleItem)) return false;
 
   const legacyModule = resource.legacy?.module || resource.module || '';
   const normalizedLegacyModule = normalizeLegacyValue(legacyModule);
@@ -107,6 +91,7 @@ export function isResourceLinkedToModule(resource, moduleItem, scope = {}) {
 }
 
 export function getResourceLinkMode(resource, moduleItem, scope = {}) {
+  if (!isResourceLinkedToModule(resource, moduleItem, scope)) return 'none';
   if (Array.isArray(resource?.moduleIds) && resource.moduleIds.includes(moduleItem?.id)) {
     return 'academic';
   }
